@@ -1,0 +1,4 @@
+| description | part_number | quantity | brand | model | condition | unit_price | total_price | location | item_name | unit | purchase_price | selling_price | least_price | maximum_price | minimum_quantity | low_quantity | manufacturer | manufacturing_date | |-------------|-------------|----------|-------|-------|-----------|------------|-------------|----------|-----------|------|----------------|---------------|-------------|---------------|------------------|--------------|--------------|--------------------| | Widget A | PN-001 | 10 | Acme | X100 | New | 25.50 | 255.00 | Warehouse 1 | Screwdriver | pcs | 20.00 | 30.00 | 18.00 | 35.00 | 5 | 2 | ToolCorp | 2024-01-01 |
+
+
+

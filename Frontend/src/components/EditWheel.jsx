@@ -1,0 +1,171 @@
+import React, { useState, useEffect } from "react";
+import api from "../api";
+import { useNavigate, useParams } from "react-router-dom";
+import Sidebar from "../partials/Sidebar";
+import Header from "../partials/Header";
+import Loading from "./Loading";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import BackButton from "./BackButton";
+
+const EditWheel = () => {
+  const [formData, setFormData] = useState({
+    job_card_no: "",
+    date: "",
+    customer_name: "",
+    customer_type: "",
+    mobile: "",
+    tin_number: "",
+    checked_date: "",
+    work_description: "",
+    result: "",
+    total_amount: "",
+    professional: "",
+    checked_by: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  console.log(formData);
+  const { id } = useParams(); // Assuming you're using React Router v6 and the ID is part of the URL
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (id) {
+      api
+        .get(`/view-wheel/${id}`)
+        .then((response) => {
+          console.log(response.data);
+          setFormData(response.data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          setError("Failed to fetch data.");
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
+  }, [id]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      await api.put(`/update/${id}`, formData);
+
+      toast.success("Job card added successfully!", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      navigate("/job-manager/wheel-alignment-list");
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "An unexpected error occurred.";
+
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="fixed top-4 left-[19%] z-[99999999]">
+          <BackButton />
+        </div>
+        <main className="grow p-6">
+          <div className="max-w-4xl mx-auto p-8 rounded-lg shadow-lg dark:bg-gray-800 bg-white overflow-hidden">
+            <h2 className="phone:text-md dark:text-gray-200 tablet:text-2xl font-bold mb-6 text-left text-blue-700 uppercase tracking-wider">
+              Wheel Alignment Registration
+            </h2>
+            {error && <div className="text-red-500 mb-4">{error}</div>}
+            {success && <div className="text-green-500 mb-4">{success}</div>}
+
+            <form
+              onSubmit={handleSubmit}
+              className="border border-blue-500 px-4 py-6 rounded-md"
+            >
+              <div className="grid phone:flex phone:flex-col tablet:grid tablet:grid-cols-2 gap-6">
+                {Object.entries(formData).map(([key, value]) =>
+                  key === "id" ? null : ( // Skip rendering when key is 'id'
+                    <div key={key} className="">
+                      <label className="dark:text-gray-200 block text-gray-600 capitalize">
+                        {key.replace("_", " ")}
+                      </label>
+                      {key === "customer_type" ? (
+                        <select
+                          name={key}
+                          value={value}
+                          onChange={handleChange}
+                          className="w-full dark:bg-gray-800 dark:text-white placeholder:text-gray-200 border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1"
+                          required
+                        >
+                          <option value="">Select Customer Type</option>
+                          <option value="Regular">Regular</option>
+                          <option value="Contract">Contract</option>
+                        </select>
+                      ) : key === "work_description" ? (
+                        <textarea
+                          name={key}
+                          value={value}
+                          onChange={handleChange}
+                          className="w-full border dark:bg-gray-800 dark:text-white placeholder:text-gray-200 border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1"
+                          placeholder={`Enter ${key.replace("_", " ")}`}
+                          required
+                        />
+                      ) : (
+                        <input
+                          type={
+                            key.includes("date")
+                              ? "date"
+                              : key === "total_amount"
+                              ? "number"
+                              : "text"
+                          }
+                          name={key}
+                          value={value}
+                          onChange={handleChange}
+                          className="w-full dark:bg-gray-800 dark:text-white placeholder:text-gray-200 border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1"
+                          placeholder={`Enter ${key.replace("_", " ")}`}
+                          required
+                        />
+                      )}
+                    </div>
+                  )
+                )}
+                <div className="col-span-2 flex justify-end">
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 transition disabled:bg-gray-400"
+                    disabled={loading}
+                  >
+                    update
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default EditWheel;
