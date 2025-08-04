@@ -945,31 +945,6 @@ const AddToWorkOrder = () => {
           <SpareChange />
 
           <OutSource />
-          <ServiceReminderForm />
-
-          <div className="px-4 sm:px-6 lg:px-8 w-full max-w-8xl mx-auto py-4">
-            <div className="flex justify-center items-center bg-gradient-to-br from-gray-100 to-gray-200 py-10 rounded-xl shadow-md">
-              <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg border border-gray-300 transition-transform duration-200 hover:scale-[1.02]">
-                <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-4">
-                  Ready for a Test Drive?
-                </h2>
-                <p className="text-gray-600 text-center mb-6">
-                  Take the vehicle out for a spin to ensure it runs smoothly
-                  after repairs.
-                </p>
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleNavigate}
-                    className="bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-green-700 active:scale-95 transition duration-300"
-                  >
-                    Start Test Drive
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <TestDriveResult id={id} />
         </main>
       </div>
     </div>

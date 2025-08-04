@@ -299,7 +299,7 @@ const OutSource = () => {
     <main className="grow bg-white dark:bg-gray-800 w-[95%] mt-10 m-auto rounded-md">
       <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
         <h2 className="uppercase tracking-wider text-blue-700 phone:text-md tablet:text-xl font-bold text-center mb-6">
-          Outsource
+          Other Service
         </h2>
         <div className="border rounded-md border-blue-500 py-6 px-6 overflow-hidden">
           {/* Job Card No */}
