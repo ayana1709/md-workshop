@@ -1,138 +1,70 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import Sidebar from "../partials/Sidebar";
 import Header from "../partials/Header";
 import api from "../api";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useStores } from "../contexts/storeContext";
+import PrintModal from "./PrintModal";
 import BackButton from "./BackButton";
-export default function EditRepair() {
-  const { id } = useParams(); // Get ID from URL (for editing)
-  const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [vehicles, setVehicles] = useState([
-    {
-      plate_no: "",
-      model: "",
-      vin: "",
-      tin: "",
-      year: "",
-      condition: "",
-      km_reading: "",
-      estimated_price: "",
-    },
-  ]);
+import { useParams } from "react-router-dom";
+import { useEffect } from "react";
 
+export default function EditRepair() {
+  const { isPrintModalOpen, setIsPrintModalOpen, setRepairData } = useStores();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    job_id: "",
     customer_name: "",
     customer_type: "",
     mobile: "",
+    types_of_jobs: "",
     received_date: "",
     estimated_date: "",
     promise_date: "",
     priority: "",
-    repair_category: [],
-    customer_observation: ["1. "], // Default starts with "1. "
-    spare_change: ["1. "], // Default starts with "1. "
+    product_name: "",
+    serial_code: "",
+    customer_observation: ["1. "],
+    spare_change: [
+      { item: "1. ", part_number: "", qty: "", unit_price: "", total_price: 0 },
+    ],
+    job_description: [{ task: "1. ", price: "" }],
     received_by: "",
-    job_description: ["1. "],
+    image: null,
   });
 
-  const addVehicle = () => {
-    setVehicles([
-      ...vehicles,
-      {
-        plate_no: "",
-        model: "",
-        vin: "",
-        tin: "",
-        year: "",
-        condition: "",
-        km_reading: "",
-        estimated_price: "",
-      },
-    ]);
-  };
   useEffect(() => {
-    if (id) {
-      const fetchRepair = async () => {
-        try {
-          const response = await api.get(`/repairs/${id}`);
-          console.log(response);
-          const data = response.data;
-          console.log(data);
+    const fetchRepair = async () => {
+      try {
+        const response = await api.get(`/repairs/${id}`);
+        const data = response.data;
 
-          // Update formData state
-          setFormData({
-            id: data.id,
-            job_id: data.job_id.toString().padStart(4, "0") || "",
-            customer_name: data.customer_name || "",
-            customer_type: data.customer_type || "",
-            mobile: data.mobile || "",
-            received_date: data.received_date || "",
-            estimated_date: data.estimated_date || "",
-            promise_date: data.promise_date || "",
-            priority: data.priority || "",
-            repair_category: data.repair_category || [], // ✅ Setting repair_category as an array
-            customer_observation: data.customer_observation || ["1. "],
-            spare_change: data.spare_change || ["1. "],
-            received_by: data.received_by || "",
-            job_description: data.job_description || ["1. "],
-            vehicles: data.vehicles,
-          });
+        setFormData({
+          ...formData, // keep structure
+          ...data, // overwrite with backend values
+          image: null, // don't bind image blob directly
+        });
+      } catch (err) {
+        console.error("Failed to load repair data", err);
+      }
+    };
 
-          // ✅ Directly update vehicles state
-          setVehicles((prevVehicles) => {
-            if (prevVehicles.length > 0) {
-              return [
-                {
-                  ...prevVehicles[0], // Keep existing properties of the first vehicle
-                  model: data.vehicles[0].model,
-                  plate_no: data.vehicles[0].plate_no,
-                  vin: data.vehicles[0].vin || "", // Add vin if available
-                  tin: data.vehicles[0].tin || "", // Add vin if available
-                  year: data.vehicles[0].year,
-                  condition: data.vehicles[0].condition,
-                  km_reading: data.vehicles[0].km_reading,
-                  estimated_price: data.vehicles[0].estimated_price,
-                },
-                ...prevVehicles.slice(1), // Keep other vehicles unchanged
-              ];
-            } else {
-              // If there are no vehicles, initialize with the fetched data
-              return [
-                {
-                  model: data.model,
-                  plate_no: data.plate_no,
-                  vin: data.vin || "",
-                  tin: data.tin || "",
-                  year: data.year,
-                  condition: data.condition,
-                  km_reading: data.km_reading,
-                  estimated_price: data.estimated_price,
-                },
-              ];
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching repair data:", error);
-        }
-      };
+    fetchRepair();
+  }, [id]);
 
-      fetchRepair();
-    }
-  }, [id]); // ✅ Runs only when `id` changes
-
-  const removeVehicle = (index) => {
-    setVehicles(vehicles.filter((_, i) => i !== index));
+  const handleItemChange = (item) => {
+    setSelectedItems((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+    );
   };
-  console.log(vehicles);
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, type, checked } = e.target;
+
     if (type === "checkbox") {
       setFormData((prevData) => ({
         ...prevData,
@@ -143,147 +75,179 @@ export default function EditRepair() {
     } else {
       setFormData((prevData) => ({ ...prevData, [name]: value }));
     }
+
+    if (name === "customer_name" && value.length > 1) {
+      try {
+        const response = await api.get(`/search-customers?q=${value}`);
+        console.log("API Response:", response.data);
+        let data = response.data;
+        if (!Array.isArray(data)) {
+          data = data.data || [];
+        }
+        // setSuggestions(data.length ? data : [""]); // Show "No results" if empty
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+        setSuggestions([]);
+      }
+    } else if (name === "customer_name") {
+      setSuggestions([]);
+    }
   };
 
-  const handleVehicleChange = (index, e) => {
-    const { name, value } = e.target;
-    const updatedVehicles = vehicles.map((vehicle, i) =>
-      i === index ? { ...vehicle, [name]: value } : vehicle
-    );
-    setVehicles(updatedVehicles);
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        image: file, // 👈 this is what FormData expects
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const formattedRepairCategory = Array.isArray(formData.repair_category)
-        ? formData.repair_category
-        : formData.repair_category.split(",").map((item) => item.trim());
-
+      // Normalize customer observation
       const formattedCustomerObservation = Array.isArray(
         formData.customer_observation
       )
         ? formData.customer_observation
         : [formData.customer_observation];
 
-      const formattedSpareChange = Array.isArray(formData.spare_change)
-        ? formData.spare_change
-        : [formData.spare_change];
-
-      const formattedVehicles = vehicles.map((vehicle) => ({
-        plate_no: vehicle.plate_no || "",
-        model: vehicle.model || "",
-        vin: vehicle.vin || "",
-        tin: vehicle.tin || "",
-        year: vehicle.year || "",
-        condition: vehicle.condition || "",
-        km_reading: vehicle.km_reading || "",
-        estimated_price: vehicle.estimated_price || "",
-      }));
-
-      const payload = {
+      const payloadData = {
         ...formData,
-        repair_category: formattedRepairCategory,
         customer_observation: formattedCustomerObservation,
-        spare_change: formattedSpareChange,
-        vehicles: formattedVehicles,
+        job_description: formData.job_description,
+        spare_change: formData.spare_change,
       };
 
-      let response;
-      if (id) {
-        // UPDATE if id exists
-        response = await api.put(`/repairs/${id}`, payload);
-        toast.success("Repair job updated successfully!");
-      } else {
-        // CREATE new repair
-        response = await api.post("/repairs", payload);
-        toast.success("Repair job created successfully!");
-      }
+      // Create multipart form data
+      const formDataToSend = new FormData();
+      formDataToSend.append("payload", JSON.stringify(payloadData));
 
-      setTimeout(() => navigate("/job-manager/repair"), 1000);
+      // ✅ Add image to FormData if available
+      if (formData.image) {
+        formDataToSend.append("image", formData.image);
+      }
+      // console.log("Sending to backend:", JSON.stringify(payloadData, null, 2));
+      const response = await api.post(
+        `/repairs/${id}?_method=PUT`,
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      toast.success(response.data.message, {
+        position: "top-right",
+        autoClose: 1000,
+      });
+
+      setRepairData(payloadData); // Store repair details
+      setIsPrintModalOpen(true); // Open modal
     } catch (error) {
       console.error("Error submitting form:", error.response?.data || error);
-      toast.error("Failed to submit form.");
+
+      const errorMessage =
+        error.response?.data?.message || "Failed to submit form.";
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 3000,
+      });
     }
   };
 
-  const placeholders = {
-    plate_no: "የተሽከርካሪ መታወቂያ ቁጥር",
-    model: "የተሽከርካሪ ሞዴል",
-    tin: "የግብር መለያ ቁጥር",
-    year: "የምርት አመት",
-    km_reading: "የተሽከርካሪ ኪ.ሜ አንቀሳቃሴ",
-    estimated_price: "የተገመተ የተሽከርካሪ ዋጋ",
+  const handleCustomerObservationChange = (e) => {
+    const lines = e.target.value.split("\n");
+    setFormData({ ...formData, customer_observation: lines });
   };
 
-  const handleCustomerInfoChange = (index, e) => {
-    const updatedInfo = [...formData.customer_observation];
-    updatedInfo[index] = e.target.value;
-    setFormData((prevData) => ({
-      ...prevData,
-      customer_observation: updatedInfo,
-    }));
-  };
-  const handleCustomerInfoKeyDown = (e, index) => {
+  const handleCustomerObservationKeyDown = (e) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent default behavior
-
-      const updatedInfo = [...formData.customer_observation];
-      const nextNumber = updatedInfo.length + 1; // Get the next numbered entry
-
-      updatedInfo.splice(index + 1, 0, `${nextNumber}. `); // Insert new entry
-
-      setFormData((prevData) => ({
-        ...prevData,
-        customer_observation: updatedInfo,
-      }));
+      e.preventDefault();
+      setFormData((prevState) => {
+        const newObservations = [
+          ...prevState.customer_observation,
+          `${prevState.customer_observation.length + 1}. `,
+        ];
+        return { ...prevState, customer_observation: newObservations };
+      });
     }
   };
 
-  const handleSpareChangeChange = (index, e) => {
-    const updatedSpareChange = [...formData.spare_change];
-    updatedSpareChange[index] = e.target.value;
-    setFormData((prevData) => ({
-      ...prevData,
-      spare_change: updatedSpareChange,
-    }));
+  const handleSpareChangeChange = (index, field, value) => {
+    const updated = [...formData.spare_change];
+    updated[index][field] = value;
+
+    // Recalculate total if price or qty changes
+    const qty = parseFloat(updated[index].qty);
+    const unit = parseFloat(updated[index].unit_price);
+    updated[index].total_price = !isNaN(qty) && !isNaN(unit) ? qty * unit : 0;
+
+    setFormData({ ...formData, spare_change: updated });
   };
 
   const handleSpareChangeKeyDown = (e, index) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent default behavior
+      e.preventDefault();
+      const newRowNumber = formData.spare_change.length + 1;
+      const newList = [
+        ...formData.spare_change,
+        { item: `${newRowNumber}. `, qty: "", unit_price: "", total_price: 0 },
+      ];
+      setFormData({ ...formData, spare_change: newList });
 
-      const updatedSpareChange = [...formData.spare_change];
-      const nextNumber = updatedSpareChange.length + 1; // Generate next entry number
-
-      updatedSpareChange.splice(index + 1, 0, `${nextNumber}. `); // Insert new numbered entry
-
-      setFormData((prevData) => ({
-        ...prevData,
-        spare_change: updatedSpareChange,
-      }));
+      // Focus on new item name input
+      setTimeout(() => {
+        const input = document.getElementById(`spare-item-${newRowNumber - 1}`);
+        if (input) input.focus();
+      }, 50);
     }
   };
-  const handleJobDescriptionChange = (e) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      job_description: e.target.value.split("\n"), // Store as an array of lines
-    }));
+
+  const getSpareChangeTotal = () => {
+    return formData.spare_change.reduce(
+      (sum, item) => sum + (parseFloat(item.total_price) || 0),
+      0
+    );
   };
 
-  const handleJobDescriptionKeyDown = (e) => {
+  const getJobTotal = () => {
+    return formData.job_description.reduce(
+      (sum, item) => sum + (parseFloat(item.price) || 0),
+      0
+    );
+  };
+
+  const getGrandTotal = () => getJobTotal() + getSpareChangeTotal();
+  const handleJobDescriptionChange = (index, field, value) => {
+    const updatedJobs = [...formData.job_description];
+    updatedJobs[index][field] = value;
+    setFormData({ ...formData, job_description: updatedJobs });
+  };
+
+  const handleJobDescriptionKeyDown = (e, index) => {
     if (e.key === "Enter") {
-      e.preventDefault(); // Prevent default Enter behavior
-
-      const updatedDescription = [...formData.job_description];
-      const nextNumber = updatedDescription.length + 1; // Get next numbered entry
-      updatedDescription.push(`${nextNumber}. `); // Append new numbered line
-
-      setFormData((prevData) => ({
-        ...prevData,
-        job_description: updatedDescription,
-      }));
+      e.preventDefault();
+      const newList = [
+        ...formData.job_description,
+        { task: `${formData.job_description.length + 1}. `, price: "" },
+      ];
+      setFormData({ ...formData, job_description: newList });
+      setTimeout(() => {
+        const nextInput = document.getElementById(`task-${newList.length - 1}`);
+        if (nextInput) nextInput.focus();
+      }, 50);
     }
+  };
+
+  const getTotalEstimatedPrice = () => {
+    return formData.job_description.reduce((total, item) => {
+      const price = parseFloat(item.price);
+      return total + (isNaN(price) ? 0 : price);
+    }, 0);
   };
 
   return (
@@ -292,341 +256,514 @@ export default function EditRepair() {
 
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <div className="fixed top-4 left-[19%] z-[99999999]">
+        {isPrintModalOpen && (
+          <div className="absolute top-0 left-0 w-full">
+            <PrintModal
+              routePath="print-register"
+              dataKey="repairData"
+              navigateBack="/job-manager/repair"
+            />
+          </div>
+        )}
+        <div className="fixed phone:top-[13%] tablet:top-4 phone:left-2 tablet:left-[19%] z-[99999999]">
           <BackButton />
         </div>
-
-        <main className="grow mt-6">
+        <main className="grow mt-12 px-2 tablet:px-4">
           <form
             onSubmit={handleSubmit}
-            className="phone:w-[95%] tablet:max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg"
+            className="w-full ml-0 tablet:ml-4 mr-4 p-4 bg-white dark:bg-gray-800 shadow-lg rounded-lg"
           >
-            <h2 className="uppercase tracking-wide text-blue-700 phone:text-lg tablet:text-xl font-bold mb-4">
-              Edit Registration Form
+            <h2 className="uppercase tracking-wide dark:text-gray-200 text-blue-700 phone:text-center phone:text-lg tablet:text-xl font-bold mb-4">
+              Update Repair Job
             </h2>
-            <div className="grid phone:grid-cols-1 tablet:grid-cols-2 gap-6">
-              {/* Customer Details */}
-              <div className="col-span-1 border border-blue-500 px-4 py-2 rounded-md overflow-hidden">
-                <h3 className="font-semibold mb-4 text-blue-700">
-                  Customer Details
-                </h3>
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <label>
-                      Job Id <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="job_id"
-                      value={formData.job_id}
-                      onChange={handleChange}
-                      placeholder="የደንበኛው ስም"
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label>
-                      Customer Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="customer_name"
-                      value={formData.customer_name}
-                      onChange={handleChange}
-                      placeholder="የደንበኛው ስም"
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label>
-                      Customer Type<span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="customer_type"
-                      onChange={handleChange}
-                      value={formData.customer_type}
-                      placeholder="የደንበኛው አይነት"
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    >
-                      <option value="">Select Type</option>
-                      <option value="Regular">Regular</option>
-                      <option value="Contract">Contract</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>
-                      Mobile <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="mobile"
-                      onChange={handleChange}
-                      value={formData.mobile}
-                      placeholder="ስልክ ቁጥር"
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label>
-                      Received Date/የተቀበሉበት ቀን{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="received_date"
-                      onChange={handleChange}
-                      value={formData.received_date}
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label>
-                      E. Date/የሚገመተው ቀን{" "}
-                      <span className="text-gray-400 text-sm">(Optional)</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="estimated_date"
-                      onChange={handleChange}
-                      value={formData.estimated_date}
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label>
-                      {" "}
-                      Date Out/የምያልቅበት ቀን{" "}
-                      <span className="text-gray-400 text-sm">(Optional)</span>
-                    </label>
-                    <input
-                      type="date"
-                      name="promise_date"
-                      onChange={handleChange}
-                      value={formData.promise_date}
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                    />
-                  </div>
-                  <div>
-                    <label className="font-medium">
-                      Priority <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="priority"
-                      onChange={handleChange}
-                      value={formData.priority}
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    >
-                      <option value="">ቅድምያው የሚሰጠዉን ምረጥ</option>
-                      <option value="Urgent">Urgent</option>
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                  </div>
-
-                  <div className="border border-gray-300 hover:shadow-md hover:border-blue-500 p-3 py-4 rounded-md">
-                    <label className="mb-2 block text-gray-700 font-semibold">
-                      Repair Category <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        "General Service",
-                        "Body",
-                        "Mechanical",
-                        "Electrical",
-                        "Diagnostic",
-                      ].map((category) => (
-                        <label key={category}>
-                          <input
-                            type="checkbox"
-                            name="repair_category"
-                            value={category}
-                            onChange={handleChange}
-                            className="ring-0 focus:ring-0"
-                            checked={formData.repair_category.includes(
-                              category
-                            )} // Check if category exists in the array
-                          />{" "}
-                          {category}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
-                <div className="flex flex-col gap-4 mt-6">
-                  <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                    <h3 className="font-semibold mb-2">
-                      Customer Information{" "}
-                      <span className="text-gray-400 text-sm">(Optional)</span>
-                    </h3>
-
-                    {formData.customer_observation.map((info, index) => (
-                      <input
-                        key={index}
-                        type="text"
-                        value={info}
-                        onChange={(e) => handleCustomerInfoChange(index, e)}
-                        onKeyDown={(e) => handleCustomerInfoKeyDown(e, index)}
-                        className="w-full border border-gray-300 p-2 rounded mb-2"
-                      />
-                    ))}
-                  </div>
-
-                  <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                    <h3 className="font-semibold mb-2">
-                      Spare Change{" "}
-                      <span className="text-gray-400 text-sm">(Optional)</span>
-                    </h3>
-                    <div className="flex flex-col gap-2">
-                      {formData.spare_change.map((item, index) => (
-                        <input
-                          key={index}
-                          type="text"
-                          name="spare_change"
-                          value={item}
-                          onChange={(e) => handleSpareChangeChange(index, e)}
-                          onKeyDown={(e) => handleSpareChangeKeyDown(e, index)}
-                          placeholder="Enter spare change details"
-                          className="w-full border border-gray-300 p-2 rounded mb-2"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                    <h3 className="font-semibold mb-2">
-                      Received By{" "}
-                      <span className="text-gray-400 text-sm">(Optional)</span>
-                    </h3>
-                    <input
-                      type="text"
-                      name="received_by"
-                      value={formData.received_by}
-                      onChange={handleChange}
-                      placeholder="የተቀባይ ስም"
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Vehicle Details */}
-              <div className="col-span-1 text-right px-4 py-2 border border-blue-500 rounded-md">
-                <h3 className="text-left font-semibold mb-2 text-blue-700">
-                  Vehicle Details{" "}
-                </h3>
-                {/* <button
-                  type="button"
-                  onClick={addVehicle}
-                  className="w-full bg-blue-500 text-white p-2 rounded"
-                >
-                  Add Vehicle +
-                </button> */}
-
-                {formData.vehicles?.map((vehicle, index) => (
-                  <div
-                    key={index}
-                    className="mt-4 p-4 border hover:border-blue-500 rounded-lg relative inline-block text-left flex flex-col gap-2 transition-all duration-500"
-                  >
-                    <h4 className="font-semibold">Vehicle {index + 1}</h4>
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => removeVehicle(index)}
-                        className="absolute top-2 right-2 text-red-500"
-                      >
-                        ✖
-                      </button>
-                    )}
-
-                    {/* Required Fields */}
-                    {["plate_no", "model"].map((field) => (
-                      <div key={field}>
-                        <label>
-                          {field.replace("_", " ").toUpperCase()}{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name={field}
-                          value={vehicle[field] || ""}
-                          placeholder={placeholders[field]} // Amharic Placeholder
-                          onChange={(e) => handleVehicleChange(index, e)}
-                          className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                          required
-                        />
-                      </div>
-                    ))}
-
-                    {/* Optional Fields */}
-                    {[
-                      "vin",
-                      "tin",
-                      "year",
-                      "km_reading",
-                      "estimated_price",
-                    ].map((field) => (
-                      <div key={field}>
-                        <label>
-                          {field.replace("_", " ").toUpperCase()}{" "}
-                          <span className="text-gray-400 text-sm">
-                            (Optional)
-                          </span>
-                        </label>
-                        <input
-                          type="text"
-                          name={field}
-                          value={vehicle[field] || ""}
-                          placeholder={placeholders[field]} // Amharic Placeholder
-                          onChange={(e) => handleVehicleChange(index, e)}
-                          className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                        />
-                      </div>
-                    ))}
-
-                    {/* Required Condition Field */}
-                    <label>
-                      Condition <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="condition"
-                      value={vehicle.condition || ""}
-                      onChange={(e) => handleVehicleChange(index, e)}
-                      className="placeholder:text-sm w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      required
-                    >
-                      <option value="">የመኪናዉን ሁኔታ ምረጥ</option>
-                      <option value="New">New</option>
-                      <option value="Used">Used</option>
-                      <option value="Average">Average</option>
-                      <option value="Damage">Damage</option>
-                    </select>
-                  </div>
-                ))}
-
-                {/* Job Description Section */}
-                <div className="mt-10 p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                  <h3 className="text-left font-semibold mb-2">
-                    Job Description{" "}
-                    <span className="text-gray-400 text-sm">(Optional)</span>
+            <div className="flex justify-center">
+              <div className="w-full max-w-4xl grid grid-cols-1 gap-6">
+                {/* Customer Details */}
+                <div className="border border-blue-500 px-4 py-2 rounded-md overflow-hidden">
+                  <h3 className="font-semibold mb-4 dark:text-gray-200 tracking-wider uppercase text-blue-700">
+                    Customer Details /የደንበኛ ዝርዝሮች
                   </h3>
-                  <textarea
-                    value={
-                      Array.isArray(formData.job_description)
-                        ? formData.job_description.join("\n")
-                        : ""
-                    }
-                    onChange={handleJobDescriptionChange}
-                    onKeyDown={handleJobDescriptionKeyDown}
-                    className="w-full border border-gray-300 p-2 rounded resize-none"
-                    rows="5"
-                  />
+                  <div className="flex flex-col gap-4">
+                    <div className="relative">
+                      <label className="dark:text-gray-200">
+                        Customer Name/የደንበኛው ስም{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="customer_name"
+                        value={formData.customer_name}
+                        onChange={handleChange}
+                        placeholder="የደንበኛው ስም"
+                        className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      />
+                      {Array.isArray(suggestions) && suggestions.length > 0 && (
+                        <ul className="absolute bg-white border w-full mt-1 shadow-md rounded-md">
+                          {suggestions.map((name, index) => (
+                            <li
+                              key={index}
+                              className="p-2 cursor-pointer hover:bg-gray-200"
+                              onClick={() => {
+                                setFormData((prevData) => ({
+                                  ...prevData,
+                                  customer_name: name,
+                                }));
+                                setSuggestions([]); // Hide suggestions after selection
+                              }}
+                            >
+                              {name}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="dark:text-gray-200">
+                        Customer Type/ የደንበኛ አይነት
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="customer_type"
+                        value={formData.customer_type}
+                        onChange={handleChange}
+                        placeholder="የደንበኛው አይነት"
+                        className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Contract">Contract</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="dark:text-gray-200">
+                        Mobile /ስልክ ቁጥር<span className="text-red-500 ">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="mobile"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        placeholder="ስልክ ቁጥር"
+                        className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="dark:text-gray-200">
+                        Types Of Jobs
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="types_of_jobs"
+                        value={formData.types_of_jobs}
+                        onChange={handleChange}
+                        placeholder=""
+                        className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Repair">Repair</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="installation">Installation</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="dark:text-gray-200">
+                        E. Date/የሚገመተው ቀን{" "}
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          (Optional)
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        name="estimated_date"
+                        value={formData.estimated_date}
+                        onChange={handleChange}
+                        className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="dark:text-gray-200">
+                        Received Date/የተቀበሉበት ቀን{" "}
+                        <span className="text-red-500 ">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="received_date"
+                        value={formData.received_date}
+                        onChange={handleChange}
+                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="dark:text-gray-200">
+                        {" "}
+                        Date Out/የምያልቅበት ቀን{" "}
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          (Optional)
+                        </span>
+                      </label>
+                      <input
+                        type="date"
+                        name="promise_date"
+                        value={formData.promise_date}
+                        onChange={handleChange}
+                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="dark:text-gray-200 font-medium">
+                        Priority/ቅድሚያ የሚሰጡዋቸውን{" "}
+                        <span className="text-red-500 ">*</span>
+                      </label>
+                      <select
+                        name="priority"
+                        value={formData.priority}
+                        onChange={handleChange}
+                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        required
+                      >
+                        <option value="">ቅድምያው የሚሰጠዉን ምረጥ</option>
+                        <option value="Urgent">Urgent</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="dark:text-gray-200">
+                      {" "}
+                      product Name
+                      <span className="text-red-500 ">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="product_name"
+                      value={formData.product_name}
+                      onChange={handleChange}
+                      className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="dark:text-gray-200">
+                      {" "}
+                      Serial Code
+                      <span className="text-red-500 ">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="serial_code"
+                      value={formData.serial_code}
+                      onChange={handleChange}
+                      className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                    />
+                  </div>
+
+                  {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
+                  <div className="flex flex-col gap-4 mt-6">
+                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
+                      <h3 className="font-semibold mb-2 dark:text-gray-200">
+                        Customer Observation /የደንበኛ ምልከታ
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          {" "}
+                          (Optional)
+                        </span>
+                      </h3>
+                      <textarea
+                        value={formData.customer_observation.join("\n")}
+                        onChange={handleCustomerObservationChange}
+                        onKeyDown={handleCustomerObservationKeyDown}
+                        className="w-full border border-gray-300 dark:text-white p-2 rounded mb-2 dark:bg-gray-800 placeholder:dark:text-gray-100 min-h-[100px]"
+                        rows={5}
+                      />
+                    </div>
+                    {/* job to be done */}
+                    <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-auto">
+                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
+                        Jobs To Be Done /የሚደረጉ ስራዎች
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          {" "}
+                          (Optional)
+                        </span>
+                      </h3>
+
+                      <table className="w-full text-sm border">
+                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                          <tr>
+                            <th className="p-2 border">Job Description</th>
+                            <th className="p-2 border text-right">
+                              Estimated Price (ETB)
+                            </th>
+                            <th className="p-2 border text-center">X</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.job_description.map((job, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="p-2 border">
+                                <input
+                                  id={`task-${index}`}
+                                  type="text"
+                                  value={job.task}
+                                  onChange={(e) =>
+                                    handleJobDescriptionChange(
+                                      index,
+                                      "task",
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) =>
+                                    handleJobDescriptionKeyDown(e, index)
+                                  }
+                                  placeholder={`Task ${index + 1}`}
+                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-2 border text-right">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={job.price}
+                                  onChange={(e) =>
+                                    handleJobDescriptionChange(
+                                      index,
+                                      "price",
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) =>
+                                    handleJobDescriptionKeyDown(e, index)
+                                  }
+                                  placeholder="0.00"
+                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-2 border text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (formData.job_description.length > 1) {
+                                      const updated = [
+                                        ...formData.job_description,
+                                      ];
+                                      updated.splice(index, 1);
+                                      setFormData({
+                                        ...formData,
+                                        job_description: updated,
+                                      });
+                                    }
+                                  }}
+                                  className="text-red-500 font-bold"
+                                >
+                                  ×
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
+                        Total Estimated Price/ጠቅላላ የተገመተው ዋጋ:{" "}
+                        {getTotalEstimatedPrice().toLocaleString()} ETB
+                      </div>
+                    </div>
+
+                    {/* spare chage  */}
+                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-auto">
+                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
+                        Spare Change /መለዋወጫ ለውጥ{" "}
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          (Optional)
+                        </span>
+                      </h3>
+
+                      <table className="w-full text-sm border">
+                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                          <tr>
+                            <th className="p-2 border">Item Name</th>
+                            <th className="p-2 border">Part Number</th>
+                            <th className="p-2 border text-center">Qty</th>
+                            <th className="p-2 border text-center">
+                              Unit Price
+                            </th>
+                            <th className="p-2 border text-right">Total</th>
+                            <th className="p-2 border text-center">X</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {formData.spare_change.map((item, index) => (
+                            <tr key={index} className="border-b">
+                              <td className="p-2 border">
+                                <input
+                                  id={`spare-item-${index}`}
+                                  type="text"
+                                  value={item.item}
+                                  onChange={(e) =>
+                                    handleSpareChangeChange(
+                                      index,
+                                      "item",
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) =>
+                                    handleSpareChangeKeyDown(e, index)
+                                  }
+                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-2 border">
+                                <input
+                                  type="text"
+                                  value={item.part_number || ""}
+                                  onChange={(e) =>
+                                    handleSpareChangeChange(
+                                      index,
+                                      "part_number",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  placeholder="Part #"
+                                />
+                              </td>
+                              <td className="p-2 border text-center">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.qty}
+                                  onChange={(e) =>
+                                    handleSpareChangeChange(
+                                      index,
+                                      "qty",
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) =>
+                                    handleSpareChangeKeyDown(e, index)
+                                  }
+                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="p-2 border text-center">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.unit_price}
+                                  onChange={(e) =>
+                                    handleSpareChangeChange(
+                                      index,
+                                      "unit_price",
+                                      e.target.value
+                                    )
+                                  }
+                                  onKeyDown={(e) =>
+                                    handleSpareChangeKeyDown(e, index)
+                                  }
+                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  placeholder="0"
+                                />
+                              </td>
+                              <td className="p-2 border text-right">
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={item.total_price.toFixed(2)}
+                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                />
+                              </td>
+                              <td className="p-2 border text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (formData.spare_change.length > 1) {
+                                      const updated = [
+                                        ...formData.spare_change,
+                                      ];
+                                      updated.splice(index, 1);
+                                      setFormData({
+                                        ...formData,
+                                        spare_change: updated,
+                                      });
+                                    }
+                                  }}
+                                  className="text-red-500 font-bold"
+                                >
+                                  ×
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
+                        Total Spare Change Price/ጠቅላላ የመለዋወጫ ለውጥ ዋጋ:{" "}
+                        {getSpareChangeTotal().toLocaleString()} ETB
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 mt-4">
+                      <h3 className="font-semibold mb-2 dark:text-gray-200">
+                        Upload Image / የምስል መጫኛ
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          {" "}
+                          (Optional)
+                        </span>
+                      </h3>
+
+                      <input
+                        type="file"
+                        name="image"
+                        value={formData.image}
+                        accept="image/*"
+                        onChange={handleImageChange} // 👈 not handleChange
+                        className="w-full text-sm dark:text-white dark:bg-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+
+                      {previewUrl && (
+                        <div className="mt-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                            Preview:
+                          </p>
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-full max-h-64 object-contain border rounded-md"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-6 text-right text-lg font-bold border-t pt-4  text-dark-700 dark:text-white">
+                      Sub Total Estimated Price/ንዑስ ጠቅላላ የተገመተው ዋጋ:{" "}
+                      {getGrandTotal().toLocaleString()} ETB
+                    </div>
+
+                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
+                      <h3 className="font-semibold mb-2 dark:text-gray-200">
+                        Received By /የተቀባይ ስም
+                        <span className="text-gray-400 text-sm dark:text-gray-200">
+                          (Optional)
+                        </span>
+                      </h3>
+                      <input
+                        type="text"
+                        name="received_by"
+                        value={formData.received_by}
+                        onChange={handleChange}
+                        placeholder="የተቀባይ ስም"
+                        className="placeholder:text-sm dark:text-white dark:bg-gray-800 placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

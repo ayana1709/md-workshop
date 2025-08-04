@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import Sidebar from "../partials/Sidebar";
 import Header from "../partials/Header";
 import api from "../api";
@@ -9,47 +8,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { useStores } from "../contexts/storeContext";
 import PrintModal from "./PrintModal";
 import BackButton from "./BackButton";
-
-const checklistItems = [
-  "Fuel",
-  "Wind shield Glass",
-  "Battery",
-  "Radiator Cup",
-  "Engine Oil Cup",
-  "Wiper Jar",
-  "Antena",
-  "Front Grill",
-  "Head Light L.s",
-  "Mirror View R.S",
-  "Parking L.S",
-  "Parking R.S",
-  "Door Glass F.R L.s",
-  "Door Glass F.R R.s",
-  "Door Glass R.R L.s",
-  "Door Glass R.R R.s",
-  "Finder Sinal Lh",
-  "Finder Sinal Rh",
-  "Asray",
-  "Floor mat",
-  "Lighter",
-  "Mirror View inside",
-  "Mirror View L.h",
-  "Mirror View R.h",
-  "Radio & Knob",
-  "Tape Recorder and CD",
-  "Tail Lamp L.h",
-  "Tail Lamp R.h",
-  "Hub Cap",
-  "Spare Wheel cover",
-  "Spare Wheel",
-  "Tools",
-  "Jack",
-  "Fire Extinguisher",
-  "RR Bumper",
-  "Fuel Tank cup",
-  "Key Holder",
-  "Tyre",
-];
 
 export default function RepairRegistrationForm() {
   const { isPrintModalOpen, setIsPrintModalOpen, setRepairData } = useStores();
@@ -360,6 +318,7 @@ export default function RepairRegistrationForm() {
                       </label>
                       <select
                         name="customer_type"
+                        value={formData.customer_type}
                         onChange={handleChange}
                         placeholder="የደንበኛው አይነት"
                         className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
@@ -378,6 +337,7 @@ export default function RepairRegistrationForm() {
                       <input
                         type="number"
                         name="mobile"
+                        value={formData.mobile}
                         onChange={handleChange}
                         placeholder="ስልክ ቁጥር"
                         className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
@@ -392,6 +352,7 @@ export default function RepairRegistrationForm() {
                       </label>
                       <select
                         name="types_of_jobs"
+                        value={formData.types_of_jobs}
                         onChange={handleChange}
                         placeholder=""
                         className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
@@ -413,6 +374,7 @@ export default function RepairRegistrationForm() {
                       <input
                         type="text"
                         name="estimated_date"
+                        value={formData.estimated_date}
                         onChange={handleChange}
                         className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
@@ -425,6 +387,7 @@ export default function RepairRegistrationForm() {
                       <input
                         type="date"
                         name="received_date"
+                        value={formData.received_date}
                         onChange={handleChange}
                         className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                         required
@@ -442,6 +405,7 @@ export default function RepairRegistrationForm() {
                       <input
                         type="date"
                         name="promise_date"
+                        value={formData.promise_date}
                         onChange={handleChange}
                         className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
@@ -453,6 +417,7 @@ export default function RepairRegistrationForm() {
                       </label>
                       <select
                         name="priority"
+                        value={formData.priority}
                         onChange={handleChange}
                         className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                         required
@@ -474,6 +439,7 @@ export default function RepairRegistrationForm() {
                     <input
                       type="text"
                       name="product_name"
+                      value={formData.product_name}
                       onChange={handleChange}
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
@@ -487,10 +453,12 @@ export default function RepairRegistrationForm() {
                     <input
                       type="text"
                       name="serial_code"
+                      value={formData.serial_code}
                       onChange={handleChange}
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>
+
                   {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
                   <div className="flex flex-col gap-4 mt-6">
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
