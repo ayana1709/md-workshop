@@ -1,19 +1,10 @@
-// JobDetailsRightSection.jsx
-import React, { useState } from "react";
+import React from "react";
 import { IoMdArrowDropright } from "react-icons/io";
-import car from "../../images/car.png";
-
-const baseURL = import.meta.env.VITE_API_URL;
 
 const JobDetailsRightSection = ({ printData }) => {
-  const [popupSrc, setPopupSrc] = useState(null);
-
-  const customerLength = Math.min(
-    5,
-    printData?.customer_observation?.length || 0
-  );
-  const jobLength = Math.min(5, printData?.job_description?.length || 0);
-  const spareLength = Math.min(5, printData?.spare_change?.length || 0);
+  const customerLength = printData?.customer_observation?.length || 0;
+  const jobLength = printData?.job_description?.length || 0;
+  const spareLength = printData?.spare_change?.length || 0;
 
   const totalJobPrice = printData?.job_description?.reduce(
     (acc, curr) => acc + (parseFloat(curr?.price) || 0),
@@ -26,58 +17,80 @@ const JobDetailsRightSection = ({ printData }) => {
   );
 
   return (
-    <div className="absolute top-[310px] right-6 w-[65%] text-[10px]">
-      <h1 className="text-base font-bold text-center mb-2">
-        Type Of Job To Be Performed
-      </h1>
+    <div className="w-full px-4 text-xs font-sans text-black print:text-black">
+      {/* Header Information */}
+      <div className="grid grid-cols-2 gap-4 border p-2 mb-4 text-[11px]">
+        <div>
+          <p>
+            <strong>Job ID:</strong> {printData?.job_card_no}
+          </p>
+          <p>
+            <strong>Customer Name:</strong> {printData?.customer_name}
+          </p>
+          <p>
+            <strong>Phone:</strong> {printData?.mobile}
+          </p>
+          <p>
+            <strong>Received Date:</strong> {printData?.received_date}
+          </p>
+          <p>
+            <strong>Promise Date:</strong> {printData?.promise_date}
+          </p>
+        </div>
+        <div>
+          <p>
+            <strong>Status:</strong> {printData?.status}
+          </p>
+          <p>
+            <strong>Product Name:</strong> {printData?.product_name}
+          </p>
+          <p>
+            <strong>Serial/Code:</strong> {printData?.serial_code}
+          </p>
+          <p>
+            <strong>Type of Job:</strong> {printData?.types_of_jobs}
+          </p>
+        </div>
+      </div>
 
-      {/* Upper Table: Customer Observation & Job To Be Done */}
-      <div className="flex gap-1 w-full mb-2">
-        <div className="w-1/2">
-          <h2 className="text-[10px] font-bold mb-1">Customer Observation</h2>
-          <table className="w-full border border-collapse">
-            <thead>
+      {/* Job Description and Customer Observation */}
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <div>
+          <h2 className="font-bold mb-1 text-[12px]">Customer Observation</h2>
+          <table className="w-full border border-collapse text-[11px]">
+            <thead className="bg-gray-200 text-center font-semibold text-[11px]">
               <tr>
-                <th className="border border-gray-600 p-1">Observation</th>
+                <th className="border p-1">Observation</th>
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: customerLength }).map((_, index) => (
-                <tr key={index}>
-                  <td className="border border-gray-400 p-1 align-top">
-                    {printData?.customer_observation?.[index] || ""}
-                  </td>
+              {printData?.customer_observation?.map((obs, i) => (
+                <tr key={i}>
+                  <td className="border p-1 align-top">{obs}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        <div className="w-1/2">
-          <h2 className="text-[10px] font-bold mb-1">Jobs To Be Done</h2>
-          <table className="w-full border border-collapse">
-            <thead>
+        <div>
+          <h2 className="font-bold mb-1 text-[12px]">Jobs To Be Done</h2>
+          <table className="w-full border border-collapse text-[11px]">
+            <thead className="bg-gray-200 font-semibold text-center text-[11px]">
               <tr>
-                <th className="border border-gray-600 p-1">Job Description</th>
-                <th className="border border-gray-600 p-1 text-right">Price</th>
+                <th className="border p-1">Description</th>
+                <th className="border p-1 text-right">Price</th>
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: jobLength }).map((_, index) => (
-                <tr key={index}>
-                  <td className="border border-gray-400 p-1 align-top">
-                    {printData?.job_description?.[index]?.task || ""}
-                  </td>
-                  <td className="border border-gray-400 p-1 text-right align-top">
-                    {printData?.job_description?.[index]?.price || "0.00"}
-                  </td>
+              {printData?.job_description?.map((job, i) => (
+                <tr key={i}>
+                  <td className="border p-1">{job.task}</td>
+                  <td className="border p-1 text-right">{job.price} ETB</td>
                 </tr>
               ))}
               <tr>
-                <td className="border border-gray-400 p-1 text-right font-semibold">
-                  Total
-                </td>
-                <td className="border border-gray-400 p-1 text-right font-semibold">
+                <td className="border p-1 text-right font-semibold">Total</td>
+                <td className="border p-1 text-right font-semibold">
                   {totalJobPrice.toFixed(2)} ETB
                 </td>
               </tr>
@@ -86,47 +99,36 @@ const JobDetailsRightSection = ({ printData }) => {
         </div>
       </div>
 
-      {/* Spare Change Table */}
-      <div className="mb-2">
-        <h2 className="text-[10px] font-bold mb-1">Spare Change</h2>
-        <table className="w-full border border-collapse">
-          <thead>
+      {/* Spare Parts Table */}
+      <div className="mb-4">
+        <h2 className="font-bold mb-1 text-[12px]">Spare Parts</h2>
+        <table className="w-full border border-collapse text-[11px]">
+          <thead className="bg-gray-200 font-semibold text-center">
             <tr>
-              <th className="border border-gray-600 p-1">Item</th>
-              <th className="border border-gray-600 p-1">Part #</th>
-              <th className="border border-gray-600 p-1">Qty</th>
-              <th className="border border-gray-600 p-1">Unit</th>
-              <th className="border border-gray-600 p-1">Total</th>
+              <th className="border p-1">Item</th>
+              <th className="border p-1">Part #</th>
+              <th className="border p-1">Qty</th>
+              <th className="border p-1">Unit Price</th>
+              <th className="border p-1 text-right">Total</th>
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: spareLength }).map((_, index) => (
-              <tr key={index}>
-                <td className="border border-gray-400 p-1">
-                  {printData?.spare_change?.[index]?.item || ""}
-                </td>
-                <td className="border border-gray-400 p-1">
-                  {printData?.spare_change?.[index]?.part_number || ""}
-                </td>
-                <td className="border border-gray-400 p-1">
-                  {printData?.spare_change?.[index]?.qty || 0}
-                </td>
-                <td className="border border-gray-400 p-1">
-                  {printData?.spare_change?.[index]?.unit_price || 0}
-                </td>
-                <td className="border border-gray-400 p-1 text-right">
-                  {printData?.spare_change?.[index]?.total_price || 0} ETB
+            {printData?.spare_change?.map((spare, i) => (
+              <tr key={i}>
+                <td className="border p-1">{spare.item}</td>
+                <td className="border p-1">{spare.part_number}</td>
+                <td className="border p-1">{spare.qty}</td>
+                <td className="border p-1">{spare.unit_price}</td>
+                <td className="border p-1 text-right">
+                  {spare.total_price} ETB
                 </td>
               </tr>
             ))}
             <tr>
-              <td
-                colSpan={4}
-                className="border border-gray-400 p-1 text-right font-semibold"
-              >
+              <td colSpan={4} className="border p-1 text-right font-semibold">
                 Total
               </td>
-              <td className="border border-gray-400 p-1 text-right font-semibold">
+              <td className="border p-1 text-right font-semibold">
                 {totalSparePrice.toFixed(2)} ETB
               </td>
             </tr>
@@ -134,82 +136,44 @@ const JobDetailsRightSection = ({ printData }) => {
         </table>
       </div>
 
-      {/* Car Images */}
-      <div className="flex justify-center flex-wrap gap-3 mt-4">
-        {["front", "back", "left", "right"].map((dir) => {
-          const imagePath = printData?.car_images?.[`car_image_${dir}`];
-          const src = imagePath ? `${baseURL}${imagePath}` : car;
-
-          return (
-            <div
-              key={dir}
-              className="flex flex-col items-center w-[150px] cursor-pointer"
-              onClick={() => setPopupSrc(src)}
-            >
-              <img
-                src={src}
-                alt={`${dir} view`}
-                className="w-[140px] h-[100px] object-cover border border-gray-300 rounded"
-              />
-              <p className="mt-1 text-[11px] font-medium capitalize text-black">
-                {dir} View
-              </p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Image Modal */}
-      {popupSrc && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50"
-          onClick={() => setPopupSrc(null)}
-        >
-          <img
-            src={popupSrc}
-            alt="Full Preview"
-            className="max-w-[90%] max-h-[90%] rounded shadow-xl"
-          />
-        </div>
-      )}
-
-      {/* Welcome Section */}
-      <div className="mt-4 text-[12px] leading-snug">
-        <h1 className="text-center font-bold mb-2 text-black text-[14px]">
-          Welcome to Our Company
-          <br />
-          Please Read and Sign
-        </h1>
-        <ul className="space-y-1 pl-2">
-          <li className="flex items-start">
-            <IoMdArrowDropright size={14} className="mt-[2px]" />
+      {/* Workshop Notice Section */}
+      <div className="mt-4 text-[11px]">
+        <h2 className="text-center font-bold text-black text-[12px] mb-2">
+          Workshop Service Terms & Conditions
+        </h2>
+        <ul className="space-y-1 pl-3">
+          <li className="flex">
+            <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              1000 ETB/day parking fee applies after service is complete.
+              A daily fee of 1000 ETB applies for vehicles not collected after
+              service completion.
             </p>
           </li>
-          <li className="flex items-start">
-            <IoMdArrowDropright size={14} className="mt-[2px]" />
+          <li className="flex">
+            <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              Remove valuables from vehicle. We’re not responsible unless
-              received by hand.
+              Please remove all personal belongings before handing over the
+              product or vehicle.
             </p>
           </li>
-          <li className="flex items-start">
-            <IoMdArrowDropright size={14} className="mt-[2px]" />
+          <li className="flex">
+            <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              You permit test driving outside with our card.
+              We are not liable for unreported issues or undocumented parts
+              during handover.
             </p>
           </li>
-          <li className="flex items-start">
-            <IoMdArrowDropright size={14} className="mt-[2px]" />
+          <li className="flex">
+            <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              Your signature confirms approval of listed services.
+              By signing below, you confirm and approve the listed services and
+              estimates.
             </p>
           </li>
         </ul>
-        <h3 className="text-center font-bold mt-3 text-[12px]">
-          Thank you for making us your first choice.
-        </h3>
+        <p className="text-center font-semibold mt-3">
+          Thank you for choosing our workshop for your service needs.
+        </p>
       </div>
     </div>
   );
