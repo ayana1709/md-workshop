@@ -1,12 +1,9 @@
+import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
-import logo from "../images/aa.png"; // Ensure this logo path is correct
-import { IoMdArrowDropdown } from "react-icons/io";
-import { TiDocumentAdd } from "react-icons/ti";
-import { useEffect, useRef, useState } from "react";
-import { GrDocumentUpdate } from "react-icons/gr";
+import { useStores } from "@/contexts/storeContext";
 
 function ButtonRepairOperation({
   tableData,
@@ -15,8 +12,19 @@ function ButtonRepairOperation({
   headerMappings,
 }) {
   const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { companyData } = useStores();
+
+  const companyInfo = {
+    name: companyData?.name_en || "Company Name",
+    phone: companyData?.phone || "Phone",
+    address: companyData?.address || "Address",
+    tin: companyData?.tin ? `TIN: ${companyData.tin}` : "TIN: -",
+    logo: companyData?.logo
+      ? `${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`
+      : "", // fallback image if needed
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -24,57 +32,56 @@ function ButtonRepairOperation({
         setIsDropdownOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  // Company Information
-  const companyInfo = {
-    name: "SPEEDMETER TRADING PLC",
-    phone: "+251 98 999 9900",
-    address: "Sub City Bole Michael No 1701/01, Addis Ababa, Ethiopia",
-    tin: "TIN: 123-456-789",
-    logo: logo,
+
+  const handleExport = () => {
+    if (tableData.length === 0) return alert("No data to export.");
+    exportPDF(filename || "Summary Report", tableData);
   };
 
-  // Function to Export PDF
   const exportPDF = (title, data) => {
-    const doc = new jsPDF({ orientation: "landscape" }); // Set landscape mode for wider tables
+    const doc = new jsPDF({ orientation: "landscape" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Add Company Logo & Header
-    doc.addImage(companyInfo.logo, "PNG", pageWidth / 2 - 25, 10, 50, 20);
+    if (logoBase64) {
+      doc.addImage(logoBase64, "PNG", pageWidth / 2 - 25, 10, 50, 20);
+    }
+
     doc.setFontSize(14);
-    doc.text(companyInfo.name, pageWidth / 2, 35, { align: "center" });
+    doc.text(companyData?.name_en || "Company Name", pageWidth / 2, 35, {
+      align: "center",
+    });
     doc.setFontSize(10);
     doc.text(
-      `Phone: ${companyInfo.phone} | ${companyInfo.address}`,
+      `Phone: ${companyData?.phone || "N/A"} | ${
+        companyData?.address || "N/A"
+      }`,
       pageWidth / 2,
       45,
       { align: "center" }
     );
-    doc.text(companyInfo.tin, pageWidth / 2, 55, { align: "center" });
+    doc.text(
+      companyData?.tin ? `TIN: ${companyData.tin}` : "",
+      pageWidth / 2,
+      55,
+      { align: "center" }
+    );
 
-    // Report Title
     doc.setFontSize(12);
     doc.text(title, 14, 70);
 
-    // Convert headers
-    const tableHeaders = [
-      ...headers,
-      "Plate Number", // Add Plate Number column
-      "Condition", // Add Condition column
-    ].map((key) => headerMappings[key] || key);
+    const tableHeaders = [...headers, "Plate Number", "Condition"].map(
+      (key) => headerMappings[key] || key
+    );
 
-    // Convert data (Fix stringified arrays & Fetch plate numbers and conditions)
     const tableBody = tableData.map((row) =>
       headers
         .map((key) => {
           let value = row[key];
-
-          // Parse stringified arrays
           if (
             typeof value === "string" &&
             value.startsWith("[") &&
@@ -86,33 +93,30 @@ function ButtonRepairOperation({
               value = "Invalid Data";
             }
           }
-
           return value ?? "N/A";
         })
         .concat([
-          extractPlateNumbers(row.vehicles), // Extract Plate Numbers
-          extractConditions(row.vehicles), // Extract Conditions
+          extractPlateNumbers(row.vehicles),
+          extractConditions(row.vehicles),
         ])
     );
 
-    // Generate Table
     doc.autoTable({
       startY: 80,
       head: [tableHeaders],
       body: tableBody,
       theme: "grid",
-      tableWidth: "auto", // Ensures full width
-      margin: { left: 10, right: 10 }, // Ensures no content is cut off
-      styles: { fontSize: 10, overflow: "linebreak" }, // Ensure text wraps
-      columnStyles: {
-        0: { cellWidth: "auto" }, // Make columns adjust automatically
-      },
+      tableWidth: "auto",
+      margin: { left: 10, right: 10 },
+      styles: { fontSize: 10, overflow: "linebreak" },
+      columnStyles: { 0: { cellWidth: "auto" } },
     });
 
-    // Footer
     doc.setFontSize(10);
     doc.text(
-      `${companyInfo.name} | ${companyInfo.phone} | ${companyInfo.address}`,
+      `${companyData?.name_en || "Company Name"} | ${
+        companyData?.phone || ""
+      } | ${companyData?.address || ""}`,
       pageWidth / 2,
       pageHeight - 20,
       { align: "center" }
@@ -121,34 +125,18 @@ function ButtonRepairOperation({
     doc.save(`${title}.pdf`);
   };
 
-  // Helper function to extract plate numbers
-  const extractPlateNumbers = (vehicles) => {
-    if (!vehicles || vehicles.length === 0) return "N/A";
-    return vehicles.map((v) => v.plate_no || "N/A").join(", ");
-  };
+  const extractPlateNumbers = (vehicles) =>
+    Array.isArray(vehicles) && vehicles.length
+      ? vehicles.map((v) => v.plate_no || "N/A").join(", ")
+      : "N/A";
 
-  // Helper function to extract vehicle conditions
-  const extractConditions = (vehicles) => {
-    if (!vehicles || vehicles.length === 0) return "N/A";
-    return vehicles.map((v) => v.condition || "N/A").join(", ");
-  };
+  const extractConditions = (vehicles) =>
+    Array.isArray(vehicles) && vehicles.length
+      ? vehicles.map((v) => v.condition || "N/A").join(", ")
+      : "N/A";
 
-  // Handle PDF Export
-  const handleExport = () => {
-    if (tableData.length === 0) {
-      alert("No data available for export.");
-      return;
-    }
-
-    exportPDF(filename || "summary report", tableData);
-  };
-
-  // Export to Excel
   const exportToExcel = (title, data) => {
-    if (!Array.isArray(data) || data.length === 0) {
-      console.error("Error: Invalid or empty data provided for export.");
-      return; // Exit function if data is not an array or is empty
-    }
+    if (!Array.isArray(data) || data.length === 0) return;
 
     const worksheet = XLSX.utils.json_to_sheet(
       data.map((row) => ({
@@ -163,21 +151,19 @@ function ButtonRepairOperation({
         "Promise Date": row.promise_date || "N/A",
         "Received By": row.received_by || "N/A",
         "Received Date": row.received_date || "N/A",
-        "Repair Category": formatArray(row.repair_category),
-        "Selected Items": formatArray(row.selected_items),
+        // "Repair Category": formatArray(row.repair_category),
+        // "Selected Items": formatArray(row.selected_items),
         "Spare Change": formatArray(row.spare_change),
-        Vehicles: formatVehicles(row.vehicles), // Fix applied here
+        // Vehicles: formatVehicles(row.vehicles),
         "Updated At": row.updated_at || "N/A",
       }))
     );
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Job Orders");
-
     XLSX.writeFile(workbook, `${title}.xlsx`);
   };
 
-  // Helper function to format arrays as comma-separated strings
   const formatArray = (data) => {
     if (!data) return "N/A";
     if (
@@ -194,37 +180,23 @@ function ButtonRepairOperation({
     return Array.isArray(data) ? data.join(", ") : data;
   };
 
-  // Helper function to convert vehicles array into a readable string
-  const formatVehicles = (vehicles) => {
-    if (!Array.isArray(vehicles) || vehicles.length === 0) return "N/A";
-    return vehicles
-      .map(
-        (v) =>
-          `Plate: ${v.plate_no || "N/A"}, Condition: ${v.condition || "N/A"}`
-      )
-      .join(" | "); // Separate each vehicle entry with " | "
-  };
+  const formatVehicles = (vehicles) =>
+    Array.isArray(vehicles)
+      ? vehicles.map((v) => v.plate_no || "N/A").join(", ")
+      : "N/A";
 
-  // Print Table
   const printTable = () => {
-    if (tableData.length === 0) {
-      alert("No data available for printing.");
-      return;
-    }
+    if (tableData.length === 0) return alert("No data to print.");
 
-    const printWindow = window.open("", "", "width=1000,height=700");
-
-    // Exclude 'customer_observation' and 'job_description' from headers
     const filteredHeaders = headers.filter(
-      (header) =>
-        header !== "customer_observation" && header !== "job_description"
+      (h) => h !== "customer_observation" && h !== "job_description"
     );
 
     const tableHeaders = filteredHeaders
       .map(
-        (header) =>
+        (h) =>
           `<th style="border: 1px solid black; padding: 2px;">${
-            headerMappings[header] || header
+            headerMappings[h] || h
           }</th>`
       )
       .join("");
@@ -234,8 +206,6 @@ function ButtonRepairOperation({
         return `<tr>${filteredHeaders
           .map((key) => {
             let value = row[key];
-
-            // Check if the value is a stringified array
             if (
               typeof value === "string" &&
               value.startsWith("[") &&
@@ -247,7 +217,6 @@ function ButtonRepairOperation({
                 value = "Invalid Data";
               }
             }
-
             return `<td style="border: 1px solid black; padding: 8px;">${
               value ?? "N/A"
             }</td>`;
@@ -256,7 +225,8 @@ function ButtonRepairOperation({
       })
       .join("");
 
-    printWindow.document.write(`
+    const win = window.open("", "", "width=1000,height=700");
+    win.document.write(`
       <html>
         <head>
           <title>${companyInfo.name} - Report</title>
@@ -265,28 +235,24 @@ function ButtonRepairOperation({
             .container { width: 90%; margin: auto; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td { border: 1px solid black; padding: 8px; text-align: left; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .footer { text-align: center; margin-top: 20px; font-size: 12px; position: fixed; bottom: 10px; width: 100%; }
+            .header { margin-bottom: 20px; }
+            .footer { font-size: 12px; position: fixed; bottom: 10px; width: 100%; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <img src="${companyInfo.logo}" width="80" height="40" /><br>
-              <strong>${companyInfo.name}</strong><br>
-              ${companyInfo.phone} | ${companyInfo.address} <br>
+              <img src="${companyInfo.logo}" width="80" height="40" /><br />
+              <strong>${companyInfo.name}</strong><br />
+              ${companyInfo.phone} | ${companyInfo.address}<br />
               ${companyInfo.tin}
             </div>
             <table>
-              <thead>
-                <tr>${tableHeaders}</tr>
-              </thead>
-              <tbody>
-                ${tableRows}
-              </tbody>
+              <thead><tr>${tableHeaders}</tr></thead>
+              <tbody>${tableRows}</tbody>
             </table>
             <div class="footer">
-              <hr>
+              <hr />
               <p>${companyInfo.name} | ${companyInfo.phone} | ${companyInfo.address}</p>
             </div>
           </div>
@@ -294,69 +260,29 @@ function ButtonRepairOperation({
         </body>
       </html>
     `);
-    printWindow.document.close();
-  };
-
-  function handleImport() {
-    navigate("/inventory/add-store");
-  }
-
-  const handleNavigation = (path) => {
-    navigate(path);
-    setIsDropdownOpen(false); // Close dropdown after selection
-  };
-  // Toggle dropdown visibility
-  const toggleDropdown = () => {
-    setIsDropdownOpen((prev) => !prev);
+    win.document.close();
   };
 
   return (
-    <div className="phone:ml-6 tablet:ml-0 flex items-center phone:gap-2 tablet:gap-2">
+    <div className="phone:ml-6 tablet:ml-0 flex items-center gap-2">
       <button
-        onClick={() => handleExport()}
-        className="bg-blue-400 text-white phone:px-2 tablet:px-4 py-2 rounded-md hover:bg-blue-500 transition-all duration-300"
+        onClick={handleExport}
+        className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"
       >
         PDF
       </button>
       <button
         onClick={() => exportToExcel(filename, tableData)}
-        className="bg-orange-400 text-white phone:px-2 tablet:px-4 py-2 rounded-md hover:bg-orange-500 transition-all duration-300"
+        className="bg-orange-500 text-white px-3 py-2 rounded-md hover:bg-orange-600 transition"
       >
         Excel
       </button>
       <button
         onClick={printTable}
-        className="bg-indigo-400 text-white phone:px-2 tablet:px-4 py-2 rounded-md hover:bg-indigo-500 transition-all duration-all"
+        className="bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600 transition"
       >
         Print
       </button>
-      {/* <div
-        onClick={toggleDropdown}
-        className="relative z-[99] hover:cursor-pointer flex items-center bg-green-500 text-white phone:px-2 tablet:px-4 py-2 rounded-md hover:bg-green-600 transition-all duration-500"
-      >
-        <span>Import</span>
-        <IoMdArrowDropdown size={25} />
-        {isDropdownOpen && (
-          <div className="absolute top-10 z-[9999999] right-2 mt-2 w-40 bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden">
-            <ul className="text-gray-800">
-              <li
-                onClick={() => handleNavigation("/inventory/add-store")}
-                className="text-md flex items-center gap-[4px] uppercase text-green-700 px-2 py-4 cursor-pointer transition-all duration-300"
-              >
-                <TiDocumentAdd size={25} />
-                <span className="text-sm"> Add Repair</span>
-              </li>
-              <li
-                onClick={() => handleNavigation("/inventory/update-store")}
-                className="text-md flex items-center gap-[4px] uppercase text-blue-700 hover:bg-blue-100 px-2 py-4 cursor-pointer transition-all duration-300"
-              >
-                <GrDocumentUpdate size={18} />
-                <span className="text-sm">Update Repair</span>
-              </li>
-            </ul>
-          </div>
-        )}
-      </div> */}
     </div>
   );
 }

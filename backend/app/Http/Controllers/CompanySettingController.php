@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CompanySetting;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+// use Illuminate\Support\Facades\Storage;
 
 class CompanySettingController extends Controller
 {
@@ -14,7 +16,9 @@ class CompanySettingController extends Controller
         return response()->json($setting);
     }
 
-    public function store(Request $request)
+
+
+public function store(Request $request)
 {
     $validated = $request->validate([
         'name_en' => 'required|string|max:255',
@@ -28,35 +32,20 @@ class CompanySettingController extends Controller
         'business_type' => 'nullable|string',
         'tagline' => 'nullable|string',
         'established' => 'nullable|digits:4|integer',
+        'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,webp|max:2048',
     ]);
 
     $setting = CompanySetting::firstOrNew([]);
 
-    if ($request->has('logo')) {
-        $logo = $request->logo;
-
-        if (is_string($logo)) {
-            // It's base64 or filename
-            if (Str::startsWith($logo, 'data:image')) {
-                // ✅ base64 image string
-                preg_match("/data:image\/(.*?);base64,(.*)/", $logo, $matches);
-                $extension = $matches[1];
-                $imageData = base64_decode($matches[2]);
-
-                $filename = 'logos/' . uniqid() . '.' . $extension;
-                Storage::disk('public')->put($filename, $imageData);
-                $validated['logo'] = $filename;
-            }
-        } elseif ($request->hasFile('logo')) {
-            // ✅ Fallback for standard file uploads
-            if ($setting->logo) {
-                Storage::disk('public')->delete($setting->logo);
-            }
-
-            $file = $request->file('logo');
-            $filename = $file->store('logos', 'public');
-            $validated['logo'] = $filename;
+    // ✅ Upload logo if a file is present
+    if ($request->hasFile('logo')) {
+        if ($setting->logo) {
+            Storage::disk('public')->delete($setting->logo);
         }
+
+        $file = $request->file('logo');
+        $filename = $file->store('logos', 'public');
+        $validated['logo'] = $filename;
     }
 
     $setting->fill($validated);
@@ -64,5 +53,8 @@ class CompanySettingController extends Controller
 
     return response()->json($setting);
 }
+
+
+
 
 }

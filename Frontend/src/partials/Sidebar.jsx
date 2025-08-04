@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 
 import SidebarLinkGroup from "./SidebarLinkGroup";
 import logo from "./../images/aa.png"; // Replace with the actual path to your logo image
+import { useStores } from "@/contexts/storeContext";
 
 function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
   const location = useLocation();
@@ -15,6 +16,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
   const [sidebarExpanded, setSidebarExpanded] = useState(
     storedSidebarExpanded === null ? false : storedSidebarExpanded === "true"
   );
+  const { companyData } = useStores();
+
+  const logoUrl = companyData?.logo
+    ? `${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`
+    : "/logo.png"; // fallback logo
 
   // close on click outside
   useEffect(() => {
@@ -113,7 +119,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
             className="hover:bg-gray-100 transition duration-200 block m-0 p-0 rounded-md"
           >
             <img
-              src={logo}
+              src={logoUrl}
               alt="Logo"
               className="w-full h-auto block m-0 p-0"
             />
@@ -252,7 +258,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-300 dark:bg-gray-600"></span>
                             <NavLink
                               end
-                              to="/types-of-jobs"
+                              to="/step-1"
                               className={({ isActive }) =>
                                 "block transition duration-150 truncate pl-4 " +
                                 (isActive

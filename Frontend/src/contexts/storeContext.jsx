@@ -43,9 +43,7 @@ function StoreProvider({ children }) {
   const [isDialogeOpen, setIsDialogeOpen] = useState(false);
   const [dialogeOpen, setDialogeOpen] = useState(false);
   const [grandTotals, setGrandTotals] = useState({});
-  const [companyData, setCompanyData] = useState(null);
-
-  console.log(type);
+  // const [companyData, setCompanyData] = useState(null);
 
   useEffect(() => {
     document.documentElement.classList.add("[&_*]:!transition-none");
@@ -150,6 +148,16 @@ function StoreProvider({ children }) {
   const getGrandTotal = (jobId) => {
     return grandTotals[jobId] || 0;
   };
+  const [companyData, setCompanyData] = useState(() => {
+    const stored = localStorage.getItem("companyData");
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  useEffect(() => {
+    if (companyData) {
+      localStorage.setItem("companyData", JSON.stringify(companyData));
+    }
+  }, [companyData]);
 
   return (
     <StoreContext.Provider

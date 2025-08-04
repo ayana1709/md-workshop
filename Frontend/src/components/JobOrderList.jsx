@@ -44,25 +44,30 @@ const JobOrderList = () => {
   const [showPrintModal, setShowPrintModal] = useState(false);
 
   const headers = [
-    "id",
+    "job_id",
     "customer_name",
-    "repair_category",
-    "received_date",
+    "mobile",
+    "types_of_jobs",
+    "product_name",
+    "serial_code",
     "estimated_date",
+    "received_date",
     "promise_date",
-    "priority",
+    "status",
   ];
 
   const headerMappings = {
-    id: "ID",
-    customer_name: "customer name",
-    repair_category: "repair category",
-    received_date: "Date In",
-    estimated_date: "Est.Date",
-    promise_date: "Date Out",
-    priority: "Priority",
+    job_id: "Job ID",
+    customer_name: "Customer Name",
+    mobile: "Mobile",
+    types_of_jobs: "Type of Job",
+    product_name: "Product Name",
+    serial_code: "Serial Code",
+    estimated_date: "Est. Duration",
+    received_date: "Start Date",
+    promise_date: "End Date",
+    status: "Status",
   };
-  console.log(repairs);
 
   useEffect(() => {
     const fetchRepairs = async () => {
@@ -293,50 +298,49 @@ const JobOrderList = () => {
         )}
       </div>
 
-      <div className="overflow-x-auto phone:mt-20 tablet:mt-0">
-        <table className="table-fixed min-w-full table-auto w-full border-collapse border border-table-border overflow-x-auto">
+      <div className="w-full overflow-x-auto phone:mt-20 tablet:mt-0">
+        <table className="min-w-[900px] w-full table-fixed border-collapse border border-table-border">
           <thead className="bg-table-head text-white text-left text-sm font-extrabold uppercase tracking-wide shadow-sm">
-            <tr className="border-table-border">
-              <th className="border border-table-border px-4 py-3 w-[50px]">
+            <tr>
+              <th className="border border-table-border px-2 py-3 w-[40px] text-center">
                 <input
                   type="checkbox"
                   onChange={toggleSelectAll}
                   checked={selectedRows.length === displayedRepairs.length}
-                  className="ring-0 outline-none dark:bg-gray-800 dark:text-gray-200 dark:border-gray-900"
+                  className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-900"
                 />
               </th>
-              <th className="border border-table-border p-2 w-[70px]">
+              <th className="border border-table-border px-2 py-3 w-[70px]">
                 Job ID
               </th>
-              {/* <th className="border border-table-border p-2 w-[80px]">Image</th> */}
-              <th className="border border-table-border p-2 w-[130px]">
-                Customer Name
+              <th className="border border-table-border px-2 py-3 w-[130px]">
+                Customer
               </th>
-              <th className="border border-table-border p-2 w-[120px]">
+              <th className="border border-table-border px-2 py-3 w-[120px]">
                 Mobile
               </th>
-              <th className="border border-table-border p-2 w-[120px]">
-                Type of Job
+              <th className="border border-table-border px-2 py-3 w-[130px]">
+                Job Type
               </th>
-              <th className="border border-table-border p-2 w-[130px]">
-                Product Name
+              <th className="border border-table-border px-2 py-3 w-[130px]">
+                Product
               </th>
-              <th className="border border-table-border p-2 w-[130px]">
+              <th className="border border-table-border px-2 py-3 w-[130px]">
                 Serial Code
               </th>
-              <th className="border border-table-border p-2 w-[90px]">
-                Est. Duration
+              <th className="border border-table-border px-2 py-3 w-[90px]">
+                Duration
               </th>
-              <th className="border border-table-border p-2 w-[110px]">
+              <th className="border border-table-border px-2 py-3 w-[110px]">
                 Start Date
               </th>
-              <th className="border border-table-border p-2 w-[110px]">
+              <th className="border border-table-border px-2 py-3 w-[110px]">
                 End Date
               </th>
-              <th className="border border-table-border p-2 w-[110px]">
+              <th className="border border-table-border px-2 py-3 w-[100px]">
                 Status
               </th>
-              <th className="border border-table-border p-2 w-[100px]">
+              <th className="border border-table-border px-2 py-3 w-[100px]">
                 Actions
               </th>
             </tr>
@@ -344,7 +348,7 @@ const JobOrderList = () => {
           <tbody>
             {displayedRepairs.length === 0 ? (
               <tr>
-                <td colSpan="13" className="text-center py-4 text-white">
+                <td colSpan="12" className="text-center py-4 text-white">
                   No data available
                 </td>
               </tr>
@@ -354,7 +358,7 @@ const JobOrderList = () => {
                   key={repair.id}
                   className="border border-table-border hover:bg-gray-100 hover:dark:bg-gray-600 transition"
                 >
-                  <td className="border border-table-border px-2 py-3 text-sm">
+                  <td className="text-center border border-table-border px-2 py-3">
                     <input
                       type="checkbox"
                       checked={selectedRows.includes(repair.id)}
@@ -363,52 +367,46 @@ const JobOrderList = () => {
                     />
                   </td>
 
-                  <td className="border border-table-border px-2 py-3 text-sm">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.job_id?.toString().padStart(4, "0")}
                   </td>
 
-                  {/* <td className="border border-table-border px-2 py-3 text-sm">
-                    {repair.image ? (
-                      <img
-                        src={`/storage/${repair.image.replace("public/", "")}`}
-                        alt="repair"
-                        className="w-16 h-12 object-cover rounded-sm cursor-pointer hover:scale-105 transition-transform duration-200"
-                        onClick={() =>
-                          setImageModal({
-                            open: true,
-                            src: `/storage/${repair.image.replace(
-                              "public/",
-                              ""
-                            )}`,
-                          })
-                        }
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-xs">No Image</span>
-                    )}
-                  </td> */}
-
-                  <td className="border border-table-border px-4 py-3 font-medium text-sm">
+                  <td
+                    className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
+                    title={repair.customer_name}
+                  >
                     {repair.customer_name}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td
+                    className="border border-table-border px-2 py-3 text-sm truncate max-w-[120px]"
+                    title={repair.mobile}
+                  >
                     {repair.mobile}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td
+                    className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
+                    title={repair.types_of_jobs}
+                  >
                     {repair.types_of_jobs || "-"}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td
+                    className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
+                    title={repair.product_name}
+                  >
                     {repair.product_name || "-"}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td
+                    className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
+                    title={repair.serial_code}
+                  >
                     {repair.serial_code || "-"}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.estimated_date
                       ? repair.estimated_date > 30
                         ? `${Math.floor(repair.estimated_date / 30)} Month(s)`
@@ -416,17 +414,17 @@ const JobOrderList = () => {
                       : "-"}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.received_date}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.promise_date || "-"}
                   </td>
 
-                  <td className="border border-table-border px-4 py-3 text-sm">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                      className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap ${
                         statusStyles[repair.status] || "bg-gray-200 text-black"
                       }`}
                     >
@@ -434,12 +432,12 @@ const JobOrderList = () => {
                     </span>
                   </td>
 
-                  <td className="text-center border border-table-border px-2 py-3">
+                  <td className="border border-table-border px-2 py-3 text-sm text-center">
                     <button
                       onClick={() => setDropdownOpen(repair.id)}
-                      className="bg-blue-700 text-white px-[14px] py-1 rounded-sm flex items-center"
+                      className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
                     >
-                      Action <FiChevronDown className="ml-2" />
+                      Action <FiChevronDown className="ml-1" />
                     </button>
                     {dropdownOpen === repair.id && (
                       <DropdownButton
@@ -458,6 +456,7 @@ const JobOrderList = () => {
           </tbody>
         </table>
       </div>
+
       {imageModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
           <div className="relative max-w-3xl w-full mx-4">

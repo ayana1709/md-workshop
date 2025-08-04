@@ -7,9 +7,9 @@ function TabNav() {
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const tabs = [
     "repair",
-    "bolo-list",
-    "inspection-list",
-    "wheel-alignment-list",
+    // "bolo-list",
+    // "inspection-list",
+    // "wheel-alignment-list",
   ];
   useLayoutEffect(() => {
     const currentPath = location.pathname.split("/")[2];
