@@ -4,7 +4,7 @@ import Transition from "../utils/Transition";
 import { useNavigate } from "react-router-dom";
 import api from "../api"; // Axios instance
 
-import UserAvatar from "../images/aya.png";
+import UserAvatar from "../images/ac.jpg";
 
 function DropdownProfile({ align }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);

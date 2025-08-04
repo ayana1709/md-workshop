@@ -122,6 +122,7 @@ import WeeklyChecklist from "./components/WeeklyChecklist";
 import AddPayment from "./components/payment/AddPayment";
 import ProformaForm from "./components/Proforma/ProformaForm";
 import ManageProforma from "./components/Proforma/ManageProforma";
+import CompanySettings from "./components/CompanySettings";
 // import Outsource from "./components/Outsource";
 // import PrintInspection from "./components/PrintInspection";
 // import PrintWheel from "./components/PrintWheel";
@@ -325,10 +326,7 @@ function App() {
         <Route path="/proforma" element={<ProformaForm />} />
         <Route path="/manage-proforma" element={<ManageProforma />} />
 
-        {/* <Route path="/proforma/create" element={<ProformaForm />} />
-        <Route path="/proforma/view/:id" element={<ProformaView />} />
-        <Route path="/proforma/print/:id" element={<ProformaPrint />} />
-        <Route path="/proforma/manage" element={<ManageProforma />} /> */}
+        <Route path="/setting" element={<CompanySettings />} />
       </Routes>
     </StoreProvider>
   );

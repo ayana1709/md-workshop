@@ -89,12 +89,12 @@ function Header({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   <path d="m13.314 11.9 2.393 2.393a.999.999 0 1 1-1.414 1.414L11.9 13.314a8.019 8.019 0 0 0 1.414-1.414Z" />
                 </svg>
               </button>
-              <SearchModal
+              {/* <SearchModal
                 id="search-modal"
                 searchId="search"
                 modalOpen={searchModalOpen}
                 setModalOpen={setSearchModalOpen}
-              />
+              /> */}
             </div>
 
             <LanguageSwitcher />
