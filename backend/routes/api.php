@@ -41,6 +41,7 @@ use App\Http\Controllers\ServiceReminderController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ProformaController;
+use App\Http\Controllers\CompanySettingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -390,4 +391,6 @@ Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
 
 
 
+Route::get('/settings', [CompanySettingController::class, 'index']);
+Route::post('/settings', [CompanySettingController::class, 'store']);
 

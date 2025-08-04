@@ -43,6 +43,7 @@ function StoreProvider({ children }) {
   const [isDialogeOpen, setIsDialogeOpen] = useState(false);
   const [dialogeOpen, setDialogeOpen] = useState(false);
   const [grandTotals, setGrandTotals] = useState({});
+  const [companyData, setCompanyData] = useState(null);
 
   console.log(type);
 
@@ -221,6 +222,8 @@ function StoreProvider({ children }) {
         grandTotals,
         updateGrandTotal,
         getGrandTotal,
+        companyData,
+        setCompanyData,
       }}
     >
       {children}
