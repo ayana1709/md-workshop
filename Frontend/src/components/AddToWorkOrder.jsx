@@ -104,7 +104,6 @@ const AddToWorkOrder = () => {
         const response = await api.get(`/repairs/basic/${id}`); // ✅ Corrected URL
         console.log("Fetched Repair Data:", response.data); // Debugging
         if (response.data) {
-          // Check if response contains expected fields
           setRepair(response.data);
         } else {
           console.error("Unexpected data format:", response.data);

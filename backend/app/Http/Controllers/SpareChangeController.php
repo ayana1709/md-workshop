@@ -14,7 +14,7 @@ class SpareChangeController extends Controller
             'job_card_no' => 'required',
             'plate_number' => 'required',
             'customer_name' => 'required',
-            'repair_category' => 'required|array',
+            'repair_category' => 'required',
             'spare_change' => 'required|array',
 
 

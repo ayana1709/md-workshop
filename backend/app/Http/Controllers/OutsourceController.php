@@ -17,41 +17,7 @@ class OutsourceController extends Controller
     }
 
 
-//    // Store a new outsource
-//    public function store(Request $request)
-// {
-//     $validated = $request->validate([
-//         'job_card_no' => 'required|string',
-//         'plate_number' => 'nullable|string',
-//         'customer_name' => 'nullable|string',
-//         'repair_category' => 'nullable|array', // ✅ Allow array
-//         'repair_category.*' => 'string', // ✅ Ensure each item is a string
-//         'outsourcedetails' => 'required|array', // ✅ Allow array
-//         'outsourcedetails.*.description' => 'required|string', // ✅ Validate each field inside array
-//         'outsourcedetails.*.requestedby' => 'required|string',
-//         // 'outsourcedetails.*.assign_to' => 'required|string',
-//         'outsourcedetails.*.condition' => 'nullable|string',
-//         'outsourcedetails.*.modal' => 'required|string',
-//         'outsourcedetails.*.brand' => 'required|numeric',
-//         'outsourcedetails.*.description' => 'nullable|string',
-//         // 'outsourcedetails.*.remark' => 'nullable|string',
-        
-//     ]);
 
-//     $outsource = outsource::create([
-//         'job_card_no' => $validated['job_card_no'],
-//         'plate_number' => $validated['plate_number'],
-//         'customer_name' => $validated['customer_name'],
-//         'repair_category' => json_encode($validated['repair_category']), // ✅ Convert to JSON before saving
-//         'outsourcedetails' => json_encode($validated['outsourcedetails']), // ✅ Convert to JSON before saving
-       
-//     ]);
-
-//     return response()->json([
-//         'message' => 'Outsource request saved successfully!',
-//         'data' => $outsource
-//     ], 201);
-// }
 public function store(Request $request)
 {
     $validatedData = $request->validate([

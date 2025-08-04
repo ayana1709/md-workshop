@@ -203,7 +203,6 @@ const SpareChange = () => {
           response.data.data.spare_change
         ); // Debugging
 
-        // ✅ Update the state with backend-generated IDs
         setWorkDetails((prev) => [...prev, ...response.data.data.spare_change]);
 
         // ✅ Sync frontend `rows` with new IDs from backend

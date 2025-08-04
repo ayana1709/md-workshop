@@ -20,6 +20,6 @@ class SpareChange extends Model
 
     protected $casts = [
         'spare_change' => 'array', // ✅ Automatically convert JSON to array
-        'repair_category' => 'array',
+        // 'repair_category' => 'array',
     ];
 }
