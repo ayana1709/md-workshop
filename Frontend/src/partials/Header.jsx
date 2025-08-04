@@ -98,8 +98,8 @@ function Header({ sidebarOpen, setSidebarOpen, variant = "default" }) {
             </div>
 
             <LanguageSwitcher />
-            <Notifications align="right" />
-            <Help align="right" />
+            {/* <Notifications align="right" /> */}
+            {/* <Help align="right" /> */}
             <ThemeToggle />
 
             {/* Divider */}
