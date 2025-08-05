@@ -44,11 +44,19 @@ export default function EditRepair() {
         const response = await api.get(`/repairs/${id}`);
         const data = response.data;
 
+        // Set form data
         setFormData({
-          ...formData, // keep structure
-          ...data, // overwrite with backend values
-          image: null, // don't bind image blob directly
+          ...formData,
+          ...data,
+          image: null, // clear file input
         });
+
+        // 👇 Set the preview URL from backend (if image exists)
+        if (data.image) {
+          setPreviewUrl(
+            `${import.meta.env.VITE_API_URL}/storage/${data.image}`
+          );
+        }
       } catch (err) {
         console.error("Failed to load repair data", err);
       }
@@ -146,7 +154,8 @@ export default function EditRepair() {
       });
 
       setRepairData(payloadData); // Store repair details
-      setIsPrintModalOpen(true); // Open modal
+      // setIsPrintModalOpen(true); // Open modal
+      // navigate(/job-manager/repair);
     } catch (error) {
       console.error("Error submitting form:", error.response?.data || error);
 
@@ -711,6 +720,7 @@ export default function EditRepair() {
                         {getSpareChangeTotal().toLocaleString()} ETB
                       </div>
                     </div>
+
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 mt-4">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Upload Image / የምስል መጫኛ
@@ -720,15 +730,19 @@ export default function EditRepair() {
                         </span>
                       </h3>
 
+                      {/* 👇 No value prop for file inputs */}
                       <input
                         type="file"
                         name="image"
-                        value={formData.image}
                         accept="image/*"
-                        onChange={handleImageChange} // 👈 not handleChange
-                        className="w-full text-sm dark:text-white dark:bg-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        onChange={handleImageChange}
+                        className="w-full text-sm dark:text-white dark:bg-gray-800 
+      file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 
+      file:text-sm file:font-semibold file:bg-blue-50 
+      file:text-blue-700 hover:file:bg-blue-100"
                       />
 
+                      {/* 👇 Show preview from either existing or uploaded file */}
                       {previewUrl && (
                         <div className="mt-4">
                           <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
@@ -742,6 +756,7 @@ export default function EditRepair() {
                         </div>
                       )}
                     </div>
+
                     <div className="mt-6 text-right text-lg font-bold border-t pt-4  text-dark-700 dark:text-white">
                       Sub Total Estimated Price/ንዑስ ጠቅላላ የተገመተው ዋጋ:{" "}
                       {getGrandTotal().toLocaleString()} ETB

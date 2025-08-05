@@ -122,21 +122,7 @@ if ($request->hasFile('image')) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     
-
 public function update(Request $request, $id)
 {
     $repair = RepairRegistration::find($id);
@@ -145,7 +131,15 @@ public function update(Request $request, $id)
         return response()->json(['message' => 'Repair not found'], 404);
     }
 
-    $validated = $request->validate([
+    // 👇 Decode JSON from 'payload'
+    $payload = json_decode($request->input('payload'), true);
+
+    if (!$payload) {
+        return response()->json(['message' => 'Invalid JSON payload'], 400);
+    }
+
+    // ✅ Validate decoded payload
+    $validated = validator($payload, [
         'job_id' => 'required|string|unique:repair_registrations,job_id,' . $repair->id,
         'customer_name' => 'required|string|max:255',
         'customer_type' => 'required|string|max:255',
@@ -161,32 +155,29 @@ public function update(Request $request, $id)
         'spare_change' => 'nullable|array',
         'job_description' => 'nullable|array',
         'received_by' => 'nullable|string',
-    ]);
+    ])->validate();
 
     try {
-        $repair->update([
-            'job_id' => $validated['job_id'],
-            'customer_name' => $validated['customer_name'],
-            'customer_type' => $validated['customer_type'],
-            'mobile' => $validated['mobile'],
-            'types_of_jobs' => $validated['types_of_jobs'],
-            'received_date' => $validated['received_date'],
-            'estimated_date' => $validated['estimated_date'],
-            'promise_date' => $validated['promise_date'],
-            'priority' => $validated['priority'],
-            'product_name' => $validated['product_name'],
-            'serial_code' => $validated['serial_code'],
-            'customer_observation' => $validated['customer_observation'],
-            'spare_change' => $validated['spare_change'],
-            'job_description' => $validated['job_description'],
-            'received_by' => $validated['received_by'],
-        ]);
+        // ✅ Handle optional new image
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $file->storeAs('public/repair_images', $filename);
+            $validated['image'] = 'repair_images/' . $filename;
+        }
+
+        // ✅ Update all fields (including image if uploaded)
+        $repair->update($validated);
 
         return response()->json(['message' => 'Repair updated successfully'], 200);
     } catch (\Exception $e) {
-        return response()->json(['message' => 'Error updating repair', 'error' => $e->getMessage()], 500);
+        return response()->json([
+            'message' => 'Error updating repair',
+            'error' => $e->getMessage()
+        ], 500);
     }
 }
+
 
 
 

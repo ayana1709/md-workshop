@@ -188,6 +188,7 @@ const JobOrderList = () => {
       // alert(error.response?.data?.message || "Failed to delete repairs");
     }
   };
+
   const statusStyles = {
     "not started": "bg-red-900 text-white",
     started: "bg-yellow-500 text-white",

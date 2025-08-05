@@ -36,7 +36,7 @@ const PrintJobOrder = () => {
   return (
     <div className="relative p-[2px] px-2 pl-6 border border-black w-[1000px] mx-auto text-sm">
       <JobOrderHeader printData={printData} />
-      <VehicleConditionTable printData={printData} />
+      {/* <VehicleConditionTable printData={printData} /> */}
       <JobDetailsRightSection printData={printData} />
       <JobOrderFooter />
     </div>

@@ -79,6 +79,17 @@ function StoreProvider({ children }) {
   const handleDelete = async (id, type) => {
     if (!id) return;
 
+    //     const handleDelete = async (id, type) => {
+    //   try {
+    //     await api.delete(`/repairs/${id}`);
+    //     toast.success("Deleted successfully");
+    //     // Optional: remove item from local state
+    //   } catch (err) {
+    //     console.error(err);
+    //     toast.error("Failed to delete");
+    //   }
+    // };
+
     // Define API path based on type
     let apiPath;
     switch (type) {

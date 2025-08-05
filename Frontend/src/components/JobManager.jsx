@@ -28,9 +28,9 @@ const JobManager = () => {
       {isModalOpen ? (
         <div className="absolute w-full h-full z-10 top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
           <ConfirmDeleteModal
-          // isOpen={isModalOpen}
-          // onClose={() => setIsModalOpen(false)}
-          // onConfirm={() => handleDelete(selectedId, type)}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onConfirm={() => handleDelete(selectedId, type)}
           />
         </div>
       ) : (

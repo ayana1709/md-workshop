@@ -60,7 +60,7 @@ const PrintRegistration = () => {
   return (
     <div className="relative p-[2px] px-2 pl-6 border border-black w-[1000px] mx-auto text-sm">
       <JobOrderHeader printData={repairData} />
-      <VehicleConditionTable printData={repairData} />
+      {/* <VehicleConditionTable printData={repairData} /> */}
       <JobDetailsRightSection printData={repairData} />
       <JobOrderFooter />
     </div>
