@@ -662,7 +662,8 @@ function PrintSummary({ jobId: propJobId }) {
                             colSpan="4"
                             className="border border-gray-400 px-4 py-2"
                           >
-                            
+                            Total cost Amount for otherserviceTotal cost Amount
+                            for otherservice
                           </td>
                           <td className="border border-gray-400 px-4 py-2">
                             {totalOutSourceWithVAT.toFixed(2)} ETB
