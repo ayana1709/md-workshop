@@ -34,6 +34,8 @@ function PrintSummary({ jobId: propJobId }) {
   const [includeOutSourceVAT, setIncludeOutSourceVAT] = useState(false);
   const [additionalCost, setAdditionalCost] = useState(0);
   const navigate = useNavigate();
+  const { companyData } = useStores();
+  console.log(companyData);
 
   const [items, setItems] = useState([
     {
@@ -193,10 +195,6 @@ function PrintSummary({ jobId: propJobId }) {
 
   console.log(totalOutCost);
 
-  // const totalCost = totalLaborCost + totalPartsCost + totalOutCost;
-  // const vatAmount = includeVAT ? (totalCost + additionalExpense) * 0.15 : 0;
-  // const grandTotal = totalCost + additionalExpense + vatAmount;
-
   // Calculate VAT amounts
   const labourVAT = includeLabourVAT ? totalLaborCost * 0.15 : 0;
   const spareVAT = includeSpareVAT ? totalPartsCost * 0.15 : 0;
@@ -332,7 +330,7 @@ function PrintSummary({ jobId: propJobId }) {
         <main className="grow mt-0">
           <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
             <div className="print-container">
-              <div className="w-full flex gap-20 items-center justify-center">
+              {/* <div className="w-full flex gap-20 items-center justify-center">
                 <img src={logo} className="w-[40%]" />
                 <div className="flex flex-col gap-2">
                   <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
@@ -342,84 +340,74 @@ function PrintSummary({ jobId: propJobId }) {
                     speed meter trading plc
                   </h2>
                 </div>
-              </div>
+              </div> */}
               {/* <p className="text-gray-600 dark:text-white">
                 Plate Number: {plateNumber}
               </p> */}
 
+              <div className="grid grid-cols-3 gap-4 items-start border-b pb-4 mb-6">
+                {/* Left: Logo */}
+                <div className="flex items-start justify-center">
+                  {companyData?.logo && (
+                    <img
+                      src={`${import.meta.env.VITE_API_URL}/storage/${
+                        companyData.logo
+                      }`}
+                      alt="Company Logo"
+                      className="h-24 object-contain"
+                    />
+                  )}
+                </div>
+
+                {/* Center: Company Info */}
+                <div className="space-y-1 text-sm text-gray-800 leading-snug">
+                  <h2 className="text-lg font-bold">{companyData?.name_en}</h2>
+                  <p className="text-sm italic text-gray-600">
+                    {companyData?.tagline}
+                  </p>
+                  <p>
+                    <strong>Address:</strong> {companyData?.address}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {companyData?.phone}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {companyData?.email}
+                  </p>
+                  <p>
+                    <strong>Website:</strong> {companyData?.website}
+                  </p>
+                  <p>
+                    <strong>Established:</strong> {companyData?.established}
+                  </p>
+                </div>
+
+                {/* Right: Business & Job Info */}
+                <div className="text-sm text-right space-y-1 text-gray-800">
+                  <h3 className="text-lg font-bold">Repair Summary</h3>
+                  <p>
+                    <strong>Job ID:</strong> {customerInfo?.job_id}
+                  </p>
+                  <p>
+                    <strong>Received Date:</strong>{" "}
+                    {customerInfo?.received_date}
+                  </p>
+                  <p>
+                    <strong>Business Type:</strong> {companyData?.business_type}
+                  </p>
+                  <p>
+                    <strong>TIN:</strong> {companyData?.tin}
+                  </p>
+                  <p>
+                    <strong>VAT Reg. No:</strong> {companyData?.vat}
+                  </p>
+                </div>
+              </div>
+
               <h2 className="text-2xl font-semibold text-center mb-4 border-b  p-6 ">
                 Print Summary
               </h2>
-              {/* Customer & Vehicle Info */}
-              {customerInfo && (
-                <div className="mt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                    Customer & Vehicle Information
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md">
-                    <ul className="space-y-2">
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">
-                          Customer Name:
-                        </strong>{" "}
-                        {customerInfo.customer_name}
-                      </li>
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">Mobile:</strong>{" "}
-                        {customerInfo.mobile}
-                      </li>
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">
-                          {" "}
-                          Customer Type:
-                        </strong>{" "}
-                        {customerInfo.customer_type}
-                      </li>
-                    </ul>
-                    <ul className="space-y-2">
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">
-                          Received Date:
-                        </strong>{" "}
-                        {customerInfo.received_date}
-                      </li>
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">
-                          Date Out:
-                        </strong>{" "}
-                        {customerInfo.promise_date}
-                      </li>
-                      <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">
-                          Priority:
-                        </strong>{" "}
-                        {customerInfo.priority}
-                      </li>
-                    </ul>
-                    {customerInfo.vehicles.map((vehicle, index) => (
-                      <ul key={index} className="space-y-2">
-                        <li className="dark:text-gray-200">
-                          <strong className="dark:text-gray-100">
-                            Plate Number :
-                          </strong>{" "}
-                          {vehicle.plate_no}
-                        </li>
 
-                        <li className="dark:text-gray-200">
-                          <strong className="dark:text-gray-100">Model:</strong>{" "}
-                          {vehicle.model}
-                        </li>
-                        <li className="dark:text-gray-200">
-                          <strong className="dark:text-gray-100">
-                            Car Condition:
-                          </strong>{" "}
-                          {vehicle.condition}
-                        </li>
-                      </ul>
-                    ))}
-                  </div>
-                </div>
-              )}
               {/* Labour Table */}
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
                 Labour Cost
@@ -588,7 +576,7 @@ function PrintSummary({ jobId: propJobId }) {
 
               {/* Out source  table  */}
               <h3 className="text-lg font-semibold text-gray-800 mt-6">
-                Out Source
+                Other Service
               </h3>
               <div className="flex items-center mt-2">
                 <input
@@ -674,7 +662,7 @@ function PrintSummary({ jobId: propJobId }) {
                             colSpan="4"
                             className="border border-gray-400 px-4 py-2"
                           >
-                            Total cost Amount for outsource
+                            
                           </td>
                           <td className="border border-gray-400 px-4 py-2">
                             {totalOutSourceWithVAT.toFixed(2)} ETB
