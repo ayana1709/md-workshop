@@ -13,7 +13,7 @@ const WorkOrder = () => {
   const [indicatorStyle, setIndicatorStyle] = useState({});
   const location = useLocation();
   const { isModalOpen, setIsModalOpen, handleDelete, type } = useStores();
-  const tabs = ["work-order-list", "Test_drive", "out-source"];
+  const tabs = ["work-order-list"];
   return (
     <div
       className={`relative z-0 w-full flex h-screen overflow-y-auto bg-gray-100 dark:bg-gray-900`}
