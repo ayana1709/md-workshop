@@ -394,3 +394,5 @@ Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
 Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
 
+
+Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);

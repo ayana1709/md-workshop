@@ -43,7 +43,7 @@ const AddSalesPage = () => {
 
   const [items, setItems] = useState([]);
 
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   console.log(items);
 
@@ -80,10 +80,40 @@ const AddSalesPage = () => {
     ]);
   };
 
+  //  import axios from "axios";
+
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
     setItems(updated);
+  };
+
+  const handlePartNumberChange = async (index, value) => {
+    // Always update part number immediately
+    handleItemChange(index, "part_number", value);
+
+    try {
+      const response = await api.get(`/items/part/${value}`);
+      const itemData = response.data;
+
+      const updatedItems = [...items];
+      const currentItem = updatedItems[index];
+
+      updatedItems[index] = {
+        ...currentItem,
+        part_number: value, // ensure part number is preserved
+        description: itemData.description || "",
+        brand: itemData.brand || "",
+        unit: itemData.unit || "",
+        unit_price: parseFloat(itemData.unit_price) || 0,
+        quantity: parseInt(itemData.quantity) || 0,
+        // any other fields...
+      };
+
+      setItems(updatedItems);
+    } catch (error) {
+      console.error("Item not found or fetch error:", error);
+    }
   };
 
   const handleDeleteRow = (index) => {
@@ -138,13 +168,13 @@ const AddSalesPage = () => {
         sale_quantity: parseInt(item.saleQty),
       })),
     };
-  
+
     try {
       const res = await api.post("/sales", saleData);
       console.log("✅ Sale created successfully:", res.data);
       toast.success("Sale created successfully!");
-      navigate('/inventory/sales')
-  
+      navigate("/inventory/sales");
+
       // Reset form fields
       setCustomer({
         salesDate: "",
@@ -175,7 +205,6 @@ const AddSalesPage = () => {
       toast.error("Failed to create sale. Please try again.");
     }
   };
-  
 
   return (
     <div className="p-4 bg-white max-w-[90%] mx-auto rounded-md shadow">
@@ -366,20 +395,23 @@ const AddSalesPage = () => {
               </td>
               <td>
                 <input
-                  className="border p-1 w-full"
-                  value={item.part_number || ""}
+                  type="text"
+                  value={items[index]?.part_number || ""}
                   onChange={(e) =>
-                    handleItemChange(index, "part_number", e.target.value)
+                    handlePartNumberChange(index, e.target.value)
                   }
+                  placeholder="Enter Part Number"
                 />
               </td>
               <td>
                 <input
                   className="border p-1 w-full"
                   value={item.brand || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "brand", e.target.value)
-                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleItemChange(index, "part_number", val);
+                    handlePartNumberChange(index, val);
+                  }}
                 />
               </td>
               <td>

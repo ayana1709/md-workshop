@@ -62,6 +62,17 @@ class ItemController extends Controller {
         }
     }
     
+    public function getByPartNumber($part_number)
+{
+    $item = Item::where('part_number', $part_number)->first();
+
+    if (!$item) {
+        return response()->json(['message' => 'Item not found'], 404);
+    }
+
+    return response()->json($item);
+}
+
     
 
     // Fetch a single item
@@ -97,7 +108,7 @@ public function update(Request $request, $id) {
     // Validate all fields, including the new ones
     $validated = $request->validate([
         'description' => 'nullable|string',
-        'part_number' => 'nullable|string',
+        'part_number' => 'required|string',
         'quantity' => 'nullable|integer|min:0',
         'brand' => 'nullable|string',
         'model' => 'nullable|string',

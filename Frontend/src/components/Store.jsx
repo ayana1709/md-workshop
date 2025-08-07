@@ -37,8 +37,8 @@ const Store = () => {
     "total-items",
     "out-of-store",
     "low-store",
-    "sales",
-    "purchase",
+    // "sales",
+    // "purchase",
   ];
 
   useLayoutEffect(() => {
@@ -126,7 +126,7 @@ const Store = () => {
                   }`
                 }
               >
-                {tab.replace("-", " ").toUpperCase()}({totalItems})
+                {tab.replace("-", " ").toUpperCase()}
               </NavLink>
             ))}
           </nav>

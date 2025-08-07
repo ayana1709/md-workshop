@@ -6,6 +6,7 @@ import { Button, TextField, MenuItem, Select } from "@mui/material";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
+import LoadingPage from "./LoadingPage";
 const OutStore = () => {
   const printRef = useRef(null);
   const [itemsOut, setItemsOut] = useState([]);
@@ -274,12 +275,28 @@ const OutStore = () => {
   );
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div>
+        {/* <LoadingPage />
+         */}
+        Loading ...
+      </div>
+    );
   }
   if (itemsOut.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-600 text-lg">
-        There is no item out.
+      <div className="flex items-center justify-center h-screen w-full bg-white dark:bg-gray-900 text-center p-6">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
+            🎉 All items are in stock!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            There are currently no items that are completely out of stock.
+          </p>
+          <p className="mt-2 text-gray-700 dark:text-gray-300 text-lg">
+            ሙሉ በሙሉ ያለቀ ዕቃ የለም።
+          </p>
+        </div>
       </div>
     );
   }
