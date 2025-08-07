@@ -145,43 +145,42 @@ const RequestSpare = () => {
   const visibleFields = [
     "itemname",
     "partnumber",
-    "brand",
+    // "brand",
     "model",
-    // "condition",
-    "description",
+    "condition",
+    // "description",
     "requestquantity",
     "requestedby",
-    "status",
+    // "status",
 
- 
+    // fetch list of work detail
 
-  // fetch list of work detail
+    useEffect(() => {
+      if (!id) return;
 
-  useEffect(() => {
-    if (!id) return;
+      const fetchWorkDetailsByJobCardNo = async () => {
+        try {
+          const response = await api.get(`/spare-request/job-card/${id}`);
 
-    const fetchWorkDetailsByJobCardNo = async () => {
-      try {
-        const response = await api.get(`/spare-request/job-card/${id}`);
-
-        if (response.data && Array.isArray(response.data.sparedetails)) {
-          setWorkDetails(response.data.sparedetails);
+          if (response.data && Array.isArray(response.data.sparedetails)) {
+            setWorkDetails(response.data.sparedetails);
+          }
+        } catch (error) {
+          console.error("Error fetching spare details:", error);
+          setWorkDetails([]);
         }
-      } catch (error) {
-        console.error("Error fetching spare details:", error);
-        setWorkDetails([]);
-      }
-    };
+      };
 
-    // Fetch initially
-    fetchWorkDetailsByJobCardNo();
+      // Fetch initially
+      fetchWorkDetailsByJobCardNo();
 
-    // Set interval to fetch every 10 seconds
-    const interval = setInterval(fetchWorkDetailsByJobCardNo, 10000); // 10000 ms = 10 seconds
+      // Set interval to fetch every 10 seconds
+      const interval = setInterval(fetchWorkDetailsByJobCardNo, 10000); // 10000 ms = 10 seconds
 
-    // Cleanup on unmount or when id changes
-    return () => clearInterval(interval);
-  }, [id]);
+      // Cleanup on unmount or when id changes
+      return () => clearInterval(interval);
+    }, [id]),
+  ];
 
   const handleView = (row) => {
     setViewData(row); // Store selected row data
@@ -457,6 +456,23 @@ const RequestSpare = () => {
                         )}
                       </td>
 
+                      {/* Brand */}
+                      <td className="border-2 border-gray-300 p-2 font-medium">
+                        {isFetchedData && !isEditing ? (
+                          row.brand
+                        ) : (
+                          <input
+                            type="text"
+                            value={
+                              isEditing ? editValues.brand : row.brand || ""
+                            }
+                            onChange={(e) =>
+                              handleChange(row.id, "brand", e.target.value)
+                            }
+                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                          />
+                        )}
+                      </td>
                       {/* model */}
                       <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
@@ -469,6 +485,29 @@ const RequestSpare = () => {
                             }
                             onChange={(e) =>
                               handleChange(row.id, "model", e.target.value)
+                            }
+                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                          />
+                        )}
+                      </td>
+                      {/* Description */}
+                      <td className="border-2 border-gray-300 p-2 font-medium">
+                        {isFetchedData && !isEditing ? (
+                          row.description
+                        ) : (
+                          <input
+                            type="text"
+                            value={
+                              isEditing
+                                ? editValues.description
+                                : row.description || ""
+                            }
+                            onChange={(e) =>
+                              handleChange(
+                                row.id,
+                                "description",
+                                e.target.value
+                              )
                             }
                             className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           />
@@ -524,7 +563,7 @@ const RequestSpare = () => {
                       </td>
 
                       {/* Condition */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
                           <span
                             className={`text-xs font-semibold px-2 py-1 rounded-full ${
@@ -562,8 +601,27 @@ const RequestSpare = () => {
                             <option value="Recieved">Recieved</option>
                           </select>
                         )}
-                      </td>
+                      </td> */}
 
+                      {/* status */}
+
+                      <td className="border-2 border-gray-300 p-2 font-medium">
+                        {isFetchedData && !isEditing ? (
+                          row.status
+                        ) : (
+                          <input
+                            type="text"
+                            disabled
+                            value={
+                              isEditing ? editValues.status : row.status || ""
+                            }
+                            onChange={(e) =>
+                              handleChange(row.id, "status", e.target.value)
+                            }
+                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                          />
+                        )}
+                      </td>
                       {/* Actions */}
 
                       <td className="relative border-2 border-gray-200 dark:border-gray-700 p-3 text-left font-medium">

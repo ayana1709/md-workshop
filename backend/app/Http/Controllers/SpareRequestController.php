@@ -20,42 +20,40 @@ class SpareRequestController extends Controller {
 
     $updatedSpareDetails = [];
 
-    foreach ($validatedData['sparedetails'] as $detail) {
-        $status = "Not in store"; // Default status
-        $unitPrice = null;
+   foreach ($validatedData['sparedetails'] as $detail) {
+    $status = "Not in store"; // Default
+    $unitPrice = null;
 
-        $item = Item::where('part_number', $detail['partnumber'])->first();
+    $partNumber = trim(strtolower($detail['partnumber']));
 
-        if ($item) {
-            // Determine status based on quantity
-            if ($detail['requestquantity'] > $item->quantity) {
-                $status = "Insufficient";
-            } else {
-                $status = "Available";
-            }
+    $item = Item::whereRaw('LOWER(TRIM(part_number)) = ?', [$partNumber])->first();
 
-            // Get unit price from item
-            $unitPrice = $item->unit_price;
+    if ($item) {
+        if ($detail['requestquantity'] > $item->quantity) {
+            $status = "Insufficient";
+        } else {
+            $status = "Available";
         }
 
-
-
-
-        $updatedSpareDetails[] = [
-            'id'=>$detail['id'],
-            'itemname'=> $detail['itemname'] ?? null,
-            'partnumber' => $detail['partnumber'],
-            'brand' => $detail['brand'] ?? null,
-            'model' => $detail['model'] ?? null,
-            'condition' => $detail['condition'] ?? null,
-            'description' => $detail['description'] ?? null,
-            'requestquantity' => $detail['requestquantity'],
-            'requestedby' => $detail['requestedby'] ?? null,
-            'status' => $status,
-            'unit_price' => $unitPrice,
-            'totalprice' =>$detail['totalprice'] ?? null,
-        ];
+        $unitPrice = $item->unit_price;
     }
+
+    $updatedSpareDetails[] = [
+        'id' => $detail['id'],
+        'itemname' => $detail['itemname'] ?? null,
+        'partnumber' => $detail['partnumber'],
+        'brand' => $detail['brand'] ?? null,
+        'model' => $detail['model'] ?? null,
+        'condition' => $detail['condition'] ?? null,
+        'description' => $detail['description'] ?? null,
+        'requestquantity' => $detail['requestquantity'],
+        'requestedby' => $detail['requestedby'] ?? null,
+        'status' => $status,
+        'unit_price' => $unitPrice,
+        'totalprice' => $detail['totalprice'] ?? null,
+    ];
+}
+
 
     // Store the spare request with updated spare details as an array
     $spareRequest = SpareRequest::create([
