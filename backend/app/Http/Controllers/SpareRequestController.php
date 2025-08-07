@@ -20,7 +20,7 @@ class SpareRequestController extends Controller {
 
     $updatedSpareDetails = [];
 
-   foreach ($validatedData['sparedetails'] as $detail) {
+         foreach ($validatedData['sparedetails'] as $detail) {
     $status = "Not in store"; // Default
     $unitPrice = null;
 
@@ -33,6 +33,8 @@ class SpareRequestController extends Controller {
             $status = "Insufficient";
         } else {
             $status = "Available";
+            $totalprice= $item->unit_price * $detail['requestquantity'];
+            $detail['totalprice'] = $totalprice;
         }
 
         $unitPrice = $item->unit_price;
@@ -52,9 +54,7 @@ class SpareRequestController extends Controller {
         'unit_price' => $unitPrice,
         'totalprice' => $detail['totalprice'] ?? null,
     ];
-}
-
-
+} 
     // Store the spare request with updated spare details as an array
     $spareRequest = SpareRequest::create([
         'job_card_no' => $validatedData['job_card_no'],
@@ -71,6 +71,91 @@ class SpareRequestController extends Controller {
 }
 
     
+
+
+
+public function updateSpareDetail(Request $request, $workDetailId)
+{
+    try {
+        $validatedData = $request->validate([
+            'itemname' => 'nullable|string',
+            'partnumber' => 'nullable|string',
+            'brand' => 'nullable|string',
+            'model' => 'nullable|string',
+            'condition' => 'nullable|string',
+            'description' => 'nullable|string',
+            'requestquantity' => 'nullable|numeric', // changed to numeric
+            'requestedby' => 'nullable|string',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json(['error' => $e->errors()], 422);
+    }
+
+    // Find the spare request that includes this detail
+    $workOrder = SpareRequest::all()->first(function ($order) use ($workDetailId) {
+        return collect($order->sparedetails)->contains('id', (int)$workDetailId);
+    });
+
+    if (!$workOrder) {
+        return response()->json(['message' => 'Spare detail not found'], 404);
+    }
+
+    // Recalculate and update the specific detail
+    $updatedWorkDetails = collect($workOrder->sparedetails)->map(function ($detail) use ($workDetailId, $validatedData) {
+        if (isset($detail['id']) && $detail['id'] == $workDetailId) {
+            // Merge new data into existing detail
+            $updated = array_merge($detail, $validatedData);
+
+            // Normalize and find matching item
+            $partNumber = trim(strtolower($updated['partnumber']));
+            $item = Item::whereRaw('LOWER(TRIM(part_number)) = ?', [$partNumber])->first();
+
+            $status = 'Not in store';
+            $unitPrice = null;
+            $totalPrice = null;
+
+            if ($item) {
+                $unitPrice = $item->unit_price;
+
+                if ($updated['requestquantity'] > $item->quantity) {
+                    $status = 'Insufficient';
+                } else {
+                    $status = 'Available';
+                }
+
+                $totalPrice = $unitPrice * $updated['requestquantity'];
+            }
+
+            $updated['status'] = $status;
+            $updated['unit_price'] = $unitPrice;
+            $updated['totalprice'] = $totalPrice;
+
+            return $updated;
+        }
+
+        return $detail;
+    })->all();
+
+    $workOrder->update(['sparedetails' => $updatedWorkDetails]);
+
+    return response()->json([
+        'message' => 'Spare detail updated successfully',
+        'sparedetails' => $updatedWorkDetails
+    ], 200);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -124,6 +209,16 @@ public function getWorkOrdersByJobCard()
 
 
 
+
+
+
+
+
+
+
+
+
+
     public function deleteWorkDetail($workDetailId)
 {
     $workOrder = SpareRequest::whereJsonContains('sparedetails', [['id' => (int) $workDetailId]])->first();
@@ -140,51 +235,6 @@ public function getWorkOrdersByJobCard()
     $workOrder->update(['sparedetails' => $updatedWorkDetails]);
     return response()->json(['message' => 'Spare detail deleted successfully'], 200);
 }
-
-
-
-
-public function updateSpareDetail(Request $request, $workDetailId)
-{
-    try {
-        $validatedData = $request->validate([
-            'itemname' => 'nullable|string',
-            'partnumber' => 'nullable|string',
-            'model' => 'nullable|string',
-            'requestquantity' => 'nullable|string',
-            'requestedby' => 'nullable|string',
-            'condition' => 'nullable|string',
-            // 'description' => 'nullable|string',
-            // 'unitprice' => 'nullable|string',
-            // 'totalprice' => 'nullable|string',
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json(['error' => $e->errors()], 422); // ✅ Return validation errors
-    }
-
-    // Find work order
-    $workOrder = SpareRequest::all()->first(function ($order) use ($workDetailId) {
-        return collect($order->sparedetails)->contains('id', (int) $workDetailId);
-    });
-
-    if (!$workOrder) {
-        return response()->json(['message' => 'Spare detail not found'], 404);
-    }
-
-    // Update specific spare detail
-    $updatedWorkDetails = collect($workOrder->sparedetails)->map(function ($detail) use ($workDetailId, $validatedData) {
-        if (isset($detail['id']) && $detail['id'] == $workDetailId) {
-            return array_merge($detail, $validatedData);
-        }
-        return $detail;
-    })->all();
-
-    $workOrder->update(['sparedetails' => $updatedWorkDetails]);
-
-    return response()->json(['message' => 'Spare detail updated successfully', 'sparedetails' => $updatedWorkDetails], 200);
-}
-
-
 
     
     

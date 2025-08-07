@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import api from "../api";
 import Sidebar from "../partials/Sidebar";
@@ -142,45 +142,45 @@ const RequestSpare = () => {
 
     fetchRepairById();
   }, [id]);
+
   const visibleFields = [
     "itemname",
     "partnumber",
-    // "brand",
+    "brand",
     "model",
-    "condition",
-    // "description",
+    // "condition",
+    "description",
     "requestquantity",
     "requestedby",
-    // "status",
-
-    // fetch list of work detail
-
-    useEffect(() => {
-      if (!id) return;
-
-      const fetchWorkDetailsByJobCardNo = async () => {
-        try {
-          const response = await api.get(`/spare-request/job-card/${id}`);
-
-          if (response.data && Array.isArray(response.data.sparedetails)) {
-            setWorkDetails(response.data.sparedetails);
-          }
-        } catch (error) {
-          console.error("Error fetching spare details:", error);
-          setWorkDetails([]);
-        }
-      };
-
-      // Fetch initially
-      fetchWorkDetailsByJobCardNo();
-
-      // Set interval to fetch every 10 seconds
-      const interval = setInterval(fetchWorkDetailsByJobCardNo, 10000); // 10000 ms = 10 seconds
-
-      // Cleanup on unmount or when id changes
-      return () => clearInterval(interval);
-    }, [id]),
+    "status",
+    "unit_price",
+    "totalprice",
   ];
+
+  // fetch list of work detail
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchWorkDetailsByJobCardNo = async () => {
+      try {
+        const response = await api.get(`/spare-request/job-card/${id}`);
+
+        if (response.data && Array.isArray(response.data.sparedetails)) {
+          setWorkDetails(response.data.sparedetails);
+        }
+      } catch (error) {
+        console.error("Error fetching spare details:", error);
+        setWorkDetails([]);
+      }
+    };
+    // Fetch initially
+    fetchWorkDetailsByJobCardNo();
+    // Set interval to fetch every 10 seconds
+    const interval = setInterval(fetchWorkDetailsByJobCardNo, 10000); // 10000 ms = 10 seconds
+    // Cleanup on unmount or when id changes
+    return () => clearInterval(interval);
+  }, [id]);
 
   const handleView = (row) => {
     setViewData(row); // Store selected row data
@@ -350,6 +350,22 @@ const RequestSpare = () => {
       });
     }
   };
+  // import { useEffect, useRef } from "react";
+
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+  //       setDropdownOpen(null);
+  //     }
+  //   };
+
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => document.removeEventListener("mousedown", handleClickOutside);
+  // }, []);
+
   return (
     <main className="grow bg-white dark:bg-gray-800 w-[95%] mt-10 m-auto rounded-md">
       <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
@@ -604,10 +620,21 @@ const RequestSpare = () => {
                       </td> */}
 
                       {/* status */}
-
                       <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
-                          row.status
+                          <span
+                            className={`px-2 py-1 rounded-full text-sm font-semibold
+        ${
+          row.status === "Available"
+            ? "bg-green-100 text-green-700"
+            : row.status === "Insufficient"
+            ? "bg-yellow-100 text-yellow-700"
+            : "bg-red-100 text-red-700"
+        }
+      `}
+                          >
+                            {row.status || "N/A"}
+                          </span>
                         ) : (
                           <input
                             type="text"
@@ -622,10 +649,17 @@ const RequestSpare = () => {
                           />
                         )}
                       </td>
+
                       {/* Actions */}
 
+                      {/* <ActionCell row={row} index={index} />
+                       */}
+
                       <td className="relative border-2 border-gray-200 dark:border-gray-700 p-3 text-left font-medium">
-                        <div className="inline-block relative">
+                        <div
+                          className="inline-block relative"
+                          ref={dropdownRef}
+                        >
                           <button
                             onClick={() =>
                               setDropdownOpen(
@@ -638,10 +672,7 @@ const RequestSpare = () => {
                           </button>
 
                           {dropdownOpen === index && (
-                            <div className="absolute top-0 left-[105%] w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-30 animate-fade-in">
-                              {/* Popup Header with X */}
-
-                              {/* Popup Menu Items */}
+                            <div className="absolute top-full left-0 mt-2 w-34 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 animate-fade-in">
                               <button
                                 onClick={() => handleView(row)}
                                 className="flex items-center gap-2 px-4 py-2 text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 w-full"
@@ -695,7 +726,7 @@ const RequestSpare = () => {
 
                 {/* Title */}
                 <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800 dark:text-white">
-                  📋 Work Details
+                  📋 Spare Details
                 </h2>
 
                 {/* Dynamic content */}

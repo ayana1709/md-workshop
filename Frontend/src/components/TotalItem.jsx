@@ -36,10 +36,6 @@ const TotalItem = () => {
   } = useStores();
   console.log(selectedRows);
 
-
-
-
-
   const filteredItems = useMemo(() => {
     let data = items;
     if (searchItem) {
@@ -69,7 +65,7 @@ const TotalItem = () => {
     const doc = new jsPDF();
     doc.setFontSize(14);
     doc.text("Store Items", 105, 20, { align: "center" });
-  
+
     const headers = [
       [
         "Item Code",
@@ -80,22 +76,22 @@ const TotalItem = () => {
         "Quantity",
         "Purchase Price",
         "Selling Price",
-        "Location"
-      ]
+        "Location",
+      ],
     ];
-  
-    const data = filteredItems.map(item => [
-      item.id ||"",
+
+    const data = filteredItems.map((item) => [
+      item.id || "",
       item.description || "",
       item.part_number || "",
       item.brand || "",
       item.unit || "",
       item.quantity || 0,
       item.purchase_price || "0.00",
-      item.selling_price|| "0.00",
-      item.location || ""
+      item.selling_price || "0.00",
+      item.location || "",
     ]);
-  
+
     doc.autoTable({
       startY: 30,
       head: headers,
@@ -108,10 +104,9 @@ const TotalItem = () => {
         textColor: [255, 255, 255],
       },
     });
-  
+
     doc.save("store-items.pdf");
   };
-  
 
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(filteredItems);
@@ -215,36 +210,37 @@ const TotalItem = () => {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-  
+
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-  
+
       const importedItems = XLSX.utils.sheet_to_json(worksheet);
-  
+
       // Send to backend
-      const response = await api.post("/items/import", { items: importedItems });
-  
+      const response = await api.post("/items/import", {
+        items: importedItems,
+      });
+
       toast.success("Items imported successfully!");
-  
+
       // ✅ Use the backend response that includes item.code
       if (response.data.items) {
         setItems((prev) => [...prev, ...response.data.items]);
       }
-  
     } catch (error) {
-      toast.error("Import failed: " + (error.response?.data?.message || error.message));
+      toast.error(
+        "Import failed: " + (error.response?.data?.message || error.message)
+      );
     }
   };
-  
-  
 
   return (
     <div className="p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-xl font-bold text-green-500 mb-4">
-        Store / ጠድላላ የዬቃ ዝርዝር
+        Store / ጠቅላላ የዕቃ ዝርዝር
       </h2>
       <div className="flex flex-wrap justify-between gap-4 mb-4 items-center">
         <div className="flex items-center gap-4 rounded-md px-2">
@@ -275,23 +271,23 @@ const TotalItem = () => {
 
         <div className="flex items-center gap-2">
           <Button
-          variant="outline"
+            variant="outline"
             onClick={() => setShowModal(true)}
             className=""
           >
             + Add Item
           </Button>
           <input
-  ref={fileInputRef}
-  type="file"
-  accept=".xlsx, .xls"
-  style={{ display: "none" }}
-  onChange={handleFileChange}
-/>
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          />
 
-<Button variant="outline" onClick={handleImportClick}>
-  Import
-</Button>
+          <Button variant="outline" onClick={handleImportClick}>
+            Import
+          </Button>
           <Button onClick={handlePrint}>Print</Button>
           <Button onClick={handleExportPDF}>PDF</Button>
           <Button onClick={handleExportExcel}>Excel</Button>

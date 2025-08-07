@@ -40,7 +40,7 @@ export function DataTable({ columns, data }) {
   return (
     <div className="space-y-4">
       {/* Column visibility dropdown */}
-      <div className="flex justify-between items-center">
+      {/* <div className="flex justify-between items-center">
         <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -65,18 +65,18 @@ export function DataTable({ columns, data }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </div> */}
 
       {/* Table */}
       <div className="rounded-md border overflow-x-auto">
         <table className="min-w-full border-collapse">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-700 text-white">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-3 py-2 text-left text-sm font-medium cursor-pointer"
+                    className="px-3 py-2 text-left text-sm  font-medium cursor-pointer"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     {flexRender(

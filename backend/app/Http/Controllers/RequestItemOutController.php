@@ -17,7 +17,7 @@ class RequestItemOutController extends Controller {
                 'job_card_no' => 'required|string',
                 'plate_number' => 'required|string',
                 'customer_name' => 'required|string',
-                'repair_category' => 'required|array',
+                'repair_category' => 'required|string',
                 'sparedetails' => 'required|array',
             ]);
     
