@@ -287,9 +287,7 @@ function App() {
           <Route path="canceled" element={<Canceled />} />
         </Route>
         <Route path="/print" element={<PrintJobOrder />} />
-        {/* <Route path="/print-summary/:plateNumber" element={<PrintSummary />} /> */}
-        {/* <Route path="/print-summary/:job_card_no" element={<PrintSummary />} />
-         */}
+
         <Route path="/print-summary/:jobId" element={<PrintSummary />} />
         {/* <Route path="/send-to-payment/:id" element={<SendPayment />} /> */}
         <Route path="/send-to-payment/:jobId" element={<SendPayment />} />

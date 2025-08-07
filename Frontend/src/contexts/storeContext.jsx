@@ -66,6 +66,7 @@ function StoreProvider({ children }) {
     const fetchItems = async () => {
       try {
         const response = await api.get("/items"); // Fetch data from backend
+        console.log("fetched items:", response.data);
         setItems(response.data); // Ensure the response structure matches
       } catch (error) {
         // console.error("Error fetching store items:", error);

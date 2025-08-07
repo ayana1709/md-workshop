@@ -46,16 +46,14 @@ class SpareRequestController extends Controller {
             'itemname'=> $detail['itemname'] ?? null,
             'partnumber' => $detail['partnumber'],
             'brand' => $detail['brand'] ?? null,
+            'model' => $detail['model'] ?? null,
+            'condition' => $detail['condition'] ?? null,
+            'description' => $detail['description'] ?? null,
             'requestquantity' => $detail['requestquantity'],
             'requestedby' => $detail['requestedby'] ?? null,
-            'condition' => $detail['condition'] ?? null,
-            'statuus'=>$detail['statuus'] ?? null,
-            'unitprice' =>$detail['unitprice'] ?? null,
-            'totalprice' =>$detail['totalprice'] ?? null,
-            'model' => $detail['model'] ?? null,
-            'description' => $detail['description'] ?? null,
             'status' => $status,
             'unit_price' => $unitPrice,
+            'totalprice' =>$detail['totalprice'] ?? null,
         ];
     }
 

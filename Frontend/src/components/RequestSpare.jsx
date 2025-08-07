@@ -78,11 +78,13 @@ const RequestSpare = () => {
         id: maxWorkDetailId + 1,
         itemname: "",
         partnumber: "",
+        brand: "",
         model: "",
+        // condition: "",
+        description: "",
         requestquantity: "",
         requestedby: "",
-        condition: rows.length === 0 ? "Requested" : "",
-        brand: "",
+        status: "Requested",
       };
 
       setRows((prevRows) => [...prevRows, newRow]);
@@ -143,12 +145,15 @@ const RequestSpare = () => {
   const visibleFields = [
     "itemname",
     "partnumber",
+    "brand",
     "model",
+    // "condition",
+    "description",
     "requestquantity",
     "requestedby",
-    "brand",
-    "condition",
-  ];
+    "status",
+
+ 
 
   // fetch list of work detail
 
@@ -368,13 +373,19 @@ const RequestSpare = () => {
                     ID
                   </th>
                   <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
-                    Item Description
+                    Item Name
                   </th>
                   <th className="border-2 border-gray-300 p-2 w-[80px] font-medium">
                     Part Number
                   </th>
                   <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
                     Brand
+                  </th>
+                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                    Model
+                  </th>
+                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                    Item Description
                   </th>
                   <th className="border-2 border-gray-300 p-2 w-[70px] font-medium">
                     Req Qty
