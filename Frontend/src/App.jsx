@@ -124,6 +124,7 @@ import ProformaForm from "./components/Proforma/ProformaForm";
 import ManageProforma from "./components/Proforma/ManageProforma";
 import CompanySettings from "./components/CompanySettings";
 import NewAddSalesPage from "./components/NewAddSalesPage";
+import CreatePurchaseOrder from "./components/CreatePurchaseOrder";
 // import Outsource from "./components/Outsource";
 // import PrintInspection from "./components/PrintInspection";
 // import PrintWheel from "./components/PrintWheel";
@@ -265,11 +266,12 @@ function App() {
           <Route path="out-of-store" element={<OutStore />} />
           <Route path="add-to-sale" element={<AddSalesPage />} />
           <Route path="order" element={<PurchaseOrder />} />
-          <Route path="purchase" element={<Purchases />} />
           <Route path="low-store" element={<LowStore />} />
         </Route>
         <Route path="sales" element={<ManageSales />} />
         <Route path="add-too-sale" element={<NewAddSalesPage />} />
+        <Route path="create-order" element={<CreatePurchaseOrder />} />
+        <Route path="purchase" element={<Purchases />} />
 
         {/* Incoming Request  */}
         <Route path="/history/:code" element={<HistoryPage />} />

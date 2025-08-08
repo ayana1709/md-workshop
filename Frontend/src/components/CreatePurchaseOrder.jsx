@@ -1,13 +1,13 @@
-// NewAddSalesPage.jsx
+// AddSalesPage.jsx
 import api from "../api";
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CiSquareMore } from "react-icons/ci";
 import { toast } from "react-toastify";
-import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
+import Sidebar from "@/partials/Sidebar";
 
-const NewAddSalesPage = () => {
+const CreatePurchaseOrder = () => {
   const location = useLocation();
   const { selectedIds } = location.state || {};
 
@@ -28,9 +28,11 @@ const NewAddSalesPage = () => {
   const [remark, setRemark] = useState("");
   const [customer, setCustomer] = useState({
     salesDate: "",
-    customerName: "",
+    supplierName: "",
     companyName: "",
     tinNumber: "",
+    referenceNumber: "",
+    remark: "",
     mobile: "",
     office: "",
     phone: "",
@@ -44,9 +46,8 @@ const NewAddSalesPage = () => {
   console.log(customer);
 
   const [items, setItems] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   console.log(items);
 
@@ -57,7 +58,8 @@ const NewAddSalesPage = () => {
         .then((res) => {
           const itemsWithSaleQty = res.data.items.map((item) => ({
             ...item,
-            saleQty: 1, // default initial value
+            price: "",
+            saleQty: "", // default initial value
           }));
           setItems(itemsWithSaleQty);
         })
@@ -75,48 +77,17 @@ const NewAddSalesPage = () => {
         partNumber: "",
         brand: "",
         unit: "",
-        price: 0,
+        price: "",
         quantity: "",
-
-        saleQty: 1,
+        saleQty: "",
       },
     ]);
   };
-
-  //  import axios from "axios";
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
     setItems(updated);
-  };
-
-  const handlePartNumberChange = async (index, value) => {
-    // Always update part number immediately
-    handleItemChange(index, "part_number", value);
-
-    try {
-      const response = await api.get(`/items/part/${value}`);
-      const itemData = response.data;
-
-      const updatedItems = [...items];
-      const currentItem = updatedItems[index];
-
-      updatedItems[index] = {
-        ...currentItem,
-        part_number: value, // ensure part number is preserved
-        description: itemData.description || "",
-        brand: itemData.brand || "",
-        unit: itemData.unit || "",
-        unit_price: parseFloat(itemData.unit_price) || 0,
-        quantity: parseInt(itemData.quantity) || 0,
-        // any other fields...
-      };
-
-      setItems(updatedItems);
-    } catch (error) {
-      console.error("Item not found or fetch error:", error);
-    }
   };
 
   const handleDeleteRow = (index) => {
@@ -139,17 +110,17 @@ const NewAddSalesPage = () => {
 
   const PaidAmount = grandTotal;
   const handleSubmit = async () => {
-    const saleData = {
+    const generateRandomId = () => {
+      return Math.floor(1000 + Math.random() * 9000); // Generates a number from 1000 to 9999
+    };
+    // Random alphanumeric ID
+
+    const purchaseData = {
       sales_date: customer.salesDate,
-      customer_name: customer.customerName,
+      supplier_name: customer.supplierName,
       company_name: customer.companyName,
       tin_number: customer.tinNumber,
-      vat_rate: vatRate,
-      discount,
-      paid_amount: PaidAmount,
-      total_amount: totalAmount,
-      sub_total: subTotal,
-      due_amount: dueAmount,
+      reference_number: customer.referenceNumber,
       mobile,
       office,
       phone,
@@ -158,54 +129,26 @@ const NewAddSalesPage = () => {
       address,
       bank_account: bankAccount,
       other_info: otherInfo,
-      payment_type: paymentType,
-      payment_status: paymentStatus,
-      remark: remark,
+      remark: customer.remark,
       items: items.map((item) => ({
-        item_id: item.id,
+        item_id: item.id || generateRandomId(), // ✅ Fallback to random ID if not present
         description: item.description,
         part_number: item.part_number,
         brand: item.brand,
         unit: item.unit,
-        unit_price: parseFloat(item.unit_price),
-        sale_quantity: parseInt(item.saleQty),
+        unit_price: parseFloat(item.price) || 0,
+        sale_quantity: parseInt(item.saleQty) || 0,
       })),
     };
 
     try {
-      const res = await api.post("/sales", saleData);
-      // console.log("✅ Sale created successfully:", res.data);
-      toast.success("Sale created successfully!");
-      navigate("/sales");
-
-      // Reset form fields
-      setCustomer({
-        salesDate: "",
-        customerName: "",
-        companyName: "",
-        tinNumber: "",
-      });
-      setVatRate("");
-      setDiscount("");
-      // setPaidAmount("");
-      // setTotalAmount("");
-      // setSubTotal("");
-      setDueAmount("");
-      setMobile("");
-      setOffice("");
-      setPhone("");
-      setWebsite("");
-      setEmail("");
-      setAddress("");
-      setBankAccount("");
-      setOtherInfo("");
-      setPaymentType("");
-      setPaymentStatus("");
-      setRemark("");
-      setItems([]); // or initialize with one empty item if needed
+      console.log(purchaseData);
+      const res = await api.post("/purchases", purchaseData);
+      toast.success("Item successfully purchased!");
+      navigate("/purchase");
     } catch (error) {
-      console.error("❌ Error creating sale:", error);
-      toast.error("Failed to create sale. Please try again.");
+      console.error("❌ Error creating purchase:", error);
+      toast.error("Failed to submit purchase.");
     }
   };
 
@@ -238,14 +181,14 @@ const NewAddSalesPage = () => {
             </div>
 
             <div className="relative">
-              <label>Customer Name</label>
+              <label>Supplier Name</label>
               <input
                 type="text"
                 className="border p-2 w-full rounded-sm"
-                placeholder="Customer Name"
-                value={customer.customerName}
+                placeholder="supplier name"
+                value={customer.supplierName}
                 onChange={(e) =>
-                  setCustomer({ ...customer, customerName: e.target.value })
+                  setCustomer({ ...customer, supplierName: e.target.value })
                 }
               />
               <button
@@ -279,6 +222,30 @@ const NewAddSalesPage = () => {
                 value={customer.tinNumber}
                 onChange={(e) =>
                   setCustomer({ ...customer, tinNumber: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label>Reference Number</label>
+              <input
+                type="text"
+                className="border p-2 w-full rounded-sm"
+                placeholder="reference number"
+                value={customer.referenceNumber}
+                onChange={(e) =>
+                  setCustomer({ ...customer, referenceNumber: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <label>Remark</label>
+              <input
+                type="text"
+                className="border p-2 w-full rounded-sm"
+                placeholder="remark"
+                value={customer.remark}
+                onChange={(e) =>
+                  setCustomer({ ...customer, remark: e.target.value })
                 }
               />
             </div>
@@ -359,18 +326,6 @@ const NewAddSalesPage = () => {
                 />
               </div>
             )}
-
-            <div>
-              <label>VAT</label>
-              <select
-                className="border p-2 w-full"
-                value={vatRate}
-                onChange={(e) => setVatRate(Number(e.target.value))}
-              >
-                <option value="0">No VAT</option>
-                <option value="15">15%</option>
-              </select>
-            </div>
           </div>
 
           {/* Items Table */}
@@ -384,8 +339,6 @@ const NewAddSalesPage = () => {
                 <th className="p-2">Unit</th>
                 <th className="p-2">Price</th>
                 <th className="p-2">Quantity</th>
-                <th className="p-2">Available</th>
-                <th className="p-2">Total</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -406,23 +359,20 @@ const NewAddSalesPage = () => {
                   </td>
                   <td>
                     <input
-                      type="text"
-                      value={items[index]?.part_number || ""}
+                      className="border p-1 w-full"
+                      value={item.part_number || ""}
                       onChange={(e) =>
-                        handlePartNumberChange(index, e.target.value)
+                        handleItemChange(index, "part_number", e.target.value)
                       }
-                      placeholder="Enter Part Number"
                     />
                   </td>
                   <td>
                     <input
                       className="border p-1 w-full"
                       value={item.brand || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleItemChange(index, "part_number", val);
-                        handlePartNumberChange(index, val);
-                      }}
+                      onChange={(e) =>
+                        handleItemChange(index, "brand", e.target.value)
+                      }
                     />
                   </td>
                   <td>
@@ -437,12 +387,13 @@ const NewAddSalesPage = () => {
                   <td>
                     <input
                       type="number"
+                      min="0"
                       className="border p-1 w-full"
-                      value={item.unit_price || 0}
+                      value={item.price}
                       onChange={(e) =>
                         handleItemChange(
                           index,
-                          "unit_price",
+                          "price",
                           parseFloat(e.target.value)
                         )
                       }
@@ -467,18 +418,12 @@ const NewAddSalesPage = () => {
                   </td>
 
                   {/* Available Quantity (readonly) */}
-                  <td>{item.quantity ?? 0}</td>
-
-                  {/* Row Total */}
-                  <td className="p-2">
-                    {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(2)}
-                  </td>
 
                   {/* Delete Button */}
                   <td className="p-2 text-center">
                     <button
                       onClick={() => handleDeleteRow(index)}
-                      className="text-red-500 text-center"
+                      className="text-lg text-red-500 text-center"
                     >
                       X
                     </button>
@@ -494,126 +439,6 @@ const NewAddSalesPage = () => {
           >
             Add Row
           </button>
-
-          {/* Totals and Payment Info */}
-          <div className="grid grid-cols-2 gap-4 p-6 text-sm">
-            <div className="space-y-2">
-              <div>
-                <label>Sub Total:</label>
-                <input
-                  className="border p-1 w-full rounded-md"
-                  readOnly
-                  disabled
-                  value={subTotal.toFixed(2)}
-                />
-              </div>
-              <div>
-                <label>VAT:</label>
-                <input
-                  className="border p-1 w-full rounded-md"
-                  readOnly
-                  disabled
-                  value={vatAmount.toFixed(2)}
-                />
-              </div>
-              <div>
-                <label>Total Amount:</label>
-                <input
-                  className="border p-1 w-full rounded-md"
-                  readOnly
-                  disabled
-                  value={totalAmount.toFixed(2)}
-                />
-              </div>
-              <div>
-                <label>Discount:</label>
-                <input
-                  type="number"
-                  className="border p-1 w-full rounded-md"
-                  value={discount}
-                  onChange={(e) => setDiscount(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label>Grand Total:</label>
-                <input
-                  className="border p-1 w-full rounded-md"
-                  readOnly
-                  disabled
-                  value={grandTotal.toFixed(2)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div>
-                <label>Paid Amount:</label>
-                <input
-                  type="number"
-                  className="border p-1 w-full rounded-md"
-                  readOnly
-                  disabled
-                  value={PaidAmount}
-                  //   onChange={(e) => setPaidAmount(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <label>Due Amount:</label>
-                <input
-                  className="border p-1 w-full rounded-sm bg-gray-200"
-                  readOnly
-                  disabled
-                  value={Number(dueAmount).toFixed(2)}
-                />
-              </div>
-              <div>
-                <label>Payment Type:</label>
-                <select
-                  className="border p-1 w-full rounded-sm ring-0 outline-none focus:ring-0 focus:outline-none"
-                  value={paymentType}
-                  onChange={(e) => setPaymentType(e.target.value)}
-                >
-                  <option value="">--SELECT--</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Transfer">Transfer</option>
-                  <option value="Cheque">Cheque</option>
-                  <option value="Credit">Credit</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Payment Status:</label>
-                <select
-                  className="border p-1 w-full rounded-sm ring-0 outline-none focus:ring-0 focus:outline-none"
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                >
-                  <option value="Full Payment">Full Payment</option>
-                  <option value="Advanced Payment">Advanced Payment</option>
-                  <option value="No Payment">No Payment</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Remark:</label>
-                <select
-                  className="border p-1 w-full ring-0 rounded-sm outline-none focus:ring-0 focus:outline-none"
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                >
-                  <option value="">-- Select Remark --</option>
-                  <option value="Sold">Sold</option>
-                  <option value="Pending">Pending</option>
-                  <option value="On Credit">On Credit</option>
-                  <option value="Canceled">Canceled</option>
-                  <option value="Returned">Returned</option>
-                  <option value="Refund">Refund</option>
-                  <option value="Delivery Note">Delivery Note</option>
-                  <option value="Others">Others</option>
-                </select>
-              </div>
-            </div>
-          </div>
 
           {/* Buttons */}
           <div className="mt-6 flex gap-4 justify-end py-4">
@@ -633,4 +458,4 @@ const NewAddSalesPage = () => {
   );
 };
 
-export default NewAddSalesPage;
+export default CreatePurchaseOrder;

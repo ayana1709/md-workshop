@@ -44,7 +44,7 @@ const PurchaseOrder = () => {
   console.log(customer);
 
   const [items, setItems] = useState([]);
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
   console.log(items);
 
@@ -107,6 +107,11 @@ const PurchaseOrder = () => {
 
   const PaidAmount = grandTotal;
   const handleSubmit = async () => {
+    const generateRandomId = () => {
+      return Math.floor(1000 + Math.random() * 9000); // Generates a number from 1000 to 9999
+    };
+    // Random alphanumeric ID
+
     const purchaseData = {
       sales_date: customer.salesDate,
       supplier_name: customer.supplierName,
@@ -123,25 +128,24 @@ const PurchaseOrder = () => {
       other_info: otherInfo,
       remark: customer.remark,
       items: items.map((item) => ({
-        item_id: item.id,
+        item_id: item.id || generateRandomId(), // ✅ Fallback to random ID if not present
         description: item.description,
         part_number: item.part_number,
         brand: item.brand,
         unit: item.unit,
-        unit_price: parseFloat(item.price),
-        sale_quantity: parseInt(item.saleQty),
+        unit_price: parseFloat(item.price) || 0,
+        sale_quantity: parseInt(item.saleQty) || 0,
       })),
     };
 
     try {
       console.log(purchaseData);
       const res = await api.post("/purchases", purchaseData);
-      toast.success(res.data.message);
-      navigate("/inventory/purchase")
-      // Optionally reset or redirect
+      toast.success("Item successfully purchased!");
+      navigate("/purchase");
     } catch (error) {
-      console.error("❌ Error creating sale:", error);
-      toast.error(error);
+      console.error("❌ Error creating purchase:", error);
+      toast.error("Failed to submit purchase.");
     }
   };
 

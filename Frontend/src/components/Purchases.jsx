@@ -21,6 +21,8 @@ import {
   getSortedRowModel,
 } from "@tanstack/react-table";
 import autoTable from "jspdf-autotable";
+import Sidebar from "@/partials/Sidebar";
+import Header from "@/partials/Header";
 
 const Purchases = () => {
   const [sorting, setSorting] = useState([]);
@@ -31,6 +33,7 @@ const Purchases = () => {
   const [filterValue, setFilterValue] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Fetch data
   useEffect(() => {
@@ -55,6 +58,22 @@ const Purchases = () => {
     );
     setFiltered(f);
   }, [filterValue, data]);
+  const flatData = useMemo(() => {
+    return filtered.flatMap((purchase) =>
+      purchase.items.map((item) => ({
+        id: purchase.id,
+        reference_number: purchase.reference_number,
+        sales_date: purchase.sales_date,
+        supplier_name: purchase.supplier_name,
+        remark: purchase.remark,
+        description: item.description,
+        part_number: item.part_number,
+        brand: item.brand,
+        sale_quantity: item.sale_quantity,
+        unit_price: parseFloat(item.unit_price),
+      }))
+    );
+  }, [filtered]);
 
   // Columns config
   const columns = useMemo(
@@ -63,8 +82,18 @@ const Purchases = () => {
       { accessorKey: "reference_number", header: "Ref.No" },
       { accessorKey: "sales_date", header: "Order Date" },
       { accessorKey: "supplier_name", header: "Supplier Name" },
-      { accessorKey: "mobile", header: "Prepared By" },
-      { accessorKey: "status", header: "Status" },
+      { accessorKey: "description", header: "Item Description" },
+      { accessorKey: "part_number", header: "Part No" },
+      { accessorKey: "brand", header: "Brand" },
+      { accessorKey: "sale_quantity", header: "Qty" },
+      { accessorKey: "unit_price", header: "Unit Price" },
+      {
+        header: "Total",
+        accessorFn: (row) =>
+          (parseFloat(row.unit_price) * row.sale_quantity).toFixed(2),
+        id: "total",
+        cell: (info) => <span>{info.getValue()}</span>,
+      },
       { accessorKey: "remark", header: "Remark" },
       {
         id: "actions",
@@ -156,61 +185,83 @@ const Purchases = () => {
   };
 
   return (
-    <div className="bg-white p-6 container mx-auto py-8 rounded-md">
-      <h2 className="text-2xl font-bold mb-4">Purchase Orders</h2>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex items-center justify-between mb-4">
-        <Input
-          placeholder="Search supplier or company..."
-          value={filterValue}
-          onChange={(e) => setFilterValue(e.target.value)}
-          className="max-w-sm"
-        />
-        <div className="flex items-center gap-2">
-          <Button onClick={exportCSV}>Export to CSV</Button>
-          <Button onClick={exportToPDF}>Export PDF</Button>
-        </div>
-      </div>
+      {/* Main Content */}
+      <div className="flex flex-col flex-1">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <DataTable columns={columns} data={filtered} />
+        <main className="p-6">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 tracking-tight">
+              Purchase Orders
+            </h2>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Purchased Items</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-96 overflow-auto mt-4">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="text-left px-2 py-1">Item ID</th>
-                  <th className="text-left px-2 py-1">Description</th>
-                  <th className="text-left px-2 py-1">Part #</th>
-                  <th className="text-left px-2 py-1">Brand</th>
-                  <th className="text-left px-2 py-1">Unit</th>
-                  <th className="text-left px-2 py-1">Unit Price</th>
-                  <th className="text-left px-2 py-1">Quantity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedItems.map((item, idx) => (
-                  <tr key={idx} className="border-t">
-                    <td className="px-2 py-1">{item.item_id}</td>
-                    <td className="px-2 py-1">{item.description}</td>
-                    <td className="px-2 py-1">{item.part_number}</td>
-                    <td className="px-2 py-1">{item.brand}</td>
-                    <td className="px-2 py-1">{item.unit}</td>
-                    <td className="px-2 py-1">{item.unit_price}</td>
-                    <td className="px-2 py-1">{item.sale_quantity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Search & Export Controls */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <Input
+                placeholder="Search supplier or company..."
+                value={filterValue}
+                onChange={(e) => setFilterValue(e.target.value)}
+                className="max-w-md"
+              />
+              <div className="flex items-center gap-2">
+                <Button onClick={exportCSV} variant="outline">
+                  Export CSV
+                </Button>
+                <Button onClick={exportToPDF}>Export PDF</Button>
+              </div>
+            </div>
+
+            {/* Data Table */}
+            <div className="overflow-auto">
+              <DataTable columns={columns} data={filtered} />
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </main>
+
+        {/* Modal Dialog for Purchase Items */}
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-4xl bg-white shadow-xl rounded-lg">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold text-gray-800">
+                Purchased Items
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-auto mt-4 max-h-96 border rounded">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th className="px-3 py-2">Item ID</th>
+                    <th className="px-3 py-2">Description</th>
+                    <th className="px-3 py-2">Part #</th>
+                    <th className="px-3 py-2">Brand</th>
+                    <th className="px-3 py-2">Unit</th>
+                    <th className="px-3 py-2">Unit Price</th>
+                    <th className="px-3 py-2">Quantity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {selectedItems.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="px-3 py-2">{item.item_id}</td>
+                      <td className="px-3 py-2">{item.description}</td>
+                      <td className="px-3 py-2">{item.part_number}</td>
+                      <td className="px-3 py-2">{item.brand}</td>
+                      <td className="px-3 py-2">{item.unit}</td>
+                      <td className="px-3 py-2">{item.unit_price}</td>
+                      <td className="px-3 py-2">{item.sale_quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 };
-
 export default Purchases;

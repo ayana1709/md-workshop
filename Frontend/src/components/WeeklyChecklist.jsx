@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import Header from "@/partials/Header";
 
 function WeeklyChecklist() {
   const [progressData, setProgressData] = useState([]);
@@ -19,6 +20,7 @@ function WeeklyChecklist() {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -439,209 +441,218 @@ function WeeklyChecklist() {
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 p-6 dark:bg-gray-800 min-h-screen">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-700 dark:text-white">
-            Weekly Job Checklist:{" "}
-            {currentWeek.startOf("isoWeek").format("YYYY-MM-DD")} to{" "}
-            {currentWeek.endOf("isoWeek").format("YYYY-MM-DD")}
-          </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                setCurrentWeek((prev) => prev.clone().subtract(1, "week"))
-              }
-              className="bg-gray-500 text-white px-3 py-1 rounded"
-            >
-              ⬅ Previous
-            </button>
-            <button
-              onClick={() =>
-                setCurrentWeek((prev) => prev.clone().add(1, "week"))
-              }
-              className="bg-gray-600 text-white px-3 py-1 rounded"
-            >
-              Next ➡
-            </button>
-            <button
-              onClick={() => exportToPDF(weeklyData)}
-              className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-2"
-            >
-              <FaFilePdf /> PDF
-            </button>
-            <button
-              onClick={() => exportToExcel(weeklyData)}
-              className="bg-green-600 text-white px-3 py-1 rounded flex items-center gap-2"
-            >
-              <FaFileExcel /> Excel
-            </button>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex flex-col flex-1">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="flex-1 p-6 dark:bg-gray-800 min-h-screen">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-700 dark:text-white">
+              Weekly Job Checklist:{" "}
+              {currentWeek.startOf("isoWeek").format("YYYY-MM-DD")} to{" "}
+              {currentWeek.endOf("isoWeek").format("YYYY-MM-DD")}
+            </h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() =>
+                  setCurrentWeek((prev) => prev.clone().subtract(1, "week"))
+                }
+                className="bg-gray-500 text-white px-3 py-1 rounded"
+              >
+                ⬅ Previous
+              </button>
+              <button
+                onClick={() =>
+                  setCurrentWeek((prev) => prev.clone().add(1, "week"))
+                }
+                className="bg-gray-600 text-white px-3 py-1 rounded"
+              >
+                Next ➡
+              </button>
+              <button
+                onClick={() => exportToPDF(weeklyData)}
+                className="bg-red-600 text-white px-3 py-1 rounded flex items-center gap-2"
+              >
+                <FaFilePdf /> PDF
+              </button>
+              <button
+                onClick={() => exportToExcel(weeklyData)}
+                className="bg-green-600 text-white px-3 py-1 rounded flex items-center gap-2"
+              >
+                <FaFileExcel /> Excel
+              </button>
+            </div>
           </div>
-        </div>
-        <UpdateModal
-          isOpen={showModal}
-          entry={selectedEntry}
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveModal}
-        />
-        <ViewModal
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
-          entry={selectedEntry}
-        />
+          <UpdateModal
+            isOpen={showModal}
+            entry={selectedEntry}
+            onClose={() => setShowModal(false)}
+            onSave={handleSaveModal}
+          />
+          <ViewModal
+            isOpen={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            entry={selectedEntry}
+          />
 
-        {loading ? (
-          <div className="text-center text-lg text-gray-500 dark:text-gray-300 mt-10">
-            Loading weekly checklist...
-          </div>
-        ) : (
-          <div className="overflow-x-auto border rounded-lg bg-white dark:bg-gray-700">
-            <table className="min-w-full text-sm border-collapse">
-              <thead className="bg-gray-600 text-white">
-                <tr>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Job ID
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Plate Num
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Start Date
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    End Date
-                  </th>
-                  <th
-                    colSpan={6}
-                    className="border px-3 py-2 text-center border-l-4 border-blue-600"
-                  >
-                    <div className="underline">Days of Week</div>
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Status
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Test Drive
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Delivery Status
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Checked By
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Approved By
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Received Date
-                  </th>
-                  <th rowSpan="2" className="border px-3 py-2">
-                    Action
-                  </th>
-                </tr>
-                <tr>
-                  {weekdays.map((day) => (
-                    <th
-                      key={day}
-                      className="border px-3 py-2 border-l-2 border-blue-400"
-                    >
-                      {day}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {weeklyData.length === 0 ? (
+          {loading ? (
+            <div className="text-center text-lg text-gray-500 dark:text-gray-300 mt-10">
+              Loading weekly checklist...
+            </div>
+          ) : (
+            <div className="overflow-x-auto border rounded-lg bg-white dark:bg-gray-700">
+              <table className="min-w-full text-sm border-collapse">
+                <thead className="bg-gray-600 text-white">
                   <tr>
-                    <td colSpan={17} className="text-center py-4">
-                      No data for this week.
-                    </td>
-                  </tr>
-                ) : (
-                  weeklyData.map((entry) => (
-                    <tr
-                      key={entry.jobId}
-                      className="hover:bg-gray-100 dark:hover:bg-gray-600"
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Job ID
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Plate Num
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Start Date
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      End Date
+                    </th>
+                    <th
+                      colSpan={6}
+                      className="border px-3 py-2 text-center border-l-4 border-blue-600"
                     >
-                      <td className="border px-2 py-2">{entry.jobId}</td>
-                      <td className="border px-2 py-2">{entry.plateNum}</td>
-                      <td className="border px-2 py-2">{entry.startDate}</td>
-                      <td className="border px-2 py-2">{entry.endDate}</td>
-                      {weekdays.map((day) => (
-                        <td
-                          key={day}
-                          className={`border px-2 py-2 text-center ${getColor(
-                            entry.days[day]
-                          )}`}
-                        >
-                          {entry.days[day]}
-                        </td>
-                      ))}
-                      <td
-                        className={`border px-2 py-2 ${getStatusColor(
-                          entry.status
-                        )}`}
+                      <div className="underline">Days of Week</div>
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Status
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Test Drive
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Delivery Status
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Checked By
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Approved By
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Received Date
+                    </th>
+                    <th rowSpan="2" className="border px-3 py-2">
+                      Action
+                    </th>
+                  </tr>
+                  <tr>
+                    {weekdays.map((day) => (
+                      <th
+                        key={day}
+                        className="border px-3 py-2 border-l-2 border-blue-400"
                       >
-                        {entry.status}
-                      </td>
-                      <td className="border px-2 py-2 text-center">
-                        {entry.testDriveStatus === "Pass" ? (
-                          <span className="text-green-600 font-bold">
-                            passed
-                          </span>
-                        ) : entry.testDriveStatus === "Fail" ? (
-                          <span className="text-red-600 font-bold">Failed</span>
-                        ) : (
-                          <span className="text-gray-400">Pending</span>
-                        )}
-                      </td>
-
-                      <td className="border px-2 py-2">{entry.driverStatus}</td>
-                      <td className="border px-2 py-2">{entry.checkedBy}</td>
-                      <td className="border px-2 py-2">{entry.approvedBy}</td>
-                      <td className="border px-2 py-2">{entry.receivedDate}</td>
-                      <td className="border px-2 py-2 relative">
-                        <button
-                          onClick={() => toggleDropdown(entry.jobId)}
-                          className="bg-blue-500 text-white px-2 py-1 rounded flex items-center gap-1"
-                        >
-                          Action <FiMoreVertical />
-                        </button>
-
-                        {openDropdown === entry.jobId && (
-                          <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow-md z-10">
-                            <button
-                              className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-                              onClick={() => {
-                                setSelectedEntry(entry);
-                                setShowViewModal(true);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              View
-                            </button>
-
-                            <button
-                              className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-                              onClick={() => {
-                                setSelectedEntry(entry);
-                                setShowModal(true);
-                                setOpenDropdown(null);
-                              }}
-                            >
-                              Update Info
-                            </button>
-                          </div>
-                        )}
+                        {day}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {weeklyData.length === 0 ? (
+                    <tr>
+                      <td colSpan={17} className="text-center py-4">
+                        No data for this week.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ) : (
+                    weeklyData.map((entry) => (
+                      <tr
+                        key={entry.jobId}
+                        className="hover:bg-gray-100 dark:hover:bg-gray-600"
+                      >
+                        <td className="border px-2 py-2">{entry.jobId}</td>
+                        <td className="border px-2 py-2">{entry.plateNum}</td>
+                        <td className="border px-2 py-2">{entry.startDate}</td>
+                        <td className="border px-2 py-2">{entry.endDate}</td>
+                        {weekdays.map((day) => (
+                          <td
+                            key={day}
+                            className={`border px-2 py-2 text-center ${getColor(
+                              entry.days[day]
+                            )}`}
+                          >
+                            {entry.days[day]}
+                          </td>
+                        ))}
+                        <td
+                          className={`border px-2 py-2 ${getStatusColor(
+                            entry.status
+                          )}`}
+                        >
+                          {entry.status}
+                        </td>
+                        <td className="border px-2 py-2 text-center">
+                          {entry.testDriveStatus === "Pass" ? (
+                            <span className="text-green-600 font-bold">
+                              passed
+                            </span>
+                          ) : entry.testDriveStatus === "Fail" ? (
+                            <span className="text-red-600 font-bold">
+                              Failed
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">Pending</span>
+                          )}
+                        </td>
+
+                        <td className="border px-2 py-2">
+                          {entry.driverStatus}
+                        </td>
+                        <td className="border px-2 py-2">{entry.checkedBy}</td>
+                        <td className="border px-2 py-2">{entry.approvedBy}</td>
+                        <td className="border px-2 py-2">
+                          {entry.receivedDate}
+                        </td>
+                        <td className="border px-2 py-2 relative">
+                          <button
+                            onClick={() => toggleDropdown(entry.jobId)}
+                            className="bg-blue-500 text-white px-2 py-1 rounded flex items-center gap-1"
+                          >
+                            Action <FiMoreVertical />
+                          </button>
+
+                          {openDropdown === entry.jobId && (
+                            <div className="absolute right-0 mt-2 bg-white dark:bg-gray-800 border rounded shadow-md z-10">
+                              <button
+                                className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                                onClick={() => {
+                                  setSelectedEntry(entry);
+                                  setShowViewModal(true);
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                View
+                              </button>
+
+                              <button
+                                className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                                onClick={() => {
+                                  setSelectedEntry(entry);
+                                  setShowModal(true);
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                Update Info
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -628,6 +628,101 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   );
                 }}
               </SidebarLinkGroup>
+              {/* Purchase */}
+              <SidebarLinkGroup
+                activecondition={pathname.includes("ecommerce")}
+              >
+                {(handleClick, open) => {
+                  return (
+                    <React.Fragment>
+                      <a
+                        href="#0"
+                        className={`block text-gray-800 dark:text-gray-100 truncate transition duration-150 ${
+                          pathname.includes("ecommerce")
+                            ? ""
+                            : "hover:text-gray-900 dark:hover:text-white"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleClick();
+                          setSidebarExpanded(true);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <svg
+                              className={`shrink-0 fill-green-500 ${
+                                pathname.includes("purchase")
+                                  ? "text-violet-500"
+                                  : "text-gray-400 dark:text-gray-500"
+                              }`}
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M6 2a2 2 0 0 0-2 2v2H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a3 3 0 0 0 3-3V7a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6Zm0 2h12v2H6V4ZM4 8h16v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Zm3 5h10v7a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-7Zm3-2a1 1 0 1 1 2 0v2h2a1 1 0 1 1 0 2h-2v2a1 1 0 1 1-2 0v-2H8a1 1 0 1 1 0-2h2v-2Z" />
+                            </svg>
+
+                            <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                              Purchase
+                            </span>
+                          </div>
+                          {/* Icon */}
+                          <div className="flex shrink-0 ml-2">
+                            <svg
+                              className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                                open && "rotate-180"
+                              }`}
+                              viewBox="0 0 12 12"
+                            >
+                              <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </a>
+                      <div className="lg:hidden lg:sidebar-expanded:block 2xl:block">
+                        <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+                          {/* create purchase */}
+                          <li className="mb-1 last:mb-0">
+                            <NavLink
+                              end
+                              to="/create-order"
+                              className={({ isActive }) =>
+                                "block transition duration-150 truncate " +
+                                (isActive
+                                  ? "text-violet-500"
+                                  : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                              }
+                            >
+                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                Create Purchase
+                              </span>
+                            </NavLink>
+                          </li>
+                          {/* manage Purchase   */}
+                          <li className="mb-1 last:mb-0">
+                            <NavLink
+                              end
+                              to="/purchase"
+                              className={({ isActive }) =>
+                                "block transition duration-150 truncate " +
+                                (isActive
+                                  ? "text-violet-500"
+                                  : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                              }
+                            >
+                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
+                                Manage Purchase
+                              </span>
+                            </NavLink>
+                          </li>
+                        </ul>
+                      </div>
+                    </React.Fragment>
+                  );
+                }}
+              </SidebarLinkGroup>
 
               <SidebarLinkGroup
                 activecondition={pathname.includes("ecommerce")}
@@ -792,102 +887,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             >
                               <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
                                 Manage Proforma
-                              </span>
-                            </NavLink>
-                          </li>
-                        </ul>
-                      </div>
-                    </React.Fragment>
-                  );
-                }}
-              </SidebarLinkGroup>
-
-              {/* Purchase */}
-              <SidebarLinkGroup
-                activecondition={pathname.includes("ecommerce")}
-              >
-                {(handleClick, open) => {
-                  return (
-                    <React.Fragment>
-                      <a
-                        href="#0"
-                        className={`block text-gray-800 dark:text-gray-100 truncate transition duration-150 ${
-                          pathname.includes("ecommerce")
-                            ? ""
-                            : "hover:text-gray-900 dark:hover:text-white"
-                        }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleClick();
-                          setSidebarExpanded(true);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <svg
-                              className={`shrink-0 fill-green-500 ${
-                                pathname.includes("purchase")
-                                  ? "text-violet-500"
-                                  : "text-gray-400 dark:text-gray-500"
-                              }`}
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M6 2a2 2 0 0 0-2 2v2H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a3 3 0 0 0 3-3V7a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6Zm0 2h12v2H6V4ZM4 8h16v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Zm3 5h10v7a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-7Zm3-2a1 1 0 1 1 2 0v2h2a1 1 0 1 1 0 2h-2v2a1 1 0 1 1-2 0v-2H8a1 1 0 1 1 0-2h2v-2Z" />
-                            </svg>
-
-                            <span className="text-sm font-medium ml-4 lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                              Purchase
-                            </span>
-                          </div>
-                          {/* Icon */}
-                          <div className="flex shrink-0 ml-2">
-                            <svg
-                              className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
-                                open && "rotate-180"
-                              }`}
-                              viewBox="0 0 12 12"
-                            >
-                              <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </a>
-                      <div className="lg:hidden lg:sidebar-expanded:block 2xl:block">
-                        <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
-                          {/* Staff  */}
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              end
-                              to="/dashboard"
-                              className={({ isActive }) =>
-                                "block transition duration-150 truncate " +
-                                (isActive
-                                  ? "text-violet-500"
-                                  : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                              }
-                            >
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Staff
-                              </span>
-                            </NavLink>
-                          </li>
-                          {/* Timesheet    */}
-                          <li className="mb-1 last:mb-0">
-                            <NavLink
-                              end
-                              to="/dashboard"
-                              className={({ isActive }) =>
-                                "block transition duration-150 truncate " +
-                                (isActive
-                                  ? "text-violet-500"
-                                  : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                              }
-                            >
-                              <span className="text-sm font-medium lg:opacity-0 lg:sidebar-expanded:opacity-100 2xl:opacity-100 duration-200">
-                                Timesheet
                               </span>
                             </NavLink>
                           </li>
