@@ -16,8 +16,8 @@ function ProformaForm() {
   const [formData, setFormData] = useState({
     jobId: "",
     date: format(new Date(), "yyyy-MM-dd"),
-    plateNo: "",
-    vehicleType: "",
+    product_name: "",
+    types_of_jobs: "",
     customerName: "",
     items: [
       {
@@ -36,9 +36,42 @@ function ProformaForm() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await api.post("/proformas", formData);
-      Swal.fire("Success", "Proforma created successfully!", "success");
-      // Optionally reset form or redirect
+      const { data } = await api.post("/proformas", formData);
+
+      Swal.fire({
+        title: "Success!",
+        text: "Proforma created successfully. Do you want to print it?",
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Print",
+        cancelButtonText: "No, Thanks",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Navigate to print page
+          window.open(`/proforma-print/${data.id}`, "_blank");
+        } else {
+          // Reset form
+          setFormData({
+            jobId: "",
+            date: format(new Date(), "yyyy-MM-dd"),
+            product_name: "",
+            types_of_jobs: "",
+            customerName: "",
+            items: [
+              {
+                description: "",
+                quantity: 1,
+                materialCost: 0,
+                laborCost: 0,
+                totalCost: 0,
+              },
+            ],
+            preparedBy: "",
+            deliveryTime: "",
+            notes: "",
+          });
+        }
+      });
     } catch (error) {
       console.error("Proforma save failed:", error);
       Swal.fire("Error", "Failed to save proforma.", "error");
@@ -69,18 +102,12 @@ function ProformaForm() {
             <ProformaFooter formData={formData} setFormData={setFormData} />
 
             <div className="flex justify-end gap-4 mt-6">
-              <button className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300">
-                Cancel
-              </button>
               <button
                 onClick={handleSubmit}
                 disabled={loading}
                 className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 {loading ? "Saving..." : "Save Proforma"}
-              </button>
-              <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                Print
               </button>
             </div>
           </div>

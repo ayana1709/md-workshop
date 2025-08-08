@@ -17,8 +17,8 @@ public function up()
         $table->string('job_id')->nullable(); // can be linked to job_order
         $table->date('date');
         $table->string('customer_name');
-        $table->string('plate_no');
-        $table->string('vehicle_type');
+        $table->string('product_name');
+        $table->string('types_of_jobs');
         $table->string('prepared_by');
         $table->string('delivery_time')->nullable();
         $table->text('notes')->nullable();

@@ -67,7 +67,7 @@ function ProformaTable({ formData, setFormData, lang = "en" }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
       <table className="w-full text-sm border-collapse">
-        <thead className="bg-gray-400 text-white">
+        <thead className="bg-gray-700 text-white">
           <tr>
             {[
               "no",
@@ -107,7 +107,6 @@ function ProformaTable({ formData, setFormData, lang = "en" }) {
               <td className="border px-2 py-1">
                 <input
                   type="number"
-                  min="0"
                   value={item.quantity}
                   onChange={(e) =>
                     handleItemChange(index, "quantity", e.target.value)
@@ -118,7 +117,6 @@ function ProformaTable({ formData, setFormData, lang = "en" }) {
               <td className="border px-2 py-1">
                 <input
                   type="number"
-                  min="0"
                   value={item.materialCost}
                   onChange={(e) =>
                     handleItemChange(index, "materialCost", e.target.value)
@@ -129,7 +127,6 @@ function ProformaTable({ formData, setFormData, lang = "en" }) {
               <td className="border px-2 py-1">
                 <input
                   type="number"
-                  min="0"
                   value={item.laborCost}
                   onChange={(e) =>
                     handleItemChange(index, "laborCost", e.target.value)
