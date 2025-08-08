@@ -34,7 +34,7 @@ const TotalItem = () => {
     setIsItemModalOpen,
     setSelectedRepairId,
   } = useStores();
-  console.log(selectedRows);
+  // console.log(selectedRows);
 
   const filteredItems = useMemo(() => {
     let data = items;

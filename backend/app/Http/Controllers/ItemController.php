@@ -234,15 +234,14 @@ public function getLowStockItems()
 
     return response()->json($items);
 }
+
+
 public function getItemOutRecords()
 {
-    $itemsOut = ItemOut::all();
+    // Filter items where quantity is 0 (out of stock)
+    $itemsOut = Item::where('quantity', '=', 0)->get();
 
-    if ($itemsOut->isEmpty()) {
-        return response()->json(['message' => 'No items moved out yet', 'items_out' => []], 200);
-    }
-
-    return response()->json($itemsOut);
+    return response()->json($itemsOut, 200);
 }
 
 

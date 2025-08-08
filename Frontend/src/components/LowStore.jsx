@@ -1,542 +1,320 @@
-import React, { useState, useEffect, useRef } from "react";
-import api from "../api"; // assuming you have an api instance set up
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { Button, TextField, MenuItem, Select } from "@mui/material";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useStores } from "../contexts/storeContext";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { DataTable } from "./ui/dataTable"; // Assuming this is your ShadCN wrapper
+import { columns } from "./columns"; // We'll define this shortly
+import { FiSearch } from "react-icons/fi";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
+
+import { toast } from "react-toastify";
+import api from "@/api";
+
 const LowStore = () => {
   const printRef = useRef(null);
-  const [itemsOut, setItemsOut] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const fileInputRef = useRef(null); // top of component
+  const navigate = useNavigate();
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  console.log(itemsOut);
-  useEffect(() => {
-    if (isPrinting) {
-      handlePrint();
+  const [searchItem, setSearchItem] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const {
+    lowitems,
+    setLowItems,
+    setShowModal,
+    setIsItemModalOpen,
+    setSelectedRepairId,
+  } = useStores();
+  // console.log(selectedRows);
+
+  const filteredItems = useMemo(() => {
+    let data = lowitems;
+    if (searchItem) {
+      data = data.filter((item) =>
+        item.part_number?.toLowerCase().includes(searchItem.toLowerCase())
+      );
     }
-  }, [isPrinting]); // Runs when isPrinting changes
-  useEffect(() => {
-    const fetchItemOutRecords = async () => {
-      setLoading(true); // Start loading
-
-      try {
-        const response = await api.get("/items/low-stock"); // Fetch from backend
-        setItemsOut(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        console.error("Error fetching item out records:", error);
-        toast.error("Failed to fetch item out records");
-      } finally {
-        setLoading(false); // Stop loading
-      }
-    };
-
-    fetchItemOutRecords();
-  }, []);
-
-  useEffect(() => {
-    let result = itemsOut.filter((item) =>
-      item.part_number.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     if (startDate && endDate) {
-      result = result.filter((item) => {
-        const itemDate = new Date(item.updated_at);
-        return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      data = data.filter((item) => {
+        const created = new Date(item.created_at);
+        return created >= start && created <= end;
       });
     }
+    return data;
+  }, [lowitems, searchItem, startDate, endDate]);
 
-    setFilteredItems(result);
-    setCurrentPage(1);
-  }, [searchTerm, startDate, endDate, itemsOut]);
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
   const handleExportPDF = () => {
-    if (!printRef.current) {
-      console.error("❌ printRef is not attached!");
-      return;
-    }
-
     const doc = new jsPDF();
-
-    // Company Header with Logo
     doc.setFontSize(14);
-    const logo = "/images/aa.png"; // Path to your logo image
-    const logoWidth = 50; // Smaller width for the logo
-    const logoHeight = 18; // Smaller height for the logo
+    doc.text("Store Items", 105, 20, { align: "center" });
 
-    // Calculate the X position to center the logo
-    const logoX = (doc.internal.pageSize.width - logoWidth) / 2;
-    doc.addImage(logo, "PNG", logoX, 5, logoWidth, logoHeight); // Add logo at the top center
+    const headers = [
+      [
+        "Item Code",
+        "Description",
+        "Part Number",
+        "Brand",
+        "Unit",
+        "Quantity",
+        "Purchase Price",
+        "Selling Price",
+        "Location",
+      ],
+    ];
 
-    doc.text("Speed Meter Trading PLC", 105, 35, { align: "center" });
-    doc.setFontSize(8);
-    doc.text(
-      "Sub City Bole Michael No 1701/01, Addis Ababa, Ethiopia",
-      105,
-      28,
-      { align: "center" }
-    );
-    doc.text("+251 98 999 9900 | TIN: 123-456-789", 105, 40, {
-      align: "center",
-    });
+    const data = filteredItems.map((item) => [
+      item.id || "",
+      item.description || "",
+      item.part_number || "",
+      item.brand || "",
+      item.unit || "",
+      item.quantity || 0,
+      item.purchase_price || "0.00",
+      item.selling_price || "0.00",
+      item.location || "",
+    ]);
 
-    // Extract table data
-    const table = printRef.current;
-
-    // Shorten the headers (customize these abbreviations as needed)
-    const headers = [...table.querySelectorAll("th")].map((th) => {
-      switch (th.innerText.trim()) {
-        case "Part Number":
-          return "Part #";
-        case "Quantity":
-          return "Qty";
-        case "Unit Price":
-          return "Price";
-        case "Description":
-          return "Desc";
-        // Add more cases as needed
-        default:
-          return th.innerText.trim();
-      }
-    });
-
-    const rows = [...table.querySelectorAll("tbody tr")].map((tr) =>
-      [...tr.querySelectorAll("td")].map((td) => td.innerText)
-    );
-
-    // Create the PDF Table
     doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 45, // Position below company header
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [44, 62, 80], textColor: 255 }, // Dark blue header
-      alternateRowStyles: { fillColor: [240, 240, 240] }, // Light gray alternating rows
+      startY: 30,
+      head: headers,
+      body: data,
+      styles: {
+        fontSize: 10,
+      },
+      headStyles: {
+        fillColor: [0, 122, 102],
+        textColor: [255, 255, 255],
+      },
     });
 
-    // Save the PDF
     doc.save("store-items.pdf");
   };
 
   const handleExportExcel = () => {
-    if (!printRef.current) {
-      console.error("❌ printRef is not attached!");
-      return;
-    }
-
-    // Get the table element
-    const table = printRef.current;
-
-    // Create a workbook
+    const ws = XLSX.utils.json_to_sheet(filteredItems);
     const wb = XLSX.utils.book_new();
-
-    // Extract table headers and rows
-    const headers = [...table.querySelectorAll("th")].map((th) => {
-      return th.innerText.trim();
-    });
-
-    const rows = [...table.querySelectorAll("tbody tr")].map((tr) =>
-      [...tr.querySelectorAll("td")].map((td) => td.innerText.trim())
-    );
-
-    // Create a worksheet
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Table Data");
-
-    // Export the workbook as an Excel file
+    XLSX.utils.book_append_sheet(wb, ws, "Store Items");
     XLSX.writeFile(wb, "store-items.xlsx");
   };
+  const handleAddToSales = () => {
+    const selectedIds = selectedRows.map((row) => row);
+    navigate("/inventory/add-to-sale", { state: { selectedIds } });
+  };
+
+  const handleAddToPurchase = () => {
+    const selectedIds = selectedRows.map((row) => row);
+    navigate("/inventory/order", { state: { selectedIds } });
+  };
+
   const handlePrint = () => {
-    setIsPrinting(true);
+    const originalTable = document.querySelector("#printableTable table");
+    if (!originalTable) return alert("Table not found.");
 
-    if (!printRef.current) {
-      console.error("❌ printRef is not  attached!");
-      return;
-    }
+    const clonedTable = originalTable.cloneNode(true);
 
-    // Clone the table
-    const tableClone = printRef.current.cloneNode(true);
+    // Identify indexes of unwanted columns
+    const headerCells = clonedTable.querySelectorAll("thead th");
+    let removeIndexes = [];
 
-    // Remove unwanted columns (Checkbox & Action)
-    const headers = tableClone.querySelectorAll("th");
-    const rows = tableClone.querySelectorAll("tr");
+    headerCells.forEach((th, index) => {
+      const text = th.textContent?.toLowerCase();
+      const hasCheckbox = th.querySelector("input[type='checkbox']");
+      const hasIcon = th.querySelector("svg");
 
-    if (headers.length > 0) {
-      headers[0].remove();
-      headers[headers.length - 1].remove();
-    }
-
-    rows.forEach((row) => {
-      const cells = row.querySelectorAll("td");
-      if (cells.length > 0) {
-        cells[0].remove();
-        cells[cells.length - 1].remove();
+      if (
+        text.includes("action") ||
+        text.includes("options") ||
+        hasCheckbox ||
+        hasIcon ||
+        text.trim() === ""
+      ) {
+        removeIndexes.push(index);
       }
     });
 
-    // Remove dropdown buttons
-    const targetColumns = ["Part Number", "Quantity", "Unit Price"];
-    headers.forEach((header, index) => {
-      if (targetColumns.includes(header.textContent.trim())) {
-        rows.forEach((row) => {
-          const cells = row.querySelectorAll("td");
-          if (cells[index]) {
-            const dropdownButton = cells[index].querySelector("button");
-            if (dropdownButton) {
-              dropdownButton.parentNode.removeChild(dropdownButton);
-            }
-          }
+    // Clean rows
+    clonedTable.querySelectorAll("tr").forEach((row) => {
+      const cells = Array.from(row.children);
+
+      // Remove entire column cells (checkbox, actions)
+      removeIndexes.forEach((i) => {
+        if (cells[i]) row.removeChild(cells[i]);
+      });
+
+      // Inside remaining cells, remove only interactive elements (buttons, dropdowns, icons)
+      cells.forEach((cell) => {
+        // Remove buttons/icons inside the cell, but preserve text
+        const buttonsAndIcons = cell.querySelectorAll(
+          "button, svg, .dropdown, [role='button']"
+        );
+        buttonsAndIcons.forEach((el) => {
+          el.remove();
         });
-      }
+      });
     });
 
-    // Create a hidden iframe for printing
-    const printIframe = document.createElement("iframe");
-    printIframe.style.position = "absolute";
-    printIframe.style.width = "0";
-    printIframe.style.height = "0";
-    printIframe.style.border = "none";
-    document.body.appendChild(printIframe);
-
-    const iframeDoc =
-      printIframe.contentDocument || printIframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write(`
+    // Print the cleaned table
+    const printWindow = window.open("", "", "height=600,width=800");
+    printWindow.document.write(`
       <html>
-      <head>
-        <title>Print Store Items</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #000; padding: 8px; text-align: left; }
-          th { background-color: #f4f4f4; }
-        </style>
-      </head>
-      <body>
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img id="print-logo" src="/images/aa.png" alt="Company Logo" style="width: 150px;" />
-          <h2>Speed Meter Trading PLC</h2>
-          <p>+251 98 999 9900</p>
-          <p>Sub City Bole Michael No 1701/01, Addis Ababa, Ethiopia</p>
-          <p>TIN: 123-456-789</p>
-        </div>
-        ${tableClone.outerHTML}
-      </body>
+        <head>
+          <title>Print Table</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid #ccc;
+              padding: 8px;
+              text-align: left;
+            }
+          </style>
+        </head>
+        <body>
+          ${clonedTable.outerHTML}
+        </body>
       </html>
     `);
-    iframeDoc.close();
-
-    const printWindow = printIframe.contentWindow;
-    const printLogo = printWindow.document.getElementById("print-logo");
-
-    // Ensure the image is loaded before printing
-    printLogo.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
-
-    // Detect when printing is finished
-    const printFinished = () => {
-      setIsPrinting(false);
-      window.removeEventListener("afterprint", printFinished);
-      printWindow.removeEventListener("afterprint", printFinished);
-
-      // Remove the iframe after printing
-      setTimeout(() => {
-        document.body.removeChild(printIframe);
-      }, 1000);
-    };
-
-    // Use modern print event listener
-    if (window.matchMedia) {
-      const mediaQueryList = window.matchMedia("print");
-      mediaQueryList.addEventListener("change", (e) => {
-        if (!e.matches) printFinished();
-      });
-    }
-
-    // Attach event listeners for print close detection
-    window.addEventListener("afterprint", printFinished);
-    printWindow.addEventListener("afterprint", printFinished);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const paginatedItems = filteredItems.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleImportClick = () => {
+    if (fileInputRef.current) fileInputRef.current.value = null;
+    fileInputRef.current?.click();
+  };
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-  if (itemsOut.length === 0) {
-    return (
-      <div className="p-8 text-center text-gray-600 text-lg">
-        There is no low store item.
-      </div>
-    );
-  }
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      const importedItems = XLSX.utils.sheet_to_json(worksheet);
+
+      // Send to backend
+      const response = await api.post("/items/import", {
+        items: importedItems,
+      });
+
+      toast.success("Items imported successfully!");
+
+      // ✅ Use the backend response that includes item.code
+      if (response.data.lowitems) {
+        setItems((prev) => [...prev, ...response.data.lowitems]);
+      }
+    } catch (error) {
+      toast.error(
+        "Import failed: " + (error.response?.data?.message || error.message)
+      );
+    }
+  };
 
   return (
-    <div className="relative p-6 bg-white dark:bg-gray-800 dark:text-white shadow-lg rounded-lg">
-      <h2 className="uppercase tracking-wider text-green-500 text-xl font-bold text-left mb-6">
-        Item Out List
+    <div className="p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
+      <h2 className="text-xl font-bold text-red-500 mb-4">
+        Items with low stock / ከ10 በታች ቀሪ ያላቸው እቃዎች
       </h2>
 
-      <div className="desktop:w-[45%]">
-        <div className="absolute top-14 flex flex-wrap gap-2">
-          <Select
-            value={itemsPerPage}
-            onChange={(e) => setItemsPerPage(e.target.value)}
-            size="small"
-            sx={{
-              backgroundColor: "#4765d4", // Darker blue background
-              color: "white", // White text
-              borderRadius: "5px", // Rounded corners
-              border: "none", // Removes border
-              boxShadow: "none", // Removes shadow
-              "& .MuiOutlinedInput-notchedOutline": {
-                border: "none", // Ensure no border
-              },
-              "&:hover": {
-                backgroundColor: "#172554", // Even darker blue on hover
-              },
-              "&.Mui-focused": {
-                backgroundColor: "#1e40af", // Slightly lighter when focused
-              },
-            }}
-          >
-            {[5, 10, 20, 50].map((num) => (
-              <MenuItem key={num} value={num}>
-                {`${num} per page`}
-              </MenuItem>
-            ))}
-          </Select>
-          <TextField
-            type="date"
-            label="Start Date"
-            InputLabelProps={{ shrink: true }}
-            size="small"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            sx={{
-              "& label": {
-                color: "#6b7280", // Gray-500 for label
-              },
-              "& label.Mui-focused": {
-                color: "#6b7280", // Keep label gray-500 when focused
-              },
-              "& .MuiOutlinedInput-root": {
-                color: "#6b7280", // Gray-500 input text color
-                "& fieldset": {
-                  borderColor: "#2563eb", // Blue border (light & dark mode)
-                },
-                "&:hover fieldset": {
-                  borderColor: "#2563eb", // Keep blue on hover
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#2563eb", // Keep blue when focused
-                },
-              },
-              "& .MuiInputBase-input": {
-                color: "#6b7280", // Gray-500 input text
-                "&::placeholder": {
-                  color: "#6b7280", // Gray-500 placeholder
-                  opacity: 1,
-                },
-              },
-            }}
+      <div className="flex flex-wrap justify-between gap-4 mb-4 items-center">
+        <div className="flex items-center gap-4 rounded-md px-2">
+          <Input
+            type="text"
+            placeholder="Search part number..."
+            value={searchItem}
+            onChange={(e) => setSearchItem(e.target.value)}
+            className="focus:ring-0 ml-2"
           />
 
-          <TextField
-            type="date"
-            label="End Date"
-            InputLabelProps={{ shrink: true }}
-            size="small"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            sx={{
-              "& label": {
-                color: "#6b7280", // Gray-500 for label
-              },
-              "& label.Mui-focused": {
-                color: "#6b7280", // Keep label gray-500 when focused
-              },
-              "& .MuiOutlinedInput-root": {
-                color: "#6b7280", // Gray-500 input text color
-                "& fieldset": {
-                  borderColor: "#2563eb", // Blue border (light & dark mode)
-                },
-                "&:hover fieldset": {
-                  borderColor: "#2563eb", // Keep blue on hover
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#2563eb", // Keep blue when focused
-                },
-              },
-              "& .MuiInputBase-input": {
-                color: "#6b7280", // Gray-500 input text
-                "&::placeholder": {
-                  color: "#6b7280", // Gray-500 placeholder
-                  opacity: 1,
-                },
-              },
-            }}
-          />
-          <TextField
-            label="Search Part Number"
-            size="small"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "4px", // Default rounded corners
-                transition: "border-radius 0.3s ease, border-color 0.3s ease", // Smooth transition
-                "& fieldset": {
-                  borderColor: "#3B82F6", // Tailwind's blue-500 color
-                },
-                "&:hover fieldset": {
-                  borderColor: "#2563EB", // Darker blue on hover (blue-600)
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: "transparent", // Blue border when focused
-                  borderRadius: "12px", // More rounded corners when focused
-                },
-              },
-              "& .MuiInputLabel-root": {
-                color: "#9CA3AF", // Tailwind's gray-400 color for label
-              },
-              "& .MuiInputLabel-root.Mui-focused": {
-                color: "#9CA3AF", // Keeps label gray-400 when focused
-                backgroundColor: "white",
-              },
-            }}
-          />
+          <div className="flex items-center gap-2">
+            {" "}
+            {/* <Button
+              className="bg-green-500 text-white hover:bg-green-600"
+              onClick={handleAddToSales}
+            >
+              Item Out
+            </Button> */}
+            <Button
+              className="bg-orange-500 text-white hover:bg-orange-600"
+              onClick={handleAddToPurchase}
+            >
+              Request Purchase
+            </Button>
+          </div>
         </div>
-        <div className="absolute right-8 top-14 flex gap-2 items-center">
-          <Button
-            variant="contained"
-            onClick={() => {
-              setIsPrinting(true); // This triggers useEffect
-            }}
-          >
-            Print
-          </Button>
 
-          <Button variant="contained" onClick={handleExportPDF}>
-            PDF
-          </Button>
-          <Button variant="contained" onClick={handleExportExcel}>
-            Excel
-          </Button>
+        <div className="flex items-center gap-2">
+          {/* <Button
+            variant="outline"
+            onClick={() => setShowModal(true)}
+            className=""
+          >
+            + Add Item
+          </Button> */}
+          {/* <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx, .xls"
+            style={{ display: "none" }}
+            onChange={handleFileChange}
+          /> */}
+
+          {/* <Button variant="outline" onClick={handleImportClick}>
+            Import
+          </Button> */}
+          <Button onClick={handlePrint}>Print</Button>
+          <Button onClick={handleExportPDF}>PDF</Button>
+          <Button onClick={handleExportExcel}>Excel</Button>
         </div>
       </div>
 
-      <div ref={printRef} className="overflow-x-auto mt-16">
-        <table className="table-fixed min-w-full table-auto w-full border-collapse border border-table-border">
-          <thead className="bg-table-head border-table-border text-white text-xs">
-            <tr className="border-table-border py-2">
-              <th className="border border-table-border p-2 w-[40px]">#</th>
-              {/* <th className="border border-table-border p-2 w-[80px]">Code</th> */}
-              <th className="border border-table-border p-2 w-[100px]">
-                Description
-              </th>
-              <th className="border border-table-border p-2 w-[100px]">
-                Part Number
-              </th>
-              <th className="border border-table-border p-2 w-[80px]">Brand</th>
-              <th className="border border-table-border p-2 w-[80px]">Model</th>
-              <th className="border border-table-border p-2 w-[90px]">
-                Condition
-              </th>
-              <th className="border border-table-border p-2 w-[90px]">
-                Quantity
-              </th>
-
-              <th className="border border-table-border p-2 w-[100px]">
-                Date Out
-              </th>
-              <th className="border border-table-border p-2 w-[80px]">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginatedItems?.length === 0 ? (
-              <tr>
-                <td colSpan="13" className="text-center py-4 text-gray-500">
-                  No records found
-                </td>
-              </tr>
-            ) : (
-              paginatedItems.map((item, index) => (
-                <tr
-                  key={item.id}
-                  className="border hover:bg-gray-100 hover:dark:bg-gray-600"
-                >
-                  <td className="px-4 py-3 border border-table-border">
-                    {index + 1}
-                  </td>
-
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.description}
-                  </td>
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.part_number}
-                  </td>
-
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.brand}
-                  </td>
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.model}
-                  </td>
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.condition}
-                  </td>
-                  <td className="px-4 py-3 border border-table-border">
-                    {item.quantity}
-                  </td>
-
-                  <td className="px-4 py-3 border border-table-border">
-                    {new Date(item.updated_at).toLocaleDateString()}
-                  </td>
-                  <td className="text-center px-4 py-3 border border-table-border">
-                    <button className="px-3 py-1 bg-blue-700 text-white rounded-sm">
-                      Action
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex justify-between mt-4">
-        <Button
-          disabled={currentPage === 1}
-          variant="contained"
-          onClick={() => setCurrentPage((prev) => prev - 1)}
-        >
-          Previous
-        </Button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          disabled={currentPage === totalPages}
-          variant="contained"
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-        >
-          Next
-        </Button>
+      <div id="printableTable">
+        <DataTable
+          columns={columns({
+            selectedRows,
+            setSelectedRows,
+            setLowItems,
+            printRef,
+            isEditOpen,
+            setIsEditOpen,
+            selectedItem,
+            setSelectedItem,
+            setIsItemModalOpen,
+            setSelectedRepairId,
+          })}
+          data={paginatedItems}
+          manualPagination
+          pageCount={totalPages}
+          pageIndex={currentPage - 1}
+          onPaginationChange={(page) => setCurrentPage(page + 1)}
+        />
       </div>
     </div>
   );

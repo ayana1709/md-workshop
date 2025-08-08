@@ -37,6 +37,9 @@ function StoreProvider({ children }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedField, setSelectedField] = useState("");
   const [items, setItems] = useState([]);
+  const [lowitems, setLowItems] = useState([]);
+  const [outitems, setOutItems] = useState([]);
+
   const [itemOutData, setItemOutData] = useState(null);
   const [outQuantity, setOutQuantity] = useState(0);
   const [repair, setRepair] = useState(null);
@@ -68,6 +71,34 @@ function StoreProvider({ children }) {
         const response = await api.get("/items"); // Fetch data from backend
         console.log("fetched items:", response.data);
         setItems(response.data); // Ensure the response structure matches
+      } catch (error) {
+        // console.error("Error fetching store items:", error);
+        // toast.error("Failed to fetch store items");
+      }
+    };
+
+    fetchItems();
+  }, []);
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await api.get("/items/low-stock"); // Fetch data from backend
+        console.log("fetched items:", response.data);
+        setLowItems(response.data); // Ensure the response structure matches
+      } catch (error) {
+        // console.error("Error fetching store items:", error);
+        // toast.error("Failed to fetch store items");
+      }
+    };
+
+    fetchItems();
+  }, []);
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await api.get("/items/out"); // Fetch data from backend
+        console.log("fetched items:", response.data);
+        setOutItems(response.data); // Ensure the response structure matches
       } catch (error) {
         // console.error("Error fetching store items:", error);
         // toast.error("Failed to fetch store items");
@@ -225,6 +256,10 @@ function StoreProvider({ children }) {
         setSelectedField,
         items,
         setItems,
+        lowitems,
+        setLowItems,
+        outitems,
+        setOutItems,
         showDetailModal,
         setShowDetailModal,
         isItemModalOpen,
