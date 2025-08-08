@@ -171,9 +171,9 @@ const AddSalesPage = () => {
 
     try {
       const res = await api.post("/sales", saleData);
-      console.log("✅ Sale created successfully:", res.data);
+      // console.log("✅ Sale created successfully:", res.data);
       toast.success("Sale created successfully!");
-      navigate("/inventory/sales");
+      navigate("/sales");
 
       // Reset form fields
       setCustomer({

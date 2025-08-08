@@ -37,6 +37,11 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import api from "@/api";
 import { toast } from "react-toastify";
+import Header from "@/partials/Header";
+import Sidebar from "@/partials/Sidebar";
+import { useStores } from "@/contexts/storeContext";
+// import Sidebar from "@/partials/Sidebar";
+// import { useStore } from "@/store";
 
 export default function ManageSales() {
   const [sales, setSales] = useState([]);
@@ -46,6 +51,20 @@ export default function ManageSales() {
   const [selectedSale, setSelectedSale] = useState(null);
   const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // const { companyData } = useStores();
+  const { companyData } = useStores();
+
+  const companyInfo = {
+    name: companyData?.name_en || "Company Name",
+    phone: companyData?.phone || "Phone",
+    address: companyData?.address || "Address",
+    tin: companyData?.tin ? `TIN: ${companyData.tin}` : "TIN: -",
+    logo: companyData?.logo
+      ? `${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`
+      : "", // fallback image if needed
+  };
 
   useEffect(() => {
     api
@@ -85,7 +104,7 @@ export default function ManageSales() {
           </span>
         );
       },
-    },
+    }, // ✅ close column object
 
     {
       accessorKey: "payment_type",
@@ -111,34 +130,150 @@ export default function ManageSales() {
         );
       },
     },
-
-    {
-      accessorKey: "from",
-      header: "From",
-      cell: () => "Stock", // <- your default stock value
-    },
-    { accessorKey: "remark", header: "Remark" },
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const sale = row.original;
 
-        const openViewDialog = () => {
-          setSelectedSale(sale);
-          setOpenView(true);
-        };
-
-        const openEditDialog = () => {
-          setSelectedSale(sale);
-          setOpenEdit(true);
-        };
-
         const handleDelete = () => {
           if (confirm("Are you sure you want to delete this sale?")) {
             console.log("Deleting sale:", sale);
-            // Perform your delete logic here
+            // Perform delete logic here
           }
+        };
+
+        const handlePrint = () => {
+          const printWindow = window.open("", "_blank");
+
+          const { name, phone, address, tin, logo } = companyInfo;
+
+          const {
+            customer_name,
+            sales_date,
+            total_amount,
+            paid_amount,
+            due_amount,
+            payment_status,
+            payment_type,
+            remark,
+            id,
+          } = sale;
+
+          const qrData = `Receipt No: ${id} - Customer: ${customer_name}`;
+          const qrCodeURL = `https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(
+            qrData
+          )}`;
+
+          const barcodeURL = `https://barcode.tec-it.com/barcode.ashx?data=${id}&code=Code128&dpi=96`;
+
+          const style = `
+    <style>
+      body {
+        font-family: 'Arial', sans-serif;
+        padding: 20px;
+        font-size: 13px;
+        color: #333;
+      }
+      .header, .footer {
+        text-align: center;
+      }
+      .company-logo {
+        max-height: 60px;
+        margin-bottom: 10px;
+      }
+      .info-table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+      .info-table th,
+      .info-table td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid #ccc;
+      }
+      .footer {
+        margin-top: 40px;
+        font-size: 12px;
+      }
+      .footer hr {
+        margin: 10px 0;
+      }
+      .barcode, .qrcode {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+      }
+      .amharic-label {
+        font-family: 'Noto Sans Ethiopic', sans-serif;
+        font-size: 13px;
+        color: #444;
+      }
+    </style>
+  `;
+
+          const content = `
+    <html>
+      <head>
+        <title>Sales Receipt</title>
+        <meta charset="UTF-8" />
+        ${style}
+      </head>
+      <body>
+        <div class="header">
+          ${logo ? `<img src="${logo}" class="company-logo" />` : ""}
+          <h2>${name}</h2>
+          <div class="amharic-label">የንግድ ድርጅት ሪሲት</div>
+          <p>
+            ${address}<br/>
+            ስልክ / Phone: ${phone} <br/>
+            ${tin}
+          </p>
+          <hr />
+          <h3>Sales Receipt / የሽያጭ ደረሰኝ</h3>
+        </div>
+
+        <table class="info-table">
+          <tr><th>Receipt No / የደረሰኝ ቁጥር:</th><td>#${id}</td></tr>
+          <tr><th>Date / ቀን:</th><td>${sales_date}</td></tr>
+          <tr><th>Customer / ደንበኛ:</th><td>${customer_name}</td></tr>
+          <tr><th>Total / ድምር:</th><td>${total_amount} ብር</td></tr>
+          <tr><th>Paid / የተከፈለ:</th><td>${paid_amount} ብር</td></tr>
+          <tr><th>Remaining / ቀሪ:</th><td>${due_amount} ብር</td></tr>
+          <tr><th>Payment Type / የክፍያ መንገድ:</th><td>${
+            payment_type || "-"
+          }</td></tr>
+          <tr><th>Payment Status / የክፍያ ሁኔታ:</th><td>${payment_status}</td></tr>
+          ${remark ? `<tr><th>Remark / ማስታወሻ:</th><td>${remark}</td></tr>` : ""}
+        </table>
+
+        <div class="barcode">
+          <img src="${barcodeURL}" alt="Barcode" />
+        </div>
+
+        
+
+        <div class="footer">
+          <hr />
+          <p>እናመሰግናለን / Thank you for your business!</p>
+          <p>Generated on ${new Date().toLocaleString()}</p>
+        </div>
+
+        <script>
+          window.onload = function () {
+            window.print();
+            window.onafterprint = function () {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+    </html>
+  `;
+
+          printWindow.document.write(content);
+          printWindow.document.close();
         };
 
         return (
@@ -173,7 +308,13 @@ export default function ManageSales() {
               >
                 Edit
               </Button>
-
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={handlePrint}
+              >
+                Print
+              </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 hover:text-red-700"
@@ -228,336 +369,356 @@ export default function ManageSales() {
   };
 
   return (
-    <div className="p-4 space-y-4 bg-white p-6 rounded-md">
-      {/* Controls */}
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <Input
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-[300px]"
-        />
+    <div className="flex">
+      {/* Sidebar */}
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <div className="flex gap-2 flex-wrap">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-1">
-                <Eye size={16} /> Columns
+      {/* Main Content */}
+      <div className="relative z-[9] flex flex-col flex-1 overflow-hidden">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="p-4 space-y-4 bg-white p-6 rounded-md">
+          {/* Controls */}
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <Input
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-[300px]"
+            />
+
+            <div className="flex gap-2 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-1">
+                    <Eye size={16} /> Columns
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-[300px] overflow-y-auto">
+                  {table.getAllColumns().map(
+                    (column) =>
+                      column.getCanHide() && (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          checked={column.getIsVisible()}
+                          onCheckedChange={() => column.toggleVisibility()}
+                        >
+                          {column.columnDef.header}
+                        </DropdownMenuCheckboxItem>
+                      )
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                onClick={exportToExcel}
+                className="flex items-center gap-1"
+              >
+                <Download size={16} /> Excel
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="max-h-[300px] overflow-y-auto">
-              {table.getAllColumns().map(
-                (column) =>
-                  column.getCanHide() && (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={() => column.toggleVisibility()}
-                    >
-                      {column.columnDef.header}
-                    </DropdownMenuCheckboxItem>
-                  )
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
 
-          <Button onClick={exportToExcel} className="flex items-center gap-1">
-            <Download size={16} /> Excel
-          </Button>
-
-          <Button onClick={exportToPDF} className="flex items-center gap-1">
-            <Download size={16} /> PDF
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-md border overflow-x-auto">
-        <table className="w-full min-w-[1000px] text-sm">
-          {" "}
-          {/* 👈 this line helps trigger scroll */}
-          <thead className="bg-gray-100">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-2 text-left font-medium whitespace-nowrap"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-t">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-2 whitespace-nowrap">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Dialog open={openView} onOpenChange={setOpenView}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Sale Details</DialogTitle>
-            <DialogDescription>
-              Information about the selected sale.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedSale && (
-            <div className="space-y-2 text-sm">
-              <div>
-                <strong>ID:</strong> {selectedSale.id}
-              </div>
-              <div>
-                <strong>Sales Date:</strong> {selectedSale.sales_date}
-              </div>
-              <div>
-                <strong>Customer Name:</strong>{" "}
-                {selectedSale.customer_name || "N/A"}
-              </div>
-              <div>
-                <strong>Phone Number:</strong>{" "}
-                {selectedSale.phone_number || "N/A"}
-              </div>
-              <div>
-                <strong>Total Amount:</strong> {selectedSale.total_amount}
-              </div>
-              <div>
-                <strong>Paid Amount:</strong> {selectedSale.paid_amount}
-              </div>
-              <div>
-                <strong>Due Amount:</strong> {selectedSale.due_amount}
-              </div>
-              <div>
-                <strong>Payment Status:</strong> {selectedSale.payment_status}
-              </div>
-              <div>
-                <strong>Payment Type:</strong> {selectedSale.payment_type}
-              </div>
-              <div>
-                <strong>Vat:</strong> {selectedSale.vat_rate}
-              </div>
-              <div>
-                <strong>Tin Number:</strong> {selectedSale.tin_number}
-              </div>
-              <div>
-                <strong>From</strong> {selectedSale.stock || "stock"}
-              </div>
-              <div>
-                <strong>Remark:</strong> {selectedSale.remark}
-              </div>
+              <Button onClick={exportToPDF} className="flex items-center gap-1">
+                <Download size={16} /> PDF
+              </Button>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
 
-      <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Sale</DialogTitle>
-            <DialogDescription>Update the sales information.</DialogDescription>
-          </DialogHeader>
+          {/* Table */}
+          <div className="rounded-md border overflow-x-auto">
+            <table className="w-full min-w-[1000px] text-sm">
+              {" "}
+              {/* 👈 this line helps trigger scroll */}
+              <thead className="bg-gray-100">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        className="px-4 py-2 text-left font-medium whitespace-nowrap"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id} className="border-t">
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className="px-4 py-2 whitespace-nowrap">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Dialog open={openView} onOpenChange={setOpenView}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Sale Details</DialogTitle>
+                <DialogDescription>
+                  Information about the selected sale.
+                </DialogDescription>
+              </DialogHeader>
 
-          {selectedSale && (
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-
-                const payload = {
-                  ...selectedSale,
-                  items: selectedSale.items.map((item) => ({
-                    part_number: item.part_number,
-                    description: item.pivot.description || "",
-                    brand: item.pivot.brand || "",
-                    unit: item.pivot.unit || "",
-                    unit_price: item.pivot.unit_price,
-                    sale_quantity: item.pivot.sale_quantity,
-                  })),
-                };
-
-                api
-                  .put(`/sales/${selectedSale.id}`, payload)
-                  .then((res) => {
-                    toast.success("Sale updated successfully");
-                    setOpenEdit(false);
-                  })
-                  .catch((err) => {
-                    toast.error("Failed to update sale");
-                    console.error(err);
-                  });
-              }}
-            >
-              <div>
-                <label className="text-sm font-medium">Customer Name</label>
-                <Input
-                  value={selectedSale.customer_name}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      customer_name: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Company Name</label>
-                <Input
-                  value={selectedSale.company_name}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      company_name: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Tin Number</label>
-                <Input
-                  value={selectedSale.tin_number}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      tin_number: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Vat Rate</label>
-                <Input
-                  value={selectedSale.vat_rate}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      vat_rate: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Sub Total</label>
-                <Input
-                  value={selectedSale.sub_total}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      sub_total: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Total Amount</label>
-                <Input
-                  value={selectedSale.total_amount}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      total_amount: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Paid Amount</label>
-                <Input
-                  value={selectedSale.paid_amount}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      paid_amount: e.target.value,
-                    })
-                  }
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Due Amount</label>
-                <Input
-                  value={selectedSale.due_amount}
-                  onChange={(e) =>
-                    setSelectedSale({
-                      ...selectedSale,
-                      due_amount: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              {selectedSale.items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col gap-2 border p-4 rounded-lg"
-                >
-                  <p className="font-medium text-gray-700">Item {index + 1}</p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">
-                        Sale Quantity
-                      </label>
-                      <Input
-                        type="number"
-                        value={item.pivot.sale_quantity}
-                        onChange={(e) => {
-                          const items = [...selectedSale.items];
-                          items[index].pivot.sale_quantity = parseInt(
-                            e.target.value
-                          );
-                          setSelectedSale({ ...selectedSale, items });
-                        }}
-                      />
-                    </div>
+              {selectedSale && (
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <strong>ID:</strong> {selectedSale.id}
+                  </div>
+                  <div>
+                    <strong>Sales Date:</strong> {selectedSale.sales_date}
+                  </div>
+                  <div>
+                    <strong>Customer Name:</strong>{" "}
+                    {selectedSale.customer_name || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Phone Number:</strong>{" "}
+                    {selectedSale.phone_number || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Total Amount:</strong> {selectedSale.total_amount}
+                  </div>
+                  <div>
+                    <strong>Paid Amount:</strong> {selectedSale.paid_amount}
+                  </div>
+                  <div>
+                    <strong>Due Amount:</strong> {selectedSale.due_amount}
+                  </div>
+                  <div>
+                    <strong>Payment Status:</strong>{" "}
+                    {selectedSale.payment_status}
+                  </div>
+                  <div>
+                    <strong>Payment Type:</strong> {selectedSale.payment_type}
+                  </div>
+                  <div>
+                    <strong>Vat:</strong> {selectedSale.vat_rate}
+                  </div>
+                  <div>
+                    <strong>Tin Number:</strong> {selectedSale.tin_number}
+                  </div>
+                  <div>
+                    <strong>From</strong> {selectedSale.stock || "stock"}
+                  </div>
+                  <div>
+                    <strong>Remark:</strong> {selectedSale.remark}
                   </div>
                 </div>
-              ))}
+              )}
+            </DialogContent>
+          </Dialog>
 
-              <Button type="submit" className="w-full">
-                Save Changes
-              </Button>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+          <Dialog open={openEdit} onOpenChange={setOpenEdit}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Sale</DialogTitle>
+                <DialogDescription>
+                  Update the sales information.
+                </DialogDescription>
+              </DialogHeader>
 
-      {/* Pagination */}
-      <div className="flex justify-end items-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <span>
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
-        </span>
-        <Button
-          variant="outline"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
+              {selectedSale && (
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+
+                    const payload = {
+                      ...selectedSale,
+                      items: selectedSale.items.map((item) => ({
+                        part_number: item.part_number,
+                        description: item.pivot.description || "",
+                        brand: item.pivot.brand || "",
+                        unit: item.pivot.unit || "",
+                        unit_price: item.pivot.unit_price,
+                        sale_quantity: item.pivot.sale_quantity,
+                      })),
+                    };
+
+                    api
+                      .put(`/sales/${selectedSale.id}`, payload)
+                      .then((res) => {
+                        toast.success("Sale updated successfully");
+                        setOpenEdit(false);
+                      })
+                      .catch((err) => {
+                        toast.error("Failed to update sale");
+                        console.error(err);
+                      });
+                  }}
+                >
+                  <div>
+                    <label className="text-sm font-medium">Customer Name</label>
+                    <Input
+                      value={selectedSale.customer_name}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          customer_name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Company Name</label>
+                    <Input
+                      value={selectedSale.company_name}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          company_name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Tin Number</label>
+                    <Input
+                      value={selectedSale.tin_number}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          tin_number: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Vat Rate</label>
+                    <Input
+                      value={selectedSale.vat_rate}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          vat_rate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Sub Total</label>
+                    <Input
+                      value={selectedSale.sub_total}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          sub_total: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Total Amount</label>
+                    <Input
+                      value={selectedSale.total_amount}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          total_amount: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Paid Amount</label>
+                    <Input
+                      value={selectedSale.paid_amount}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          paid_amount: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Due Amount</label>
+                    <Input
+                      value={selectedSale.due_amount}
+                      onChange={(e) =>
+                        setSelectedSale({
+                          ...selectedSale,
+                          due_amount: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  {selectedSale.items.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col gap-2 border p-4 rounded-lg"
+                    >
+                      <p className="font-medium text-gray-700">
+                        Item {index + 1}
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">
+                            Sale Quantity
+                          </label>
+                          <Input
+                            type="number"
+                            value={item.pivot.sale_quantity}
+                            onChange={(e) => {
+                              const items = [...selectedSale.items];
+                              items[index].pivot.sale_quantity = parseInt(
+                                e.target.value
+                              );
+                              setSelectedSale({ ...selectedSale, items });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button type="submit" className="w-full">
+                    Save Changes
+                  </Button>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Pagination */}
+          <div className="flex justify-end items-center gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <span>
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
