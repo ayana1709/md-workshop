@@ -34,6 +34,8 @@ const Purchases = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState(null);
 
   // Fetch data
   useEffect(() => {
@@ -75,6 +77,26 @@ const Purchases = () => {
     );
   }, [filtered]);
 
+  // Delete purchase
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/sales/${id}`);
+      setData((prev) => prev.filter((order) => order.id !== id));
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
+
+  // Edit (placeholder)
+  const handleEdit = (item) => {
+    setEditItem(item);
+    setEditModalOpen(true);
+  };
+
+  const handleView = (row) => {
+    setSelectedItems(data.find((d) => d.id === row.id)?.items || []);
+    setModalOpen(true);
+  };
   // Columns config
   const columns = useMemo(
     () => [
@@ -100,21 +122,28 @@ const Purchases = () => {
         header: "Options",
         cell: ({ row }) => (
           <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleView(row.original)}
+            >
+              View
+            </Button>
             <Button size="sm" onClick={() => handleEdit(row.original)}>
-              <Pencil className="h-4 w-4" />
+              Edit
             </Button>
             <Button
               size="sm"
               variant="destructive"
               onClick={() => handleDelete(row.original.id)}
             >
-              <Trash className="h-4 w-4" />
+              Delete
             </Button>
           </div>
         ),
       },
     ],
-    []
+    [handleView, handleEdit, handleDelete]
   );
 
   const table = useReactTable({
@@ -168,20 +197,26 @@ const Purchases = () => {
 
     doc.save("purchase-data.pdf");
   };
-
-  // Delete purchase
-  const handleDelete = async (id) => {
+  const handleSubmitEdit = async () => {
     try {
-      await api.delete(`/sales/${id}`);
-      setData((prev) => prev.filter((order) => order.id !== id));
-    } catch (error) {
-      console.error("Error deleting order:", error);
+      await api.put(`/purchases/${editItem.id}`, editItem); // Adjust route if needed
+      setData((prevData) =>
+        prevData.map((order) =>
+          order.id === editItem.id
+            ? {
+                ...order,
+                items: order.items.map((item) =>
+                  item.item_id === editItem.item_id ? editItem : item
+                ),
+              }
+            : order
+        )
+      );
+      setEditModalOpen(false);
+      setEditItem(null);
+    } catch (err) {
+      console.error("Edit failed:", err);
     }
-  };
-
-  // Edit (placeholder)
-  const handleEdit = (order) => {
-    alert(`Edit not implemented. Order ID: ${order.id}`);
   };
 
   return (
@@ -217,7 +252,15 @@ const Purchases = () => {
 
             {/* Data Table */}
             <div className="overflow-auto">
-              <DataTable columns={columns} data={filtered} />
+              {/* <DataTable columns={columns} data={filtered} /> */}
+              {/* <DataTable columns={columns} data={flatData} /> */}
+              <DataTable
+                columns={columns}
+                data={flatData}
+                onView={handleView}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
             </div>
           </div>
         </main>
@@ -258,6 +301,92 @@ const Purchases = () => {
                 </tbody>
               </table>
             </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent className="max-w-xl bg-white">
+            <DialogHeader>
+              <DialogTitle>Edit Item</DialogTitle>
+            </DialogHeader>
+            {editItem && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmitEdit();
+                }}
+                className="space-y-4 mt-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Description
+                    </label>
+                    <Input
+                      value={editItem.description}
+                      onChange={(e) =>
+                        setEditItem({
+                          ...editItem,
+                          description: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Part Number
+                    </label>
+                    <Input
+                      value={editItem.part_number}
+                      onChange={(e) =>
+                        setEditItem({
+                          ...editItem,
+                          part_number: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Brand</label>
+                    <Input
+                      value={editItem.brand}
+                      onChange={(e) =>
+                        setEditItem({ ...editItem, brand: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Unit Price
+                    </label>
+                    <Input
+                      type="number"
+                      value={editItem.unit_price}
+                      onChange={(e) =>
+                        setEditItem({ ...editItem, unit_price: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Quantity
+                    </label>
+                    <Input
+                      type="number"
+                      value={editItem.sale_quantity}
+                      onChange={(e) =>
+                        setEditItem({
+                          ...editItem,
+                          sale_quantity: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="text-right pt-4">
+                  <Button type="submit">Save</Button>
+                </div>
+              </form>
+            )}
           </DialogContent>
         </Dialog>
       </div>
