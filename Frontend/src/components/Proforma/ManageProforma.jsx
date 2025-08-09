@@ -1,15 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
 import api from "@/api";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from "@tanstack/react-table";
 
 function ManageProforma() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [proformas, setProformas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [globalFilter, setGlobalFilter] = useState("");
 
   useEffect(() => {
     fetchProformas();
@@ -51,6 +60,71 @@ function ManageProforma() {
     }
   };
 
+  const columns = useMemo(
+    () => [
+      {
+        accessorKey: "id",
+        header: "#",
+        cell: (info) => info.row.index + 1,
+      },
+      {
+        accessorKey: "date",
+        header: "Date",
+      },
+      {
+        accessorKey: "customer_name",
+        header: "Customer",
+      },
+      {
+        accessorKey: "product_name",
+        header: "Product Name",
+      },
+      {
+        accessorKey: "net_total",
+        header: "Net Total",
+        cell: (info) => `${Number(info.getValue()).toFixed(2)} Birr`,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => (
+          <div className="flex gap-2 justify-center">
+            <Link
+              to={`/proforma/view/${row.original.id}`}
+              className="text-blue-600 hover:underline"
+            >
+              View
+            </Link>
+            <Link
+              to={`/proforma/print/${row.original.id}`}
+              className="text-green-600 hover:underline"
+            >
+              Print
+            </Link>
+            <button
+              onClick={() => handleDelete(row.original.id)}
+              className="text-red-600 hover:underline"
+            >
+              Delete
+            </button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data: proformas,
+    columns,
+    state: { globalFilter },
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -69,6 +143,15 @@ function ManageProforma() {
               </Link>
             </div>
 
+            {/* Search Input */}
+            <input
+              type="text"
+              value={globalFilter ?? ""}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              placeholder="Search..."
+              className="border px-3 py-2 mb-4 rounded w-full md:w-1/3"
+            />
+
             {loading ? (
               <p className="text-center py-10 text-gray-500">Loading...</p>
             ) : error ? (
@@ -77,64 +160,66 @@ function ManageProforma() {
               <div className="overflow-x-auto">
                 <table className="min-w-full border border-gray-300 text-sm rounded-md overflow-hidden">
                   <thead className="bg-gray-100 text-gray-800 font-semibold">
-                    <tr>
-                      <th className="border px-3 py-2 text-left">#</th>
-                      <th className="border px-3 py-2 text-left">Date</th>
-                      <th className="border px-3 py-2 text-left">Customer</th>
-                      <th className="border px-3 py-2 text-left">Plate No</th>
-                      <th className="border px-3 py-2 text-right">Net Total</th>
-                      <th className="border px-3 py-2 text-center">Actions</th>
-                    </tr>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <th
+                            key={header.id}
+                            className="border px-3 py-2 text-left"
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
                   </thead>
                   <tbody>
-                    {proformas.length > 0 ? (
-                      proformas.map((proforma, idx) => (
-                        <tr key={proforma.id} className="hover:bg-gray-50">
-                          <td className="border px-3 py-2">{idx + 1}</td>
-                          <td className="border px-3 py-2">{proforma.date}</td>
-                          <td className="border px-3 py-2">
-                            {proforma.customer_name}
+                    {table.getRowModel().rows.map((row) => (
+                      <tr key={row.id} className="hover:bg-gray-50">
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id} className="border px-3 py-2">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
                           </td>
-                          <td className="border px-3 py-2">
-                            {proforma.plate_no}
-                          </td>
-                          <td className="border px-3 py-2 text-right">
-                            {Number(proforma.net_total).toFixed(2)} Birr
-                          </td>
-                          <td className="border px-3 py-2 text-center space-x-3">
-                            <Link
-                              to={`/proforma/view/${proforma.id}`}
-                              className="text-blue-600 hover:underline"
-                            >
-                              View
-                            </Link>
-                            <Link
-                              to={`/proforma/print/${proforma.id}`}
-                              className="text-green-600 hover:underline"
-                            >
-                              Print
-                            </Link>
-                            <button
-                              onClick={() => handleDelete(proforma.id)}
-                              className="text-red-600 hover:underline"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="6"
-                          className="text-center py-6 text-gray-500"
-                        >
-                          No proformas found.
-                        </td>
+                        ))}
                       </tr>
-                    )}
+                    ))}
                   </tbody>
                 </table>
+
+                {/* Pagination */}
+                <div className="flex justify-between items-center mt-4">
+                  <div>
+                    <button
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      className="px-3 py-1 border rounded mr-2"
+                    >
+                      Prev
+                    </button>
+                    <button
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                      className="px-3 py-1 border rounded"
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <span>
+                    Page{" "}
+                    <strong>
+                      {table.getState().pagination.pageIndex + 1} of{" "}
+                      {table.getPageCount()}
+                    </strong>
+                  </span>
+                </div>
               </div>
             )}
           </div>

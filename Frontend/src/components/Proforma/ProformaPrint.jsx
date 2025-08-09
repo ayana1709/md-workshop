@@ -1,17 +1,44 @@
-import React from "react";
-// import { useStores } from "../context/StoreContext"; // your store context
-import { format } from "date-fns";
+// src/pages/ProformaPrint.jsx
+import React, { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useStores } from "@/contexts/storeContext";
+import api from "@/api";
 
-export default function ProformaListPage() {
-  const { companyData, proformas } = useStores(); // get both from context
-  console.log("Company Data:", companyData);
-  console.log("Proformas:", proformas);
+export default function ProformaPrint() {
+  const { id } = useParams();
+  const { companyData } = useStores();
+  const [proforma, setProforma] = useState(null);
+  //    const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  //   const { companyData } = useStores();
+  //   const [proforma, setProforma] = useState(null);
+
+  useEffect(() => {
+    const fetchProforma = async () => {
+      try {
+        const { data } = await api.get(`/proformas/${id}`);
+        setProforma(data.data);
+      } catch (err) {
+        console.error("Error fetching proforma:", err);
+      }
+    };
+    fetchProforma();
+  }, [id]);
+
+  useEffect(() => {
+    if (proforma && searchParams.get("print") === "true") {
+      setTimeout(() => {
+        window.print();
+        window.close(); // auto-close after print if in new tab
+      }, 500);
+    }
+  }, [proforma, searchParams]);
+  if (!proforma) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-10 bg-white text-black min-h-screen">
       {/* Company Header */}
-      <div className="flex items-center justify-between border-b pb-4 mb-6">
+      <div className="flex items-start justify-between border-b pb-4 mb-4">
         <div>
           {companyData?.logo && (
             <img
@@ -22,69 +49,92 @@ export default function ProformaListPage() {
               className="h-16 mb-2"
             />
           )}
-          <h1 className="text-2xl font-bold">
-            {companyData?.name || "Company Name"}
-          </h1>
-          <p className="text-sm text-gray-600">{companyData?.address}</p>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-xl font-bold">{companyData?.name}</h1>
+          <p>{companyData?.address}</p>
+          <p>
             Phone: {companyData?.phone} | Email: {companyData?.email}
+          </p>
+        </div>
+        <div className="text-right">
+          <p>
+            <strong>No:</strong> {proforma.id}
+          </p>
+          <p>
+            <strong>Date:</strong> {proforma.date}
           </p>
         </div>
       </div>
 
-      {/* Page Title */}
-      <h2 className="text-xl font-semibold mb-4">Proforma List</h2>
+      {/* Customer Info */}
+      <div className="mb-4">
+        <p>
+          <strong>Customer:</strong> {proforma.customer_name}
+        </p>
+        <p>
+          <strong>Product Name:</strong> {proforma.product_name}
+        </p>
+        <p>
+          <strong>Type of Job:</strong> {proforma.types_of_jobs}
+        </p>
+        <p>
+          <strong>Prepared By:</strong> {proforma.prepared_by}
+        </p>
+      </div>
 
-      {/* Proforma Table */}
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-left text-gray-700">
-              <th className="p-3 border">#</th>
-              <th className="p-3 border">Date</th>
-              <th className="p-3 border">Job ID</th>
-              <th className="p-3 border">Customer</th>
-              <th className="p-3 border">Product Name</th>
-              <th className="p-3 border">Prepared By</th>
-              <th className="p-3 border">Action</th>
+      {/* Items Table */}
+      <table className="w-full border-collapse border">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="border p-2">No.</th>
+            <th className="border p-2">Description</th>
+            <th className="border p-2">Quantity</th>
+            <th className="border p-2">Material Cost</th>
+            <th className="border p-2">Labor Cost</th>
+            <th className="border p-2">Total Cost</th>
+          </tr>
+        </thead>
+        <tbody>
+          {proforma.items.map((item, index) => (
+            <tr key={item.id}>
+              <td className="border p-2 text-center">{index + 1}</td>
+              <td className="border p-2">{item.description}</td>
+              <td className="border p-2 text-center">{item.quantity}</td>
+              <td className="border p-2 text-right">{item.material_cost}</td>
+              <td className="border p-2 text-right">{item.labor_cost}</td>
+              <td className="border p-2 text-right">{item.total_cost}</td>
             </tr>
-          </thead>
-          <tbody>
-            {proformas.length > 0 ? (
-              proformas.map((proforma, index) => (
-                <tr key={proforma.id} className="hover:bg-gray-50">
-                  <td className="p-3 border">{index + 1}</td>
-                  <td className="p-3 border">
-                    {format(new Date(proforma.date), "yyyy-MM-dd")}
-                  </td>
-                  <td className="p-3 border">{proforma.jobId}</td>
-                  <td className="p-3 border">{proforma.customerName}</td>
-                  <td className="p-3 border">{proforma.product_name}</td>
-                  <td className="p-3 border">{proforma.preparedBy}</td>
-                  <td className="p-3 border">
-                    <button
-                      onClick={() =>
-                        window.open(`/proforma-print/${proforma.id}`)
-                      }
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
-                    >
-                      Print
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="7"
-                  className="text-center text-gray-500 p-4 border"
-                >
-                  No proformas found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Totals */}
+      <div className="mt-6 text-right">
+        <p>
+          <strong>Sub Total:</strong> {proforma.net_total}
+        </p>
+        <p>
+          <strong>VAT 15%:</strong> {(proforma.net_total * 0.15).toFixed(2)}
+        </p>
+        <p>
+          <strong>Gross Total:</strong> {(proforma.net_total * 1.15).toFixed(2)}
+        </p>
+        <p>
+          <strong>Withholding 2%:</strong>{" "}
+          {(proforma.net_total * 0.02).toFixed(2)}
+        </p>
+        <p>
+          <strong>Net Pay:</strong>{" "}
+          {(proforma.net_total * 1.15 - proforma.net_total * 0.02).toFixed(2)}
+        </p>
+      </div>
+
+      {/* Footer Notes */}
+      <div className="mt-10 text-sm">
+        <p>I have agreed with the above price.</p>
+        <p>Validity: 15 working days.</p>
+        <p>Payment before vehicle release.</p>
+        <p>Delivery Time: {proforma.delivery_time}</p>
+        <p>Prepared By: {proforma.prepared_by}</p>
       </div>
     </div>
   );

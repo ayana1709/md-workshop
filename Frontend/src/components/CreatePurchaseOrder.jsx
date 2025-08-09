@@ -336,100 +336,152 @@ const CreatePurchaseOrder = () => {
                 <th className="p-2">Item Description</th>
                 <th className="p-2">Part Number</th>
                 <th className="p-2">Brand</th>
-                <th className="p-2">Unit</th>
-                <th className="p-2">Price</th>
                 <th className="p-2">Quantity</th>
+                <th className="p-2">Unit</th>
+                <th className="p-2">Unit Price</th>
+                <th className="p-2">Total</th>
+                <th className="p-2">Remark</th>
+                <th className="p-2">Status</th>
                 <th className="p-2">Action</th>
               </tr>
             </thead>
+
             <tbody>
-              {items.map((item, index) => (
-                <tr key={index} className="border-t">
-                  <td className="p-2">{index + 1}</td>
+              {items.map((item, index) => {
+                // Calculate total on the fly
+                const total = (item.price || 0) * (item.saleQty || 0);
 
-                  {/* Editable Fields */}
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.description || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "description", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.part_number || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "part_number", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.brand || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "brand", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.unit || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "unit", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      min="0"
-                      className="border p-1 w-full"
-                      value={item.price}
-                      onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          "price",
-                          parseFloat(e.target.value)
-                        )
-                      }
-                    />
-                  </td>
+                return (
+                  <tr key={index} className="border-t">
+                    <td className="p-2">{index + 1}</td>
 
-                  {/* Sale Quantity (editable) */}
-                  <td>
-                    <input
-                      type="number"
-                      min="1"
-                      className="border p-1 w-full"
-                      value={item.saleQty}
-                      onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          "saleQty",
-                          parseInt(e.target.value)
-                        )
-                      }
-                    />
-                  </td>
+                    {/* Description */}
+                    <td>
+                      <input
+                        className="border p-1 w-full"
+                        value={item.description || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "description", e.target.value)
+                        }
+                      />
+                    </td>
 
-                  {/* Available Quantity (readonly) */}
+                    {/* Part Number */}
+                    <td>
+                      <input
+                        className="border p-1 w-full"
+                        value={item.part_number || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "part_number", e.target.value)
+                        }
+                      />
+                    </td>
 
-                  {/* Delete Button */}
-                  <td className="p-2 text-center">
-                    <button
-                      onClick={() => handleDeleteRow(index)}
-                      className="text-lg text-red-500 text-center"
-                    >
-                      X
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    {/* Brand */}
+                    <td>
+                      <input
+                        className="border p-1 w-full"
+                        value={item.brand || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "brand", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Quantity */}
+                    <td>
+                      <input
+                        type="number"
+                        min="1"
+                        className="border p-1 w-full no-spinner"
+                        value={item.saleQty || ""}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "saleQty",
+                            parseInt(e.target.value) || 0
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Unit */}
+                    <td>
+                      <input
+                        className="border p-1 w-full no-spinner"
+                        value={item.unit || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "unit", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Unit Price */}
+                    <td>
+                      <input
+                        type="number"
+                        min="0"
+                        className="border p-1 w-full no-spinner"
+                        value={item.price || ""}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "price",
+                            parseFloat(e.target.value) || 0
+                          )
+                        }
+                      />
+                    </td>
+
+                    {/* Total (read-only) */}
+                    <td>
+                      <input
+                        type="number"
+                        className="border p-1 w-full bg-gray-100 no-spinner"
+                        value={total.toFixed(2)}
+                        readOnly
+                      />
+                    </td>
+
+                    {/* Remark */}
+                    <td>
+                      <input
+                        className="border p-1 w-full"
+                        value={item.remark || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "remark", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    {/* Status */}
+                    <td>
+                      <select
+                        className="border p-1 w-full"
+                        value={item.status || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "status", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </td>
+
+                    {/* Delete Button */}
+                    <td className="p-2 text-center">
+                      <button
+                        onClick={() => handleDeleteRow(index)}
+                        className="text-lg text-red-500"
+                      >
+                        X
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 

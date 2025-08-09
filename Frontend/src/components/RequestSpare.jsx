@@ -399,9 +399,9 @@ const RequestSpare = () => {
                   <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
                     Model
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                  {/* <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
                     Item Description
-                  </th>
+                  </th> */}
                   <th className="border-2 border-gray-300 p-2 w-[70px] font-medium">
                     Req Qty
                   </th>
@@ -507,7 +507,7 @@ const RequestSpare = () => {
                         )}
                       </td>
                       {/* Description */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
                           row.description
                         ) : (
@@ -528,7 +528,7 @@ const RequestSpare = () => {
                             className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           />
                         )}
-                      </td>
+                      </td> */}
 
                       {/* Request Quantity */}
                       <td className="border-2 border-gray-300 p-2 font-medium">
@@ -579,7 +579,7 @@ const RequestSpare = () => {
                       </td>
 
                       {/* Condition */}
-                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
                           <span
                             className={`text-xs font-semibold px-2 py-1 rounded-full ${
@@ -617,10 +617,10 @@ const RequestSpare = () => {
                             <option value="Recieved">Recieved</option>
                           </select>
                         )}
-                      </td> */}
+                      </td>
 
                       {/* status */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
                         {isFetchedData && !isEditing ? (
                           <span
                             className={`px-2 py-1 rounded-full text-sm font-semibold
@@ -648,7 +648,7 @@ const RequestSpare = () => {
                             className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           />
                         )}
-                      </td>
+                      </td> */}
 
                       {/* Actions */}
 

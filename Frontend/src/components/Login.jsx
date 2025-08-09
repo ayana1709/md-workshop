@@ -45,11 +45,11 @@ const Login = ({ onLogin }) => {
 
   return (
     <div className="h-screen bg-gray-900 phone:px-0 phone:py-2 tablet:px-4 tablet:py-4">
-      <div className="relative h-full w-[95%] mx-auto flex gap-8 bg-gray-800 px-4 py-4 rounded-md laptop:bg-car-image laptop:bg-gradient-bg laptop:bg-cover laptop:bg-center">
+      <div className="relative h-full w-[95%] mx-auto flex gap-8 bg-gray-800 px-4 py-4 rounded-md laptop:bg-car-image laptop:bg-gradient-bg laptop:bg-[length:80%] laptop:bg-center">
         {/* <div className="w-[50%] overflow-hidden bg-car-image bg-gradient-bg bg-cover bg-center rounded-md"></div> */}
         <div className="absolute phone:right-1/2 laptop:right-[25%] translate-x-1/2 w-full max-w-md overflow-hidden">
           <div className="text-center phone:p-2 btablet:p-6 text-white">
-            <img src={logo} className="phone:w-[75%]" />
+            {/* <img src={logo} className="phone:w-[75%]" /> */}
           </div>
 
           <form
@@ -151,7 +151,7 @@ const Login = ({ onLogin }) => {
             </div>
 
             <div className="flex justify-center py-4 phone:px-2 tablet:px-0 inline-block phone:bg-none laptop:bg-gray-900 text-left text-gray-300 text-sm rounded-md">
-              <p>© 2025 Speed Meter Trading Plc. All rights reserved.</p>
+              {/* <p>© 2025 Speed Meter Trading Plc. All rights reserved.</p> */}
             </div>
           </form>
         </div>

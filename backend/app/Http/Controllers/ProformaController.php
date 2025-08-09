@@ -61,6 +61,17 @@ class ProformaController extends Controller
     return Proforma::latest()->get();
 }
 
+public function show($id)
+{
+    // Eager load the related items to avoid N+1 queries
+    $proforma = Proforma::with('items')->findOrFail($id);
+
+    return response()->json([
+        'message' => 'Proforma details retrieved successfully',
+        'data' => $proforma
+    ]);
+}
+
 public function destroy($id)
 {
     $proforma = Proforma::findOrFail($id);

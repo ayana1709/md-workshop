@@ -385,7 +385,7 @@ const SpareChange = () => {
                     Brand
                   </th>
                   <th className="border-2 border-gray-300 p-2 w-[80px]">
-                    Req Qty
+                    Qty
                   </th>
 
                   <th className="border-2 border-gray-300 p-2 w-[70px]">

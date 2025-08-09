@@ -86,9 +86,9 @@ const TotalItem = () => {
       item.part_number || "",
       item.brand || "",
       item.unit || "",
-      item.quantity || 0,
-      item.purchase_price || "0.00",
-      item.selling_price || "0.00",
+      item.quantity || "",
+      item.purchase_price || "",
+      item.selling_price || "",
       item.location || "",
     ]);
 

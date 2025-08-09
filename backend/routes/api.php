@@ -386,6 +386,8 @@ Route::post('/job-delivery-status/batch', [PostDriveTestController::class, 'batc
 Route::post('/proformas', [ProformaController::class, 'store']);
 Route::get('/proforma', [ProformaController::class, 'index']);
 Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
+Route::get('/proformas/{id}', [ProformaController::class, 'show']);
+
 
 
 
