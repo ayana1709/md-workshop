@@ -5,20 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Item extends Model {
+class Item extends Model
+{
     use HasFactory;
 
     protected $fillable = [
-        'description',
+        'item_name',
         'part_number',
-        'quantity',
         'brand',
         'model',
-        'unit_price',
-        'total_price',
-        'location',
-        'condition',
-        'item_name',
+        'quantity',
         'unit',
         'purchase_price',
         'selling_price',
@@ -28,7 +24,10 @@ class Item extends Model {
         'low_quantity',
         'manufacturer',
         'manufacturing_date',
+        'unit_price',
+        'total_price',
+        'location',
+        'condition',
+        'image', // ✅ new
     ];
-    
 }
-

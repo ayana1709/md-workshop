@@ -12,55 +12,78 @@ class ItemController extends Controller {
     }
 
     // Store a new item
-    public function store(Request $request) {
-        // Validate the input fields
-        $validated = $request->validate([
-            'description' => 'nullable|string',
-            'part_number' => 'nullable|string',
-            'quantity' => 'nullable|integer|min:0',
-            'brand' => 'nullable|string',
-            'model' => 'nullable|string',
-            'unit_price' => 'nullable|numeric|min:0',
-            'total_price' => 'nullable|numeric|min:0',
-            'location' => 'nullable|string',
-            'condition' => 'required|in:New,Used',
-    
-            // New fields
-            'item_name' => 'nullable|string',
-            'unit' => 'nullable|string',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'least_price' => 'nullable|numeric|min:0',
-            'maximum_price' => 'nullable|numeric|min:0',
-            'minimum_quantity' => 'nullable|integer|min:0',
-            'low_quantity' => 'nullable|integer|min:0',
-            'manufacturer' => 'nullable|string',
-            'manufacturing_date' => 'nullable|date',
-        ]);
-    
-        // Check if the item already exists by part_number
-        $existingItem = Item::where('part_number', $validated['part_number'] ?? null)->first();
-    
+   public function store(Request $request)
+{
+    // Validate fields
+    $validated = $request->validate([
+        'code' => 'nullable|string|max:20',
+        'part_number' => 'nullable|string|max:255',
+        'item_name' => 'nullable|string|max:255',
+        'quantity' => 'nullable|integer|min:0',
+        'brand' => 'nullable|string|max:255',
+        'model' => 'nullable|string|max:255',
+        'unit_price' => 'nullable|numeric|min:0',
+        'total_price' => 'nullable|numeric|min:0',
+        'location' => 'nullable|string|max:255',
+        'condition' => 'required|in:New,Used',
+        'unit' => 'nullable|string|max:255',
+        'purchase_price' => 'nullable|numeric|min:0',
+        'selling_price' => 'nullable|numeric|min:0',
+        'least_price' => 'nullable|numeric|min:0',
+        'maximum_price' => 'nullable|numeric|min:0',
+        'minimum_quantity' => 'nullable|integer|min:0',
+        'low_quantity' => 'nullable|integer|min:0',
+        'manufacturer' => 'nullable|string|max:255',
+        'manufacturing_date' => 'nullable|date',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+    ]);
+
+    // Auto-generate code if not provided
+    if (empty($validated['code'])) {
+        $validated['code'] = strtoupper(substr(uniqid(), -8));
+    }
+
+    // Handle image upload
+    if ($request->hasFile('image')) {
+        $path = $request->file('image')->store('items', 'public');
+        $validated['image'] = $path;
+    }
+
+    // Check if item already exists by part_number
+    if (!empty($validated['part_number'])) {
+        $existingItem = Item::where('part_number', $validated['part_number'])->first();
+
         if ($existingItem) {
-            // If exists, update the quantity
+            // If exists, update quantity & optionally replace image
             $existingItem->quantity += $validated['quantity'] ?? 0;
-            $existingItem->total_price = $existingItem->quantity * ($existingItem->unit_price ?? 0); // Update total price
+            $existingItem->total_price = $existingItem->quantity * ($existingItem->unit_price ?? 0);
+
+            if (isset($validated['image'])) {
+                // Delete old image if exists
+                if ($existingItem->image && \Storage::disk('public')->exists($existingItem->image)) {
+                    \Storage::disk('public')->delete($existingItem->image);
+                }
+                $existingItem->image = $validated['image'];
+            }
+
             $existingItem->save();
-    
+
             return response()->json([
                 'message' => 'Quantity updated for existing item',
                 'item' => $existingItem
             ], 200);
-        } else {
-            // Otherwise, create a new item
-            $item = Item::create($validated);
-    
-            return response()->json([
-                'message' => 'Item added successfully',
-                'item' => $item
-            ], 201);
         }
     }
+
+    // Create new item
+    $item = Item::create($validated);
+
+    return response()->json([
+        'message' => 'Item added successfully',
+        'item' => $item
+    ], 201);
+}
+
     
     public function getByPartNumber($part_number)
 {

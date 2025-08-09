@@ -69,7 +69,7 @@ const TotalItem = () => {
     const headers = [
       [
         "Item Code",
-        "Description",
+        "Item Name ",
         "Part Number",
         "Brand",
         "Unit",
@@ -82,7 +82,7 @@ const TotalItem = () => {
 
     const data = filteredItems.map((item) => [
       item.id || "",
-      item.description || "",
+      item.item_name || "",
       item.part_number || "",
       item.brand || "",
       item.unit || "",

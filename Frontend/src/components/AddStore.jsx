@@ -26,55 +26,88 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const formFields = [
-  { label: "Item Code", field: "code", disabled: true },
-  { label: "Part Number", field: "part_number" },
-  { label: "Brand", field: "brand" },
-  { label: "Model", field: "model" },
-  { label: "Location", field: "location" },
-  { label: "Item Name", field: "item_name" },
-  { label: "Unit", field: "unit" },
-  { label: "Purchase Price", field: "purchase_price", type: "number" },
-  { label: "Selling Price", field: "selling_price", type: "number" },
-  { label: "Least Price", field: "least_price", type: "number" },
-  { label: "Maximum Price", field: "maximum_price", type: "number" },
-  { label: "Minimum Quantity", field: "minimum_quantity", type: "number" },
-  { label: "Low Quantity", field: "low_quantity", type: "number" },
-  { label: "Manufacturer", field: "manufacturer" },
-  { label: "Manufacturing Date", field: "manufacturing_date", type: "date" },
+  { label: "Item Code", field: "code", disabled: true, placeholder: "***" },
+  {
+    label: "Item Name",
+    field: "item_name",
+    placeholder: "የእቃ ስም",
+    required: true,
+  },
+  {
+    label: "Purchase Price",
+    field: "purchase_price",
+    type: "number",
+    placeholder: "የግዢ ዋጋ",
+  },
+  {
+    label: "Selling Price",
+    field: "selling_price",
+    type: "number",
+    placeholder: "የሽያጭ ዋጋ",
+  },
+  {
+    label: "Quantity",
+    field: "quantity",
+    type: "number",
+    placeholder: "ብዛት",
+    required: true,
+  },
+  {
+    label: "Least Price",
+    field: "least_price",
+    type: "number",
+    placeholder: "አነስተኛ ዋጋ",
+  },
+  {
+    label: "Maximum Price",
+    field: "maximum_price",
+    type: "number",
+    placeholder: "ከፍተኛ ዋጋ",
+  },
+  { label: "Location", field: "location", placeholder: "አካባቢ" },
+  { label: "Part Number", field: "part_number", placeholder: "የክፍል ቁጥር" },
+  { label: "Brand", field: "brand", placeholder: "ብራንድ" },
+  { label: "Model", field: "model", placeholder: "ሞዴል" },
+  { label: "Unit", field: "unit", placeholder: "ክፍል" },
+  {
+    label: "Minimum Quantity",
+    field: "minimum_quantity",
+    type: "number",
+    placeholder: "አነስተኛ ብዛት",
+  },
+  {
+    label: "Low Quantity",
+    field: "low_quantity",
+    type: "number",
+    placeholder: "ዝቅተኛ ብዛት",
+  },
+  { label: "Manufacturer", field: "manufacturer", placeholder: "አምራች" },
+  {
+    label: "Manufacturing Date",
+    field: "manufacturing_date",
+    type: "date",
+    placeholder: "የማምረቻ ቀን",
+  },
 ];
 
-const AddStore = () => {
+export default function AddStore() {
   const navigate = useNavigate();
   const { showModal, setShowModal } = useStores();
   const [loading, setLoading] = useState(false);
-
-  const [item, setItem] = useState({
-    part_number: "",
-    quantity: "",
-    brand: "",
-    model: "",
-    condition: "New",
-    unit_price: "",
-    total_price: "",
-    location: "",
-    item_name: "",
-    unit: "",
-    purchase_price: "",
-    selling_price: "",
-    least_price: "",
-    maximum_price: "",
-    minimum_quantity: "",
-    low_quantity: "",
-    manufacturer: "",
-    manufacturing_date: "",
-  });
-
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
+  const [item, setItem] = useState(() =>
+    formFields.reduce((acc, f) => ({ ...acc, [f.field]: "" }), {
+      condition: "New",
+      unit_price: "",
+      total_price: 0,
+    })
+  );
 
   const handleChange = (field, value) => {
     setItem((prev) => {
-      let updatedItem = { ...prev, [field]: value };
+      const updated = { ...prev, [field]: value };
       if (
         [
           "unit_price",
@@ -87,41 +120,57 @@ const AddStore = () => {
           "minimum_quantity",
         ].includes(field)
       ) {
-        updatedItem[field] = value ? Number(value) : "";
+        updated[field] = value ? Number(value) : "";
       }
-      updatedItem.total_price = (
-        (updatedItem.unit_price || 0) * (updatedItem.quantity || 0)
+      updated.total_price = (
+        (updated.unit_price || 0) * (updated.quantity || 0)
       ).toFixed(2);
-      return updatedItem;
+      return updated;
     });
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setImage(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  const validateForm = () => {
+    for (let field of formFields) {
+      if (field.required && !item[field.field]) {
+        toast.error(`Please fill in ${field.label}`);
+        return false;
+      }
     }
+    if (!item.unit_price) {
+      toast.error("Please enter the unit price");
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {
+    if (!validateForm()) return;
     setLoading(true);
-    const generatedCode = uuidv4().slice(0, 8).toUpperCase();
-
-    if (!item.quantity || !item.unit_price) {
-      toast.error("Please fill in all required fields.");
-      setLoading(false);
-      return;
-    }
 
     try {
+      const generatedCode = uuidv4().slice(0, 8).toUpperCase();
       const formData = new FormData();
-      formData.append("code", generatedCode);
-      Object.keys(item).forEach((key) => {
-        formData.append(key, item[key]);
-      });
-      if (image) {
-        formData.append("image", image);
+
+      Object.entries({ ...item, code: generatedCode }).forEach(
+        ([key, value]) => {
+          formData.append(key, value);
+        }
+      );
+
+      if (imageFile) {
+        formData.append("image", imageFile);
       }
 
       await api.post("/items", formData, {
@@ -129,12 +178,19 @@ const AddStore = () => {
       });
 
       toast.success("Item added successfully!");
+      setItem(
+        formFields.reduce((acc, f) => ({ ...acc, [f.field]: "" }), {
+          condition: "New",
+          unit_price: "",
+          total_price: 0,
+        })
+      );
+      setImageFile(null);
+      setImagePreview(null);
       setShowModal(false);
       navigate("/inventory/total-items");
     } catch (error) {
-      toast.error(
-        "Error: " + (error.response?.data?.message || "Something went wrong!")
-      );
+      toast.error(error.response?.data?.message || "Something went wrong!");
     } finally {
       setLoading(false);
     }
@@ -159,72 +215,86 @@ const AddStore = () => {
             </CardHeader>
             <CardContent className="max-h-[70vh] overflow-y-auto p-6 space-y-4">
               {/* Image Upload */}
-              <div className="flex flex-col items-start">
-                <Label>Item Image</Label>
-                <div className="w-40 h-40 border flex items-center justify-center mb-2 bg-gray-100">
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="object-contain w-full h-full"
-                    />
-                  ) : (
-                    <span className="text-gray-400">No image</span>
+              <div>
+                <Label className="mb-2 font-bold">Item Image</Label>
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-40 h-40 object-cover border rounded mb-2"
+                  />
+                ) : (
+                  <div className="w-40 h-40 flex items-center justify-center bg-gray-200 border rounded mb-2">
+                    <span className="text-gray-500">No Image</span>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  {imagePreview && (
+                    <Button
+                      type="button"
+                      onClick={handleImageRemove}
+                      variant="destructive"
+                    >
+                      X
+                    </Button>
                   )}
+                  <label className="cursor-pointer bg-blue-500 text-white px-3 py-1 rounded">
+                    📂
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+                  </label>
                 </div>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
               </div>
 
-              {/* Other Fields */}
+              {/* Dynamic Form Fields */}
               <div className="grid gap-4">
-                {formFields.map(({ label, field, type, disabled }) => (
-                  <div key={field}>
-                    <Label htmlFor={field}>{label}</Label>
-                    <Input
-                      id={field}
-                      type={type || "text"}
-                      value={item[field]}
-                      onChange={(e) => handleChange(field, e.target.value)}
-                      disabled={disabled}
-                      className={type === "number" ? "no-spinner" : ""}
-                    />
-                  </div>
-                ))}
+                {formFields.map(
+                  ({ label, field, type, disabled, placeholder }) => (
+                    <div key={field}>
+                      <Label htmlFor={field} className="mb-1 block font-bold">
+                        {label}
+                      </Label>
+                      <Input
+                        id={field}
+                        type={type || "text"}
+                        value={item[field]}
+                        onChange={(e) => handleChange(field, e.target.value)}
+                        disabled={disabled}
+                        placeholder={placeholder}
+                        className="font-bold text-black placeholder-gray-500 no-spinner"
+                      />
+                    </div>
+                  )
+                )}
 
                 <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => handleChange("quantity", e.target.value)}
-                    className="no-spinner"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="unit_price">Unit Price</Label>
+                  <Label htmlFor="unit_price" className="font-bold">
+                    Unit Price
+                  </Label>
                   <Input
                     id="unit_price"
                     type="number"
                     value={item.unit_price}
                     onChange={(e) => handleChange("unit_price", e.target.value)}
-                    className="no-spinner"
+                    className="no-spinner font-bold text-black placeholder-gray-500"
+                    placeholder="የክፍል ዋጋ"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="condition">Condition</Label>
+                  <Label htmlFor="condition" className="font-bold">
+                    Condition
+                  </Label>
                   <Select
                     value={item.condition}
                     onValueChange={(value) => handleChange("condition", value)}
                   >
                     <SelectTrigger id="condition">
-                      <SelectValue />
+                      <SelectValue placeholder="ሁኔታ" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="New">New</SelectItem>
@@ -234,12 +304,15 @@ const AddStore = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="total_price">Total Price</Label>
+                  <Label htmlFor="total_price" className="font-bold">
+                    Total Price
+                  </Label>
                   <Input
                     id="total_price"
                     type="text"
                     value={item.total_price}
                     disabled
+                    className="font-bold text-black"
                   />
                 </div>
               </div>
@@ -262,6 +335,4 @@ const AddStore = () => {
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddStore;
+}
