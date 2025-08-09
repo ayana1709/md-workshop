@@ -8,6 +8,8 @@ import Header from "@/partials/Header";
 import { format } from "date-fns";
 import api from "@/api";
 import Swal from "sweetalert2";
+import { useStores } from "@/contexts/storeContext";
+// import { useStores } from "@/contexts/storeContext"; // your global store
 
 function ProformaForm() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,10 +35,15 @@ function ProformaForm() {
     notes: "",
   });
 
+  const { setProformas } = useStores(); // import from context
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
       const { data } = await api.post("/proformas", formData);
+
+      // ⬅ Save to context right after saving to DB
+      setProformas((prev) => [...prev, data]);
 
       Swal.fire({
         title: "Success!",
@@ -47,8 +54,7 @@ function ProformaForm() {
         cancelButtonText: "No, Thanks",
       }).then((result) => {
         if (result.isConfirmed) {
-          // Navigate to print page
-          window.open(`/proforma-print/${data.id}`, "_blank");
+          window.open(`/proforma-print/${data.id}`);
         } else {
           // Reset form
           setFormData({

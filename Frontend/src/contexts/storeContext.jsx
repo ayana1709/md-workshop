@@ -46,6 +46,8 @@ function StoreProvider({ children }) {
   const [isDialogeOpen, setIsDialogeOpen] = useState(false);
   const [dialogeOpen, setDialogeOpen] = useState(false);
   const [grandTotals, setGrandTotals] = useState({});
+  const [proformas, setProformas] = useState([]);
+
   // const [companyData, setCompanyData] = useState(null);
 
   useEffect(() => {
@@ -279,6 +281,8 @@ function StoreProvider({ children }) {
         getGrandTotal,
         companyData,
         setCompanyData,
+        proformas,
+        setProformas,
       }}
     >
       {children}
