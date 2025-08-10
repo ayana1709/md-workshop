@@ -40,7 +40,7 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
   return (
     <div className="space-y-4">
       {/* Column visibility dropdown */}
-      <div className="flex justify-between items-center">
+      {/* <div className="flex justify-between items-center">
         <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -65,7 +65,7 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </div> */}
 
       {/* Table */}
       <div className="rounded-md border overflow-x-auto">

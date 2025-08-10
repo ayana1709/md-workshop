@@ -69,6 +69,43 @@ export const columns = ({
     enableSorting: false,
     enableHiding: false,
   },
+
+  {
+    accessorKey: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      const [openImage, setOpenImage] = useState(false);
+
+      // Build the full image URL (adjust base URL as needed)
+      const imageUrl = row.original.image
+        ? `${import.meta.env.VITE_API_URL}/storage/${row.original.image}`
+        : "/placeholder.png";
+
+      return (
+        <>
+          {/* Small Thumbnail */}
+          <img
+            src={imageUrl}
+            alt={row.original.item_name}
+            className="w-12 h-12 object-cover rounded cursor-pointer border"
+            onClick={() => setOpenImage(true)}
+          />
+
+          {/* Popup for Full Image */}
+          <Dialog open={openImage} onOpenChange={setOpenImage}>
+            <DialogContent className="p-0 bg-transparent border-none shadow-none">
+              <img
+                src={imageUrl}
+                alt={row.original.item_name}
+                className="max-w-full max-h-[80vh] object-contain rounded"
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      );
+    },
+  },
+
   {
     accessorKey: "id",
     header: "Item Code",
@@ -77,6 +114,7 @@ export const columns = ({
       return <span>{paddedId}</span>;
     },
   },
+
   {
     accessorKey: "item_name",
     header: "Item Name",
@@ -160,10 +198,10 @@ export const columns = ({
       );
     },
   },
-  {
-    accessorKey: "description",
-    header: "Description",
-  },
+  // {
+  //   accessorKey: "description",
+  //   header: "Description",
+  // },
   {
     accessorKey: "quantity",
     header: "Quantity",
@@ -241,28 +279,28 @@ export const columns = ({
       ]);
       const formatNumber = (value) => {
         const num = Number(value);
-      
+
         if (isNaN(num)) return "0"; // fallback for invalid input
-      
+
         return new Intl.NumberFormat("en-US", {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         }).format(num);
       };
-      
+
       const rawUnitPrice = Number(row.original.unit_price || 0);
       const rawQuantity = Number(row.original.quantity || 0);
-      
+
       const vat = rawUnitPrice * 0.15;
       const unitWithVat = rawUnitPrice + vat;
       const totalWithVat = unitWithVat * rawQuantity;
-      
+
       // Only format when displaying
       console.log("Unit Price:", formatNumber(rawUnitPrice));
       console.log("VAT:", formatNumber(vat));
       console.log("Unit + VAT:", formatNumber(unitWithVat));
       console.log("Total with VAT:", formatNumber(totalWithVat));
-      
+
       const handleNewPrice = (newPrice) => {
         setPriceHistory((prev) => [
           { date: new Date().toISOString().split("T")[0], value: newPrice },
@@ -270,11 +308,8 @@ export const columns = ({
         ]);
         setShowEditModal(false);
       };
-     
-      
+
       // Usage:
-      
-      
 
       return (
         <div>
@@ -286,13 +321,10 @@ export const columns = ({
             </PopoverTrigger>
             <PopoverContent className="w-[300px]">
               <div className="text-sm space-y-1">
-              <div>Unit Price: {row.original.unit_price}</div>
-             <div>Unit VAT: {vat}</div>
-             <div>
-              Unit Price with VAT: {unitWithVat}
-             </div>
-              <div>Total Price with VAT: {totalWithVat}</div>
-
+                <div>Unit Price: {row.original.unit_price}</div>
+                <div>Unit VAT: {vat}</div>
+                <div>Unit Price with VAT: {unitWithVat}</div>
+                <div>Total Price with VAT: {totalWithVat}</div>
               </div>
               <Separator className="my-2" />
               <div className="text-sm font-semibold">
