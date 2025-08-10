@@ -33,16 +33,18 @@ const LowStore = () => {
     setShowModal,
     setIsItemModalOpen,
     setSelectedRepairId,
-  } = useStores();
+  } = useStores([]);
   // console.log(selectedRows);
 
   const filteredItems = useMemo(() => {
-    let data = lowitems;
+    let data = Array.isArray(lowitems) ? lowitems : [];
+
     if (searchItem) {
       data = data.filter((item) =>
         item.part_number?.toLowerCase().includes(searchItem.toLowerCase())
       );
     }
+
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -52,13 +54,15 @@ const LowStore = () => {
         return created >= start && created <= end;
       });
     }
+
     return data;
   }, [lowitems, searchItem, startDate, endDate]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const paginatedItems = useMemo(() => {
+    const itemsArray = Array.isArray(filteredItems) ? filteredItems : [];
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredItems.slice(startIndex, startIndex + itemsPerPage);
+    return itemsArray.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredItems, currentPage, itemsPerPage]);
 
   const handleExportPDF = () => {

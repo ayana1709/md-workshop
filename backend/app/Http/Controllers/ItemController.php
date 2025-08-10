@@ -84,6 +84,11 @@ class ItemController extends Controller {
     ], 201);
 }
 
+
+
+
+
+
     
     public function getByPartNumber($part_number)
 {
@@ -96,7 +101,60 @@ class ItemController extends Controller {
     return response()->json($item);
 }
 
-    
+    public function update(Request $request, $id)
+{
+    // Find the item by ID
+    $item = Item::findOrFail($id);
+
+    // Validate fields (matching store() rules, without forcing part_number to be required)
+    $validated = $request->validate([
+        'code' => 'nullable|string|max:20',
+        'part_number' => 'nullable|string|max:255',
+        'item_name' => 'nullable|string|max:255',
+        'quantity' => 'nullable|integer|min:0',
+        'brand' => 'nullable|string|max:255',
+        'model' => 'nullable|string|max:255',
+        'unit_price' => 'nullable|numeric|min:0',
+        'total_price' => 'nullable|numeric|min:0',
+        'location' => 'nullable|string|max:255',
+        'condition' => 'required|in:New,Used',
+        'unit' => 'nullable|string|max:255',
+        'purchase_price' => 'nullable|numeric|min:0',
+        'selling_price' => 'nullable|numeric|min:0',
+        'least_price' => 'nullable|numeric|min:0',
+        'maximum_price' => 'nullable|numeric|min:0',
+        'minimum_quantity' => 'nullable|integer|min:0',
+        'low_quantity' => 'nullable|integer|min:0',
+        'manufacturer' => 'nullable|string|max:255',
+        'manufacturing_date' => 'nullable|date',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+    ]);
+
+    // Handle image upload if provided
+    if ($request->hasFile('image')) {
+        // Delete old image if exists
+        if ($item->image && \Storage::disk('public')->exists($item->image)) {
+            \Storage::disk('public')->delete($item->image);
+        }
+
+        $path = $request->file('image')->store('items', 'public');
+        $validated['image'] = $path;
+    }
+
+    // If quantity changes, update total price
+    if (isset($validated['quantity']) && isset($validated['unit_price'])) {
+        $validated['total_price'] = $validated['quantity'] * $validated['unit_price'];
+    }
+
+    // Update the item
+    $item->update($validated);
+
+    return response()->json([
+        'message' => 'Item updated successfully',
+        'item' => $item
+    ]);
+}
+
 
     // Fetch a single item
     public function show($id) {
@@ -123,43 +181,7 @@ public function fetchSelectedItems(Request $request)
 }
 
 
-   // Update an item
-public function update(Request $request, $id) {
-    // Find the item by ID
-    $item = Item::findOrFail($id);
-
-    // Validate all fields, including the new ones
-    $validated = $request->validate([
-        'description' => 'nullable|string',
-        'part_number' => 'required|string',
-        'quantity' => 'nullable|integer|min:0',
-        'brand' => 'nullable|string',
-        'model' => 'nullable|string',
-        'unit_price' => 'nullable|numeric|min:0',
-        'total_price' => 'nullable|numeric|min:0',
-        'location' => 'nullable|string',
-        'condition' => 'nullable|in:New,Used',
-        'item_name' => 'nullable|string',
-        'unit' => 'nullable|string',
-        'purchase_price' => 'nullable|numeric|min:0',
-        'selling_price' => 'nullable|numeric|min:0',
-        'least_price' => 'nullable|numeric|min:0',
-        'maximum_price' => 'nullable|numeric|min:0',
-        'minimum_quantity' => 'nullable|integer|min:0',
-        'low_quantity' => 'nullable|integer|min:0',
-        'manufacturer' => 'nullable|string',
-        'manufacturing_date' => 'nullable|date',
-    ]);
-
-    // Update the item with validated data
-    $item->update($validated);
-
-    // Return the response
-    return response()->json([
-        'message' => 'Item updated successfully',
-        'item' => $item
-    ]);
-}
+   
 
 
     // Delete an item
