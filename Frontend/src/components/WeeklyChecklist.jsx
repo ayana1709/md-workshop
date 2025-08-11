@@ -525,9 +525,9 @@ function WeeklyChecklist() {
                     <th rowSpan="2" className="border px-3 py-2">
                       Status
                     </th>
-                    <th rowSpan="2" className="border px-3 py-2">
+                    {/* <th rowSpan="2" className="border px-3 py-2">
                       Test Drive
-                    </th>
+                    </th> */}
                     <th rowSpan="2" className="border px-3 py-2">
                       Delivery Status
                     </th>
@@ -589,7 +589,7 @@ function WeeklyChecklist() {
                         >
                           {entry.status}
                         </td>
-                        <td className="border px-2 py-2 text-center">
+                        {/* <td className="border px-2 py-2 text-center">
                           {entry.testDriveStatus === "Pass" ? (
                             <span className="text-green-600 font-bold">
                               passed
@@ -601,7 +601,7 @@ function WeeklyChecklist() {
                           ) : (
                             <span className="text-gray-400">Pending</span>
                           )}
-                        </td>
+                        </td> */}
 
                         <td className="border px-2 py-2">
                           {entry.driverStatus}

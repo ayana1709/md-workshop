@@ -422,7 +422,7 @@ export const columns = ({
                 onClick={() => {
                   setSelectedRepairId(row.original.id); // Store the ID of the repair to delete
                   setIsItemModalOpen(true); // Open the delete confirmation modal
-                  setType("item");
+                  setType(item);
                   setOpen(false);
                 }}
               >

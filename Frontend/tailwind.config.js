@@ -15,7 +15,7 @@ export default {
       },
       backgroundImage: {
         "gradient-bg":
-          "linear-gradient(90deg, transparent 0%, transparent 50%, rgba(31, 41, 55, 0.85) 50%), url('/src/images/ww.png')",
+          "linear-gradient(90deg, transparent 0%, transparent 50%, rgba(31, 41, 55, 0.85) 50%), url('/src/images/motor-775.png')",
       },
       colors: {
         gray: {

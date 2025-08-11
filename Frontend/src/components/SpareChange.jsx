@@ -79,7 +79,7 @@ const SpareChange = () => {
         brand: "",
         condition: rows.length === 0 ? "new" : "",
         unitprice: "",
-        totalprice: 0,
+        totalprice: "0.00",
       };
 
       setRows((prevRows) => [...prevRows, newRow]);
@@ -291,24 +291,51 @@ const SpareChange = () => {
   const handleSave = async () => {
     try {
       console.log("Updating spare detail with ID:", editingRow);
-      console.log("Payload:", editValues); // ✅ Debugging
+      console.log("Payload:", editValues);
 
-      await api.put(`/spare-changes/${editingRow}`, editValues);
+      // Only send the fields Laravel expects
+      const payload = {
+        itemname: editValues.itemname || null,
+        partnumber: editValues.partnumber || null,
+        requestquantity: editValues.requestquantity || null,
+        brand: editValues.brand || null,
+        condition: editValues.condition || null,
+        unitprice: editValues.unitprice || null,
+        totalprice: editValues.totalprice || null,
+      };
+
+      const { data } = await api.put(`/spare-changes/${editingRow}`, payload);
 
       // Update UI optimistically
       setRows((prevRows) =>
-        prevRows.map((row) => (row.id === editingRow ? editValues : row))
+        prevRows.map((row) =>
+          row.id === editingRow ? { ...row, ...payload } : row
+        )
       );
 
       setEditingRow(null);
       setEditValues({});
-      Swal.fire("Success!", "Spare part updated successfully.", "success");
+
+      Swal.fire({
+        title: "Success!",
+        text: data?.message || "Spare part updated successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
     } catch (error) {
       console.error(
         "Error updating spare:",
         error.response?.data || error.message
       );
-      Swal.fire("Error!", "Failed to update spare part.", "error");
+
+      Swal.fire({
+        title: "Error!",
+        text:
+          error.response?.data?.message ||
+          "Failed to update spare part. Please check your inputs.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     }
   };
 
@@ -341,7 +368,8 @@ const SpareChange = () => {
           const unitPrice =
             parseFloat(field === "unitprice" ? value : row.unitprice) || 0;
 
-          updatedRow.totalprice = quantity * unitPrice;
+          // Store as string with two decimals
+          updatedRow.totalprice = (quantity * unitPrice).toFixed(2);
 
           return updatedRow;
         }
@@ -384,9 +412,7 @@ const SpareChange = () => {
                   <th className="border-2 border-gray-300 p-2 w-[100px]">
                     Brand
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px]">
-                    Qty
-                  </th>
+                  <th className="border-2 border-gray-300 p-2 w-[80px]">Qty</th>
 
                   <th className="border-2 border-gray-300 p-2 w-[70px]">
                     Condition
@@ -547,9 +573,7 @@ const SpareChange = () => {
 
                       {/* Total Price */}
                       <td className="border-2 border-gray-300 p-2 font-medium">
-                        {row.totalprice
-                          ? parseFloat(row.totalprice).toFixed(2)
-                          : "0.00"}
+                        {row.totalprice || "0.00"}
                       </td>
 
                       {/* Actions - Dropdown Menu */}
