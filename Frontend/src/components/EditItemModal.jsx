@@ -3,8 +3,12 @@ import { Button } from "../components/ui/button";
 import { useState } from "react";
 import api from "@/api";
 import { toast } from "react-toastify";
+import { useStores } from "@/contexts/storeContext";
+// import { useStores } from "../contexts/storeContext";
 
-const EditItemModal = ({ open, setOpen, item, onSave }) => {
+const EditItemModal = ({ open, setOpen, item }) => {
+  const { fetchItems } = useStores(); // <-- get fetchItems from context
+
   const [formData, setFormData] = useState({
     code: item.code || "",
     part_number: item.part_number || "",
@@ -25,7 +29,7 @@ const EditItemModal = ({ open, setOpen, item, onSave }) => {
     unit_price: item.unit_price || "",
     total_price: item.total_price || "",
     location: item.location || "",
-    image: null, // file upload
+    image: null,
   });
 
   const handleChange = (field, value) => {
@@ -36,7 +40,7 @@ const EditItemModal = ({ open, setOpen, item, onSave }) => {
     setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = new FormData();
@@ -46,45 +50,37 @@ const EditItemModal = ({ open, setOpen, item, onSave }) => {
       }
     });
 
-    api
-      .post(`/items/${item.id}?_method=PUT`, payload, {
+    try {
+      await api.post(`/items/${item.id}?_method=PUT`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((response) => {
-        toast.success("Item updated successfully!");
-        onSave(response.data.item);
-        setOpen(false);
-      })
-      .catch((error) => {
-        console.error("Error updating item:", error);
-        toast.error("Failed to update item");
       });
+
+      toast.success("Item updated successfully!");
+      await fetchItems(); // <-- refresh list in context
+      setOpen(false);
+    } catch (error) {
+      console.error("Error updating item:", error);
+      toast.error("Failed to update item");
+    }
   };
 
   const fields = [
     { label: "Item Name:", key: "item_name" },
     { label: "Part Number:", key: "part_number" },
-    { label: "Quantity:", key: "quantity", type: "number" },
-    { label: "Brand:", key: "brand" },
-    { label: "Model:", key: "model" },
-    {
-      label: "Condition:",
-      key: "condition",
-      type: "select",
-      options: ["New", "Used"],
-    },
     { label: "Unit:", key: "unit" },
+    { label: "Unit Price:", key: "unit_price", type: "number" },
+    { label: "Quantity:", key: "quantity", type: "number" },
     { label: "Purchase Price:", key: "purchase_price", type: "number" },
     { label: "Selling Price:", key: "selling_price", type: "number" },
     { label: "Least Price:", key: "least_price", type: "number" },
+    { label: "Location:", key: "location" },
     { label: "Maximum Price:", key: "maximum_price", type: "number" },
-    { label: "Minimum Quantity:", key: "minimum_quantity", type: "number" },
     { label: "Low Quantity:", key: "low_quantity", type: "number" },
+    { label: "Brand:", key: "brand" },
+    { label: "Model:", key: "model" },
     { label: "Manufacturer:", key: "manufacturer" },
     { label: "Manufacturing Date:", key: "manufacturing_date", type: "date" },
-    { label: "Unit Price:", key: "unit_price", type: "number" },
     { label: "Total Price:", key: "total_price", type: "number" },
-    { label: "Location:", key: "location" },
   ];
 
   return (
@@ -101,27 +97,12 @@ const EditItemModal = ({ open, setOpen, item, onSave }) => {
                 <label className="w-40 text-right text-sm font-medium pt-1">
                   {field.label}
                 </label>
-                {field.type === "select" ? (
-                  <select
-                    value={formData[field.key]}
-                    onChange={(e) => handleChange(field.key, e.target.value)}
-                    className="flex-1 text-sm border border-gray-300 px-2 py-1 rounded-sm"
-                  >
-                    <option value="">Select</option>
-                    {field.options.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type={field.type || "text"}
-                    value={formData[field.key]}
-                    onChange={(e) => handleChange(field.key, e.target.value)}
-                    className="flex-1 text-sm border border-gray-300 px-2 py-1 rounded-sm"
-                  />
-                )}
+                <input
+                  type={field.type || "text"}
+                  value={formData[field.key]}
+                  onChange={(e) => handleChange(field.key, e.target.value)}
+                  className="flex-1 text-sm border border-gray-300 px-2 py-1 rounded-sm"
+                />
               </div>
             ))}
 

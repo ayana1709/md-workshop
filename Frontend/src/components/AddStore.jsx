@@ -31,7 +31,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export default function AddStore() {
   const navigate = useNavigate();
-  const { showModal, setItems, setShowModal } = useStores();
+  const { showModal, setItems, setShowModal, fetchItems } = useStores();
 
   const [loading, setLoading] = useState(false);
 
@@ -92,6 +92,7 @@ export default function AddStore() {
   };
 
   // assume your store has setItems or similar
+
   const onSubmit = async (formDataRaw) => {
     setLoading(true);
     try {
@@ -107,10 +108,8 @@ export default function AddStore() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // const refreshed = await api.get("/items");
-      // setItems(refreshed.data);
-
       toast.success("Item Added!");
+      await fetchItems(); // refresh store list
       setShowModal(false);
     } catch (error) {
       toast.error(error?.response?.data?.message || "There was an error!");

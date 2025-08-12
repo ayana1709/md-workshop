@@ -67,20 +67,22 @@ function StoreProvider({ children }) {
     return () => clearTimeout(transitionTimeout);
   }, [theme]);
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const response = await api.get("/items"); // Fetch data from backend
-        console.log("fetched items:", response.data);
-        setItems(response.data); // Ensure the response structure matches
-      } catch (error) {
-        // console.error("Error fetching store items:", error);
-        // toast.error("Failed to fetch store items");
-      }
-    };
+  // Inside StoreProvider
+  const fetchItems = async () => {
+    try {
+      const response = await api.get("/items");
+      console.log("fetched items:", response.data);
+      setItems(response.data);
+    } catch (error) {
+      toast.error("Failed to fetch store items");
+    }
+  };
 
+  // Load once on mount
+  useEffect(() => {
     fetchItems();
   }, []);
+  // this is for  low stock items
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -271,6 +273,7 @@ function StoreProvider({ children }) {
         setSelectedField,
         items,
         setItems,
+        fetchItems,
         lowitems,
         setLowItems,
         outitems,

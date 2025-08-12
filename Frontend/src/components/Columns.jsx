@@ -25,6 +25,9 @@ import {
 import AddMoreItemModal from "./AddMoreItemModal";
 import { Search, X } from "lucide-react";
 import EditItemModal from "./EditItemModal";
+import Swal from "sweetalert2";
+import api from "@/api";
+import { useStores } from "@/contexts/storeContext";
 
 export const columns = ({
   selectedRows,
@@ -388,6 +391,7 @@ export const columns = ({
       const [open, setOpen] = useState(false);
       const [isModalOpen, setIsModalOpen] = useState(false);
       const id = row.original.id;
+      const { fetchItems } = useStores();
 
       return (
         <div className="relative">
@@ -415,15 +419,37 @@ export const columns = ({
               >
                 Edit
               </Button>
-
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600"
-                onClick={() => {
-                  setSelectedRepairId(row.original.id); // Store the ID of the repair to delete
-                  setIsItemModalOpen(true); // Open the delete confirmation modal
-                  setType(item);
-                  setOpen(false);
+                onClick={async () => {
+                  const result = await Swal.fire({
+                    title: "Are you sure?",
+                    text: "This item will be permanently deleted.",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel",
+                    confirmButtonColor: "#d33",
+                  });
+
+                  if (!result.isConfirmed) return;
+
+                  try {
+                    await api.delete(`/items/${row.original.id}`);
+
+                    Swal.fire(
+                      "Deleted!",
+                      "Item deleted successfully.",
+                      "success"
+                    );
+
+                    // Refresh items from context
+                    await fetchItems();
+                  } catch (error) {
+                    console.error(error);
+                    Swal.fire("Error", "Failed to delete the item.", "error");
+                  }
                 }}
               >
                 Delete
