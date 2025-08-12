@@ -12,7 +12,7 @@ class CreateSaleItemsTable extends Migration
             $table->id();
             $table->foreignId('sale_id')->constrained()->onDelete('cascade');
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
-            $table->string('description')->nullable();
+            $table->string('item_name')->nullable();
             $table->string('part_number')->nullable();
             $table->string('brand')->nullable();
             $table->string('unit')->nullable();

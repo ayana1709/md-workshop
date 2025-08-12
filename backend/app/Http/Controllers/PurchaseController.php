@@ -18,7 +18,7 @@ class PurchaseController extends Controller
             '*.paymentMethod' => 'required|string',
             '*.paymentStatus' => 'required|string',
             '*.code' => 'required|string',
-            '*.description' => 'required|string',
+            '*.item_name' => 'required|string',
             '*.partNumber' => 'nullable|string',
             '*.quantity' => 'required|integer',
             '*.brand' => 'nullable|string',
@@ -59,7 +59,7 @@ class PurchaseController extends Controller
                     // ✅ Create a new store item
                     $newStoreItem = StoreItem::create([
                         'code' => $item['code'],
-                        'description' => $item['description'],
+                        'item_name' => $item['item_name'],
                         'partNumber' => $item['partNumber'],
                         'quantity' => $item['quantity'],
                         'brand' => $item['brand'],
@@ -78,7 +78,7 @@ class PurchaseController extends Controller
                     'purchase_id' => $purchase->id,
                     'store_item_id' => $storeItemId,
                     'code' => $item['code'],
-                    'description' => $item['description'],
+                    'item_name' => $item['item_name'],
                     'part_number' => $item['partNumber'],
                     'quantity' => $item['quantity'],
                     'brand' => $item['brand'],

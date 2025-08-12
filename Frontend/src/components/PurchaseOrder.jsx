@@ -46,7 +46,7 @@ const PurchaseOrder = () => {
   const [items, setItems] = useState([]);
   const navigate = useNavigate();
 
-  console.log(items);
+  // console.log(items);
 
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
@@ -70,7 +70,7 @@ const PurchaseOrder = () => {
     setItems([
       ...items,
       {
-        description: "",
+        item_name: "",
         partNumber: "",
         brand: "",
         unit: "",
@@ -129,7 +129,7 @@ const PurchaseOrder = () => {
       remark: customer.remark,
       items: items.map((item) => ({
         item_id: item.id || generateRandomId(), // ✅ Fallback to random ID if not present
-        description: item.description,
+        item_name: item.item_name,
         part_number: item.part_number,
         brand: item.brand,
         unit: item.unit,
@@ -318,101 +318,112 @@ const PurchaseOrder = () => {
       </div>
 
       {/* Items Table */}
-      <table className="w-full border mb-4 text-sm">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="p-2">#</th>
-            <th className="p-2">Item Description</th>
-            <th className="p-2">Part Number</th>
-            <th className="p-2">Brand</th>
-            <th className="p-2">Unit</th>
-            <th className="p-2">Price</th>
-            <th className="p-2">Quantity</th>
-            <th className="p-2">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, index) => (
-            <tr key={index} className="border-t">
-              <td className="p-2">{index + 1}</td>
 
-              {/* Editable Fields */}
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.description || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "description", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.part_number || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "part_number", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.brand || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "brand", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.unit || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "unit", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  min="0"
-                  className="border p-1 w-full"
-                  value={item.price}
-                  onChange={(e) =>
-                    handleItemChange(index, "price", parseFloat(e.target.value))
-                  }
-                />
-              </td>
-
-              {/* Sale Quantity (editable) */}
-              <td>
-                <input
-                  type="number"
-                  min="1"
-                  className="border p-1 w-full"
-                  value={item.saleQty}
-                  onChange={(e) =>
-                    handleItemChange(index, "saleQty", parseInt(e.target.value))
-                  }
-                />
-              </td>
-
-              {/* Available Quantity (readonly) */}
-
-              {/* Delete Button */}
-              <td className="p-2 text-center">
-                <button
-                  onClick={() => handleDeleteRow(index)}
-                  className="text-lg text-red-500 text-center"
-                >
-                  X
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border mb-4 text-sm">
+          <thead>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2 whitespace-nowrap">#</th>
+              <th className="p-2 whitespace-nowrap">Item Name</th>
+              <th className="p-2 whitespace-nowrap">Part Number</th>
+              <th className="p-2 whitespace-nowrap">Brand</th>
+              <th className="p-2 whitespace-nowrap">Unit</th>
+              <th className="p-2 whitespace-nowrap">Price</th>
+              <th className="p-2 whitespace-nowrap">Quantity</th>
+              <th className="p-2 whitespace-nowrap">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index} className="border-t hover:bg-gray-50">
+                <td className="p-2 whitespace-nowrap">{index + 1}</td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.item_name || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "item_name", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.part_number || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "part_number", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.brand || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "brand", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.unit || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "unit", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    type="number"
+                    min="0"
+                    className="border p-1 w-full"
+                    value={item.price}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "price",
+                        parseFloat(e.target.value)
+                      )
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    type="number"
+                    min="1"
+                    className="border p-1 w-full"
+                    value={item.saleQty}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "saleQty",
+                        parseInt(e.target.value)
+                      )
+                    }
+                  />
+                </td>
+
+                <td className="p-2 text-center whitespace-nowrap">
+                  <button
+                    onClick={() => handleDeleteRow(index)}
+                    className="text-lg text-red-500 hover:text-red-700"
+                    aria-label={`Delete item ${item.item_name}`}
+                  >
+                    ×
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <button
         onClick={handleAddRow}

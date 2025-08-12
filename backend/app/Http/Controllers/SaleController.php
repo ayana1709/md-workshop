@@ -40,7 +40,7 @@ class SaleController extends Controller
 
         'items' => 'required|array',
         'items.*.part_number' => 'required|string',
-        'items.*.description' => 'nullable|string',
+        'items.*.item_name' => 'nullable|string',
         'items.*.brand' => 'nullable|string',
         'items.*.unit' => 'nullable|string',
         'items.*.unit_price' => 'required|numeric',
@@ -91,7 +91,7 @@ class SaleController extends Controller
 
             // Attach item to the sale
             $sale->items()->attach($item->id, [
-                'description'   => $itemData['description'],
+                'item_name'   => $itemData['item_name'],
                 'part_number'   => $itemData['part_number'],
                 'brand'         => $itemData['brand'],
                 'unit'          => $itemData['unit'],
@@ -149,7 +149,7 @@ public function update(Request $request, $id)
 
         'items' => 'required|array',
         'items.*.part_number' => 'required|string',
-        'items.*.description' => 'nullable|string',
+        'items.*.item_name' => 'nullable|string',
         'items.*.brand' => 'nullable|string',
         'items.*.unit' => 'nullable|string',
         'items.*.unit_price' => 'required|numeric',
@@ -174,7 +174,7 @@ public function update(Request $request, $id)
             }
 
             $sale->items()->attach($item->id, [
-                'description'   => $itemData['description'],
+                'item_name'   => $itemData['item_name'],
                 'part_number'   => $itemData['part_number'],
                 'brand'         => $itemData['brand'],
                 'unit'          => $itemData['unit'],

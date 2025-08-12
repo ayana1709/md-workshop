@@ -68,7 +68,7 @@ const AddSalesPage = () => {
     setItems([
       ...items,
       {
-        description: "",
+        item_name: "",
         partNumber: "",
         brand: "",
         unit: "",
@@ -102,7 +102,7 @@ const AddSalesPage = () => {
       updatedItems[index] = {
         ...currentItem,
         part_number: value, // ensure part number is preserved
-        description: itemData.description || "",
+        item_name: itemData.item_name || "",
         brand: itemData.brand || "",
         unit: itemData.unit || "",
         unit_price: parseFloat(itemData.unit_price) || 0,
@@ -160,7 +160,7 @@ const AddSalesPage = () => {
       remark: remark,
       items: items.map((item) => ({
         item_id: item.id,
-        description: item.description,
+        item_name: item.item_name,
         part_number: item.part_number,
         brand: item.brand,
         unit: item.unit,
@@ -363,115 +363,121 @@ const AddSalesPage = () => {
       </div>
 
       {/* Items Table */}
-      <table className="w-full border mb-4 text-sm">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="p-2">#</th>
-            <th className="p-2">Item Description</th>
-            <th className="p-2">Part Number</th>
-            <th className="p-2">Brand</th>
-            <th className="p-2">Unit</th>
-            <th className="p-2">Price</th>
-            <th className="p-2">Quantity</th>
-            <th className="p-2">Available</th>
-            <th className="p-2">Total</th>
-            <th className="p-2">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item, index) => (
-            <tr key={index} className="border-t">
-              <td className="p-2">{index + 1}</td>
-
-              {/* Editable Fields */}
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.description || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "description", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  type="text"
-                  value={items[index]?.part_number || ""}
-                  onChange={(e) =>
-                    handlePartNumberChange(index, e.target.value)
-                  }
-                  placeholder="Enter Part Number"
-                />
-              </td>
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.brand || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    handleItemChange(index, "part_number", val);
-                    handlePartNumberChange(index, val);
-                  }}
-                />
-              </td>
-              <td>
-                <input
-                  className="border p-1 w-full"
-                  value={item.unit || ""}
-                  onChange={(e) =>
-                    handleItemChange(index, "unit", e.target.value)
-                  }
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  className="border p-1 w-full"
-                  value={item.unit_price || 0}
-                  onChange={(e) =>
-                    handleItemChange(
-                      index,
-                      "unit_price",
-                      parseFloat(e.target.value)
-                    )
-                  }
-                />
-              </td>
-
-              {/* Sale Quantity (editable) */}
-              <td>
-                <input
-                  type="number"
-                  min="1"
-                  className="border p-1 w-full"
-                  value={item.saleQty}
-                  onChange={(e) =>
-                    handleItemChange(index, "saleQty", parseInt(e.target.value))
-                  }
-                />
-              </td>
-
-              {/* Available Quantity (readonly) */}
-              <td>{item.quantity ?? 0}</td>
-
-              {/* Row Total */}
-              <td className="p-2">
-                {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(2)}
-              </td>
-
-              {/* Delete Button */}
-              <td className="p-2 text-center">
-                <button
-                  onClick={() => handleDeleteRow(index)}
-                  className="text-red-500 text-center"
-                >
-                  X
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border text-sm">
+          <thead>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2 whitespace-nowrap">#</th>
+              <th className="p-2 whitespace-nowrap">Item name</th>
+              <th className="p-2 whitespace-nowrap">Part Number</th>
+              <th className="p-2 whitespace-nowrap">Brand</th>
+              <th className="p-2 whitespace-nowrap">Unit</th>
+              <th className="p-2 whitespace-nowrap">Price</th>
+              <th className="p-2 whitespace-nowrap">Quantity</th>
+              <th className="p-2 whitespace-nowrap">Available</th>
+              <th className="p-2 whitespace-nowrap">Total</th>
+              <th className="p-2 whitespace-nowrap">Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item, index) => (
+              <tr key={index} className="border-t hover:bg-gray-50">
+                <td className="p-2">{index + 1}</td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.item_name || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "item_name", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    type="text"
+                    className="border p-1 w-full"
+                    value={item.part_number || ""}
+                    onChange={(e) =>
+                      handlePartNumberChange(index, e.target.value)
+                    }
+                    placeholder="Enter Part Number"
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.brand || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handleItemChange(index, "part_number", val);
+                      handlePartNumberChange(index, val);
+                    }}
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    className="border p-1 w-full"
+                    value={item.unit || ""}
+                    onChange={(e) =>
+                      handleItemChange(index, "unit", e.target.value)
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    type="number"
+                    className="border p-1 w-full"
+                    value={item.unit_price || 0}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "unit_price",
+                        parseFloat(e.target.value)
+                      )
+                    }
+                  />
+                </td>
+
+                <td className="p-2">
+                  <input
+                    type="number"
+                    min="1"
+                    className="border p-1 w-full"
+                    value={item.saleQty}
+                    onChange={(e) =>
+                      handleItemChange(
+                        index,
+                        "saleQty",
+                        parseInt(e.target.value)
+                      )
+                    }
+                  />
+                </td>
+
+                <td className="p-2">{item.quantity ?? 0}</td>
+
+                <td className="p-2">
+                  {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(2)}
+                </td>
+
+                <td className="p-2 text-center">
+                  <button
+                    onClick={() => handleDeleteRow(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    X
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <button
         onClick={handleAddRow}

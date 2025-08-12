@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');
             $table->unsignedBigInteger('item_id');
-            $table->string('description')->nullable();
+            $table->string('item_name')->nullable();
             $table->string('part_number')->nullable();
             $table->string('brand')->nullable();
             $table->string('unit')->nullable();

@@ -24,7 +24,7 @@ const AddPurchase = () => {
     {
       id: uuidv4(),
       code: "", // Ensure a default code value
-      description: "",
+      item_name: "",
       partNumber: "",
       quantity: null,
       brand: "",
@@ -43,7 +43,7 @@ const AddPurchase = () => {
       {
         id: uuidv4(),
         code: "", // Generate a unique code
-        description: "",
+        item_name: "",
         partNumber: "",
         quantity: null,
         brand: "",
@@ -247,7 +247,7 @@ const AddPurchase = () => {
               {[
                 "#",
                 "Code",
-                "Description",
+                "Item name",
                 "Part Number",
                 "Quantity",
                 "Brand",
