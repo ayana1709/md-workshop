@@ -73,7 +73,7 @@ const CreatePurchaseOrder = () => {
     setItems([
       ...items,
       {
-        description: "",
+        item_name: "",
         partNumber: "",
         brand: "",
         unit: "",
@@ -132,7 +132,7 @@ const CreatePurchaseOrder = () => {
       remark: customer.remark,
       items: items.map((item) => ({
         item_id: item.id || generateRandomId(), // ✅ Fallback to random ID if not present
-        description: item.description,
+        item_name: item.item_name,
         part_number: item.part_number,
         brand: item.brand,
         unit: item.unit,
@@ -333,7 +333,7 @@ const CreatePurchaseOrder = () => {
             <thead>
               <tr className="bg-gray-100 text-left">
                 <th className="p-2">#</th>
-                <th className="p-2">Item Description</th>
+                <th className="p-2">Item Name </th>
                 <th className="p-2">Part Number</th>
                 <th className="p-2">Brand</th>
                 <th className="p-2">Quantity</th>
@@ -341,7 +341,7 @@ const CreatePurchaseOrder = () => {
                 <th className="p-2">Unit Price</th>
                 <th className="p-2">Total</th>
                 <th className="p-2">Remark</th>
-                <th className="p-2">Status</th>
+                {/* <th className="p-2">Status</th> */}
                 <th className="p-2">Action</th>
               </tr>
             </thead>
@@ -359,9 +359,9 @@ const CreatePurchaseOrder = () => {
                     <td>
                       <input
                         className="border p-1 w-full"
-                        value={item.description || ""}
+                        value={item.item_name || ""}
                         onChange={(e) =>
-                          handleItemChange(index, "description", e.target.value)
+                          handleItemChange(index, "item_name", e.target.value)
                         }
                       />
                     </td>
@@ -455,7 +455,7 @@ const CreatePurchaseOrder = () => {
                     </td>
 
                     {/* Status */}
-                    <td>
+                    {/* <td>
                       <select
                         className="border p-1 w-full"
                         value={item.status || ""}
@@ -468,7 +468,7 @@ const CreatePurchaseOrder = () => {
                         <option value="Completed">Completed</option>
                         <option value="Cancelled">Cancelled</option>
                       </select>
-                    </td>
+                    </td> */}
 
                     {/* Delete Button */}
                     <td className="p-2 text-center">

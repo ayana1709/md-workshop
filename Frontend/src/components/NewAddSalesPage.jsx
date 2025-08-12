@@ -378,7 +378,7 @@ const NewAddSalesPage = () => {
             <thead>
               <tr className="bg-gray-100 text-left">
                 <th className="p-2">#</th>
-                <th className="p-2">Item Description</th>
+                <th className="p-2">Item Name</th>
                 <th className="p-2">Part Number</th>
                 <th className="p-2">Brand</th>
                 <th className="p-2">Unit</th>
@@ -398,9 +398,9 @@ const NewAddSalesPage = () => {
                   <td>
                     <input
                       className="border p-1 w-full"
-                      value={item.description || ""}
+                      value={item.item_name || ""}
                       onChange={(e) =>
-                        handleItemChange(index, "description", e.target.value)
+                        handleItemChange(index, "item_name", e.target.value)
                       }
                     />
                   </td>

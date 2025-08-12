@@ -124,6 +124,41 @@ const TotalItem = () => {
     navigate("/inventory/order", { state: { selectedIds } });
   };
 
+  const handleDownloadTemplate = () => {
+    // Define the template structure (headers only)
+    const templateData = [
+      {
+        code: "",
+        part_number: "",
+        item_name: "",
+        brand: "",
+        model: "",
+        unit: "",
+        quantity: "",
+        purchase_price: "",
+        selling_price: "",
+        least_price: "",
+        maximum_price: "",
+        minimum_quantity: "",
+        low_quantity: "",
+        location: "",
+        manufacturer: "",
+        manufacturing_date: "",
+        image: "",
+      },
+    ];
+
+    // Convert JSON to a sheet
+    const ws = XLSX.utils.json_to_sheet(templateData, { skipHeader: false });
+
+    // Create workbook and append sheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Store Template");
+
+    // Write file
+    XLSX.writeFile(wb, "store_template.xlsx");
+  };
+
   const handlePrint = () => {
     const originalTable = document.querySelector("#printableTable table");
     if (!originalTable) return alert("Table not found.");
@@ -287,6 +322,9 @@ const TotalItem = () => {
 
           <Button variant="outline" onClick={handleImportClick}>
             Import
+          </Button>
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            Download Template
           </Button>
           <Button onClick={handlePrint}>Print</Button>
           <Button onClick={handleExportPDF}>PDF</Button>

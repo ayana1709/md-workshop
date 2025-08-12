@@ -11,7 +11,7 @@ class StoreItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code', 'description', 'partNumber', 'quantity', 'brand', 'model', 'condition', 'unitPrice', 'totalPrice', 'location'
+        'code', 'item_name', 'partNumber', 'quantity', 'brand', 'model', 'condition', 'unitPrice', 'totalPrice', 'location'
     ];
     public function purchaseItems()
     {

@@ -349,77 +349,92 @@ public function addMore(Request $request)
 
 public function import(Request $request)
 {
-    $validated = $request->validate([
-        'items' => 'required|array',
-        'items.*.part_number' => 'nullable|string',
-        'items.*.description' => 'nullable|string',
-        'items.*.quantity' => 'nullable|integer|min:0',
-        'items.*.brand' => 'nullable|string',
-        'items.*.model' => 'nullable|string',
-        'items.*.unit_price' => 'nullable|numeric|min:0',
-        'items.*.total_price' => 'nullable|numeric|min:0',
-        'items.*.location' => 'nullable|string',
-        'items.*.condition' => 'required|string|in:New,Used',
-        'items.*.item_name' => 'nullable|string',
-        'items.*.unit' => 'nullable|string',
-        'items.*.purchase_price' => 'nullable|numeric|min:0',
-        'items.*.selling_price' => 'nullable|numeric|min:0',
-        'items.*.least_price' => 'nullable|numeric|min:0',
-        'items.*.maximum_price' => 'nullable|numeric|min:0',
-        'items.*.minimum_quantity' => 'nullable|integer|min:0',
-        'items.*.low_quantity' => 'nullable|integer|min:0',
-        'items.*.manufacturer' => 'nullable|string',
-        'items.*.manufacturing_date' => 'nullable|date',
-    ]);
+    $rawItems = $request->input('items', []);
+
+    // Normalize all values before validation
+    $normalizedItems = collect($rawItems)->map(function ($item) {
+        return collect($item)->map(function ($value) {
+            // Convert numbers to strings for string fields, keep null if empty
+            if (is_numeric($value)) {
+                return (string) $value;
+            }
+            return $value === '' ? null : $value;
+        })->toArray();
+    })->toArray();
+
+    // Validate after normalization
+    $validated = validator(
+        ['items' => $normalizedItems],
+        [
+            'items' => 'required|array',
+            'items.*.code' => 'nullable|string|max:20',
+            'items.*.part_number' => 'nullable|string|max:255',
+            'items.*.item_name' => 'nullable|string|max:255',
+            'items.*.brand' => 'nullable|string|max:255',
+            'items.*.model' => 'nullable|string|max:255',
+            'items.*.unit' => 'nullable|string|max:255',
+            'items.*.quantity' => 'nullable|integer|min:0',
+            'items.*.purchase_price' => 'nullable|numeric|min:0',
+            'items.*.selling_price' => 'nullable|numeric|min:0',
+            'items.*.least_price' => 'nullable|numeric|min:0',
+            'items.*.maximum_price' => 'nullable|numeric|min:0',
+            'items.*.minimum_quantity' => 'nullable|integer|min:0',
+            'items.*.low_quantity' => 'nullable|integer|min:0',
+            'items.*.location' => 'nullable|string|max:255',
+            'items.*.manufacturer' => 'nullable|string|max:255',
+            'items.*.manufacturing_date' => 'nullable|date',
+            'items.*.image' => 'nullable|string',
+        ]
+    )->validate();
 
     $items = $validated['items'];
 
-    // Get part numbers from imported data
+    // Get unique part numbers (to check existing)
     $partNumbers = collect($items)->pluck('part_number')->filter()->unique();
 
-    // Fetch existing items by part_number
-    $existingItems = Item::whereIn('part_number', $partNumbers)->get()->keyBy('part_number');
+    // Fetch existing items
+    $existingItems = Item::whereIn('part_number', $partNumbers)
+        ->get()
+        ->keyBy('part_number');
 
     $toInsert = [];
-    $toUpdate = [];
+    $updatedItems = [];
+    $newItems = [];
 
     foreach ($items as $item) {
         $partNumber = $item['part_number'] ?? null;
         $quantity = $item['quantity'] ?? 0;
-        $unitPrice = $item['unit_price'] ?? 0;
+        $purchasePrice = $item['purchase_price'] ?? 0;
+
+        // Auto-calculate total price if not given
+        if (!isset($item['total_price'])) {
+            $item['total_price'] = $quantity * $purchasePrice;
+        }
 
         if ($partNumber && $existingItems->has($partNumber)) {
+            // Update existing
             $existing = $existingItems[$partNumber];
-
-            // Update fields and queue for bulk update
+            $existing->fill(array_filter($item, fn ($v) => !is_null($v))); // update non-null fields
             $existing->quantity += $quantity;
-            $existing->total_price = $existing->quantity * $existing->unit_price;
-            $toUpdate[] = $existing;
+            $existing->total_price = $existing->quantity * ($existing->purchase_price ?? 0);
+            $existing->save();
+
+            $updatedItems[] = $existing;
         } else {
-            // Calculate total price if not provided
-            if (!isset($item['total_price'])) {
-                $item['total_price'] = $quantity * $unitPrice;
-            }
-            $toInsert[] = $item;
+            // New item
+            $created = Item::create($item);
+            $newItems[] = $created;
         }
-    }
-
-    // Perform bulk insert
-    if (!empty($toInsert)) {
-        Item::insert($toInsert);
-    }
-
-    // Perform bulk update (loop required unless using advanced DB-specific logic)
-    foreach ($toUpdate as $item) {
-        $item->save();
     }
 
     return response()->json([
         'message' => 'Items imported successfully',
-        'inserted' => count($toInsert),
-        'updated' => count($toUpdate),
+        'inserted' => count($newItems),
+        'updated' => count($updatedItems),
+        'items' => array_merge($newItems, $updatedItems), // send to frontend
     ]);
 }
+
 
 
 }
