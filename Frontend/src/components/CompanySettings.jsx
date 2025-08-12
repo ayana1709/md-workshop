@@ -26,7 +26,7 @@ const CompanySettings = () => {
   });
 
   const [logoPreview, setLogoPreview] = useState(null);
-  console.log("Logo preview URL:", logoPreview);
+  // console.log("Logo preview URL:", logoPreview);
 
   useEffect(() => {
     const fetchCompanyData = async () => {
@@ -37,7 +37,10 @@ const CompanySettings = () => {
         // ✅ Preview image only if logo exists
 
         if (data.logo) {
-          setLogoPreview(`http://localhost:8000/storage/${data.logo}`);
+          // setLogoPreview(`http://localhost:8000/storage/${data.logo}`);
+          const baseURL =
+            import.meta.env.VITE_API_URL || "http://localhost:8000";
+          setLogoPreview(`${baseURL}/storage/${data.logo}`);
         }
 
         setForm({
@@ -194,6 +197,10 @@ const CompanySettings = () => {
                     src={logoPreview}
                     alt="Company Logo"
                     className="h-24 w-auto mt-2 rounded-md border border-gray-300 shadow-md"
+                    onError={(e) => {
+                      e.target.onerror = null; // prevents looping
+                      e.target.src = "/fallback-image.png"; // fallback image path
+                    }}
                   />
                 )}
                 {errors.logo && (
