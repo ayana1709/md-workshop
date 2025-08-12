@@ -1,28 +1,25 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStores } from "../contexts/storeContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { DataTable } from "./ui/dataTable"; // Assuming this is your ShadCN wrapper
-import { columns } from "./columns"; // We'll define this shortly
-import { FiSearch } from "react-icons/fi";
+import { DataTable } from "./ui/dataTable";
+import { columns } from "./columns";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
-
 import { toast } from "react-toastify";
 import api from "@/api";
 
 const TotalItem = () => {
   const printRef = useRef(null);
-  const fileInputRef = useRef(null); // top of component
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchItem, setSearchItem] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [isPrinting, setIsPrinting] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -34,7 +31,6 @@ const TotalItem = () => {
     setIsItemModalOpen,
     setSelectedRepairId,
   } = useStores();
-  // console.log(selectedRows);
 
   const filteredItems = useMemo(() => {
     let data = items;
@@ -65,11 +61,10 @@ const TotalItem = () => {
     const doc = new jsPDF();
     doc.setFontSize(14);
     doc.text("Store Items", 105, 20, { align: "center" });
-
     const headers = [
       [
         "Item Code",
-        "Item Name ",
+        "Item Name",
         "Part Number",
         "Brand",
         "Unit",
@@ -79,7 +74,6 @@ const TotalItem = () => {
         "Location",
       ],
     ];
-
     const data = filteredItems.map((item) => [
       item.id || "",
       item.item_name || "",
@@ -91,20 +85,13 @@ const TotalItem = () => {
       item.selling_price || "",
       item.location || "",
     ]);
-
     doc.autoTable({
       startY: 30,
       head: headers,
       body: data,
-      styles: {
-        fontSize: 10,
-      },
-      headStyles: {
-        fillColor: [0, 122, 102],
-        textColor: [255, 255, 255],
-      },
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [0, 122, 102], textColor: [255, 255, 255] },
     });
-
     doc.save("store-items.pdf");
   };
 
@@ -114,6 +101,7 @@ const TotalItem = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Store Items");
     XLSX.writeFile(wb, "store-items.xlsx");
   };
+
   const handleAddToSales = () => {
     const selectedIds = selectedRows.map((row) => row);
     navigate("/inventory/add-to-sale", { state: { selectedIds } });
@@ -125,7 +113,6 @@ const TotalItem = () => {
   };
 
   const handleDownloadTemplate = () => {
-    // Define the template structure (headers only)
     const templateData = [
       {
         code: "",
@@ -147,33 +134,22 @@ const TotalItem = () => {
         image: "",
       },
     ];
-
-    // Convert JSON to a sheet
     const ws = XLSX.utils.json_to_sheet(templateData, { skipHeader: false });
-
-    // Create workbook and append sheet
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Store Template");
-
-    // Write file
     XLSX.writeFile(wb, "store_template.xlsx");
   };
 
   const handlePrint = () => {
     const originalTable = document.querySelector("#printableTable table");
     if (!originalTable) return alert("Table not found.");
-
     const clonedTable = originalTable.cloneNode(true);
-
-    // Identify indexes of unwanted columns
     const headerCells = clonedTable.querySelectorAll("thead th");
     let removeIndexes = [];
-
     headerCells.forEach((th, index) => {
       const text = th.textContent?.toLowerCase();
       const hasCheckbox = th.querySelector("input[type='checkbox']");
       const hasIcon = th.querySelector("svg");
-
       if (
         text.includes("action") ||
         text.includes("options") ||
@@ -184,53 +160,30 @@ const TotalItem = () => {
         removeIndexes.push(index);
       }
     });
-
-    // Clean rows
     clonedTable.querySelectorAll("tr").forEach((row) => {
       const cells = Array.from(row.children);
-
-      // Remove entire column cells (checkbox, actions)
       removeIndexes.forEach((i) => {
         if (cells[i]) row.removeChild(cells[i]);
       });
-
-      // Inside remaining cells, remove only interactive elements (buttons, dropdowns, icons)
       cells.forEach((cell) => {
-        // Remove buttons/icons inside the cell, but preserve text
-        const buttonsAndIcons = cell.querySelectorAll(
+        const elements = cell.querySelectorAll(
           "button, svg, .dropdown, [role='button']"
         );
-        buttonsAndIcons.forEach((el) => {
-          el.remove();
-        });
+        elements.forEach((el) => el.remove());
       });
     });
-
-    // Print the cleaned table
     const printWindow = window.open("", "", "height=600,width=800");
     printWindow.document.write(`
       <html>
         <head>
           <title>Print Table</title>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 20px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            th, td {
-              border: 1px solid #ccc;
-              padding: 8px;
-              text-align: left;
-            }
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
           </style>
         </head>
-        <body>
-          ${clonedTable.outerHTML}
-        </body>
+        <body>${clonedTable.outerHTML}</body>
       </html>
     `);
     printWindow.document.close();
@@ -238,30 +191,25 @@ const TotalItem = () => {
     printWindow.print();
     printWindow.close();
   };
+
   const handleImportClick = () => {
     if (fileInputRef.current) fileInputRef.current.value = null;
     fileInputRef.current?.click();
   };
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-
       const importedItems = XLSX.utils.sheet_to_json(worksheet);
-
-      // Send to backend
       const response = await api.post("/items/import", {
         items: importedItems,
       });
-
       toast.success("Items imported successfully!");
-
-      // ✅ Use the backend response that includes item.code
       if (response.data.items) {
         setItems((prev) => [...prev, ...response.data.items]);
       }
@@ -273,30 +221,31 @@ const TotalItem = () => {
   };
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
-      <h2 className="text-xl font-bold text-green-500 mb-4">
+    <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
+      <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
         Store / ጠቅላላ የዕቃ ዝርዝር
       </h2>
-      <div className="flex flex-wrap justify-between gap-4 mb-4 items-center">
-        <div className="flex items-center gap-4 rounded-md px-2">
+
+      {/* Top Controls */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
+        {/* Search & Quick Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <Input
             type="text"
             placeholder="Search part number..."
             value={searchItem}
             onChange={(e) => setSearchItem(e.target.value)}
-            className="focus:ring-0 ml-2"
+            className="w-full sm:w-64"
           />
-
-          <div className="flex items-center gap-2">
-            {" "}
+          <div className="flex gap-2 flex-wrap">
             <Button
-              className="bg-green-500 text-white hover:bg-green-600"
+              className="bg-green-500 text-white hover:bg-green-600 w-full sm:w-auto"
               onClick={handleAddToSales}
             >
               Item Out
             </Button>
             <Button
-              className="bg-orange-500 text-white hover:bg-orange-600"
+              className="bg-orange-500 text-white hover:bg-orange-600 w-full sm:w-auto"
               onClick={handleAddToPurchase}
             >
               Request Purchase
@@ -304,12 +253,9 @@ const TotalItem = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowModal(true)}
-            className=""
-          >
+        {/* Import / Export Controls */}
+        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+          <Button variant="outline" onClick={() => setShowModal(true)}>
             + Add Item
           </Button>
           <input
@@ -319,20 +265,49 @@ const TotalItem = () => {
             style={{ display: "none" }}
             onChange={handleFileChange}
           />
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
+              onClick={handleImportClick}
+            >
+              Import
+            </Button>
 
-          <Button variant="outline" onClick={handleImportClick}>
-            Import
+            <Button
+              variant="outline"
+              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+              onClick={handleDownloadTemplate}
+            >
+              Template
+            </Button>
+
+            <Button
+              variant="outline"
+              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+              onClick={handlePrint}
+            >
+              Print
+            </Button>
+          </div>
+
+          <Button
+            className="bg-green-500 text-white hover:bg-green-600"
+            onClick={handleExportPDF}
+          >
+            PDF
           </Button>
-          <Button variant="outline" onClick={handleDownloadTemplate}>
-            Download Template
+          <Button
+            className="bg-blue-500 text-white hover:bg-blue-600"
+            onClick={handleExportExcel}
+          >
+            Excel
           </Button>
-          <Button onClick={handlePrint}>Print</Button>
-          <Button onClick={handleExportPDF}>PDF</Button>
-          <Button onClick={handleExportExcel}>Excel</Button>
         </div>
       </div>
 
-      <div id="printableTable">
+      {/* Data Table */}
+      <div id="printableTable" className="overflow-x-auto">
         <DataTable
           columns={columns({
             selectedRows,
