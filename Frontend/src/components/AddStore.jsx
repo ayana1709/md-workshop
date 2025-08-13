@@ -1,4 +1,3 @@
-// AddStore.jsx
 import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import api from "../api";
@@ -43,7 +42,7 @@ export default function AddStore() {
 
   const [loading, setLoading] = useState(false);
 
-  const placeholderImage = "/images/placeholder.png";
+  const placeholderImage = "../../public/images/default.jpg";
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(placeholderImage);
 
@@ -78,7 +77,7 @@ export default function AddStore() {
       brand: "",
       model: "",
       manufacturer: "",
-      manufacturing_date: "",
+      manufacturing_date: new Date().toISOString().split("T")[0],
       condition: "New",
     },
   });
@@ -108,17 +107,27 @@ export default function AddStore() {
       const generatedCode = uuidv4().slice(0, 8).toUpperCase();
       const fd = new FormData();
 
+      // Append all text fields
       Object.entries({ ...formDataRaw, code: generatedCode }).forEach(
         ([k, v]) => fd.append(k, v ?? "")
       );
-      if (imageFile) fd.append("image", imageFile);
+
+      // Handle image: use uploaded file or default image
+      if (imageFile) {
+        fd.append("image", imageFile);
+      } else {
+        const defaultImagePath = "/images/default.jpg"; // public folder path
+        const response = await fetch(defaultImagePath);
+        const blob = await response.blob();
+        fd.append("image", blob, "default.jpg");
+      }
 
       await api.post("/items", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Item Added!");
-      await fetchItems(); // refresh store list
+      await fetchItems();
       setShowModal(false);
     } catch (error) {
       toast.error(error?.response?.data?.message || "There was an error!");
@@ -126,6 +135,9 @@ export default function AddStore() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    setValue("manufacturing_date", new Date().toISOString().split("T")[0]);
+  }, [setValue]);
 
   return (
     <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -149,21 +161,18 @@ export default function AddStore() {
             <form onSubmit={handleSubmit(onSubmit)}>
               <CardContent className="p-6 space-y-6 bg-white">
                 {/* Item Image */}
+
                 <div>
                   <Label className="mb-2 font-bold flex items-center gap-2">
                     📷 Item Image
                   </Label>
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="preview"
-                      className="w-36 h-36 object-cover rounded-md border-gray-700"
-                    />
-                  ) : (
-                    <div className="w-36 h-36 rounded-md border bg-gray-300 flex items-center justify-center">
-                      <span className="text-gray-500">No image</span>
-                    </div>
-                  )}
+
+                  <img
+                    src={imagePreview}
+                    alt="preview"
+                    className="w-36 h-36 object-cover rounded-md border border-gray-300"
+                  />
+
                   <div className="flex gap-2 mt-3">
                     <label className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">
                       📁 Upload
@@ -174,7 +183,8 @@ export default function AddStore() {
                         onChange={handleImageChange}
                       />
                     </label>
-                    {imagePreview && (
+
+                    {(imagePreview || imageFile) && (
                       <Button
                         variant="destructive"
                         onClick={() => {
@@ -211,7 +221,7 @@ export default function AddStore() {
                       required: "Item Name is required",
                     })}
                     placeholder="Enter item name"
-                    className={`font-bold ${
+                    className={` ${
                       errors.item_name ? "border-red-500" : "border-gray-700"
                     }`}
                   />
@@ -261,10 +271,10 @@ export default function AddStore() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pcs">pcs</SelectItem>
-                      <SelectItem value="kg">kg</SelectItem>
                       <SelectItem value="box">box</SelectItem>
                       <SelectItem value="pack">pack</SelectItem>
                       <SelectItem value="set">set</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
                       <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
@@ -302,7 +312,7 @@ export default function AddStore() {
                     type="number"
                     {...register("purchase_price")}
                     placeholder="0.00"
-                    className="border-gray-700"
+                    className="border-gray-700 no-spinner"
                   />
                 </div>
 
@@ -349,7 +359,7 @@ export default function AddStore() {
                             type="number"
                             {...register("least_price")}
                             placeholder="0.00"
-                            className="border-gray-700"
+                            className="border-gray-700 no-spinner"
                           />
                         </div>
                         <div>
@@ -360,7 +370,7 @@ export default function AddStore() {
                             type="number"
                             {...register("maximum_price")}
                             placeholder="0.00"
-                            className="border-gray-700"
+                            className="border-gray-700 no-spinner"
                           />
                         </div>
                       </motion.div>
@@ -409,7 +419,7 @@ export default function AddStore() {
                           type="number"
                           {...register("low_quantity")}
                           placeholder="0"
-                          className="border-gray-700"
+                          className="border-gray-700 no-spinner"
                         />
                       </motion.div>
                     )}
@@ -463,7 +473,8 @@ export default function AddStore() {
                         <Input
                           type="date"
                           {...register("manufacturing_date")}
-                          className="border-gray-700"
+                          defaultValue={new Date().toISOString().split("T")[0]} // set today's date
+                          className="border-gray-700 font-bold focus:ring-2 focus:ring-blue-500"
                         />
                       </motion.div>
                     )}

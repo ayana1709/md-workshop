@@ -255,9 +255,25 @@ const TotalItem = () => {
 
         {/* Import / Export Controls */}
         <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
-          <Button variant="outline" onClick={() => setShowModal(true)}>
-            + Add Item
+          <Button
+            onClick={() => setShowModal(true)}
+            className="
+    font-extrabold 
+    text-white 
+    bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 
+    px-6 py-2 
+    rounded-lg 
+    shadow-md 
+    hover:shadow-lg 
+    hover:scale-105 
+    transition-all 
+    duration-200 
+    flex items-center gap-2
+  "
+          >
+            <span className="text-xl">+</span> Add Item
           </Button>
+
           <input
             ref={fileInputRef}
             type="file"
