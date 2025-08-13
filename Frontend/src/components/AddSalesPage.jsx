@@ -46,6 +46,10 @@ const AddSalesPage = () => {
   const navigate = useNavigate();
 
   console.log(items);
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setCustomer((prev) => ({ ...prev, salesDate: today }));
+  }, []);
 
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
@@ -72,9 +76,8 @@ const AddSalesPage = () => {
         partNumber: "",
         brand: "",
         unit: "",
-        price: 0,
+        price: "",
         quantity: "",
-
         saleQty: 1,
       },
     ]);
@@ -123,11 +126,11 @@ const AddSalesPage = () => {
 
   // Calculations
   const subTotal = items.reduce(
-    (sum, item) => sum + item.unit_price * item.quantity,
+    (sum, item) => sum + item.unit_price * item.saleQty,
     0
   );
   const subtotal = items.reduce((acc, item) => {
-    return acc + item.quantity * item.unit_price;
+    return acc + item.saleQty * item.unit_price;
   }, 0);
 
   const vatAmount = (vatRate / 100) * subTotal;
@@ -363,30 +366,42 @@ const AddSalesPage = () => {
       </div>
 
       {/* Items Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full border text-sm">
-          <thead>
-            <tr className="bg-gray-100 text-left">
-              <th className="p-2 whitespace-nowrap">#</th>
-              <th className="p-2 whitespace-nowrap">Item name</th>
-              <th className="p-2 whitespace-nowrap">Part Number</th>
-              <th className="p-2 whitespace-nowrap">Brand</th>
-              <th className="p-2 whitespace-nowrap">Unit</th>
-              <th className="p-2 whitespace-nowrap">Price</th>
-              <th className="p-2 whitespace-nowrap">Quantity</th>
-              <th className="p-2 whitespace-nowrap">Available</th>
-              <th className="p-2 whitespace-nowrap">Total</th>
-              <th className="p-2 whitespace-nowrap">Action</th>
+      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+        <table className="min-w-full border-collapse text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              {[
+                "#",
+                "Item name",
+                "Part Number",
+                "Brand",
+                "Unit",
+                "Price",
+                "Quantity",
+                "Available",
+                "Total",
+                "Action",
+              ].map((header, i) => (
+                <th
+                  key={i}
+                  className="px-3 py-2 text-left text-gray-700 font-semibold whitespace-nowrap"
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-200">
             {items.map((item, index) => (
-              <tr key={index} className="border-t hover:bg-gray-50">
-                <td className="p-2">{index + 1}</td>
+              <tr
+                key={index}
+                className="hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-3 py-2">{index + 1}</td>
 
-                <td className="p-2">
+                <td className="px-3 py-2 min-w-[140px]">
                   <input
-                    className="border p-1 w-full"
+                    className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.item_name || ""}
                     onChange={(e) =>
                       handleItemChange(index, "item_name", e.target.value)
@@ -394,10 +409,10 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">
+                <td className="px-3 py-2 min-w-[140px]">
                   <input
                     type="text"
-                    className="border p-1 w-full"
+                    className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.part_number || ""}
                     onChange={(e) =>
                       handlePartNumberChange(index, e.target.value)
@@ -406,9 +421,9 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">
+                <td className="px-3 py-2 min-w-[120px]">
                   <input
-                    className="border p-1 w-full"
+                    className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.brand || ""}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -418,9 +433,9 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">
+                <td className="px-3 py-2">
                   <input
-                    className="border p-1 w-full"
+                    className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.unit || ""}
                     onChange={(e) =>
                       handleItemChange(index, "unit", e.target.value)
@@ -428,11 +443,11 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">
+                <td className="px-3 py-2">
                   <input
                     type="number"
-                    className="border p-1 w-full"
-                    value={item.unit_price || 0}
+                    className="border rounded-md px-2 py-1 w-full no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                    value={item.unit_price || ""}
                     onChange={(e) =>
                       handleItemChange(
                         index,
@@ -443,11 +458,11 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">
+                <td className="px-3 py-2">
                   <input
                     type="number"
                     min="1"
-                    className="border p-1 w-full"
+                    className="border rounded-md px-2 py-1 w-full no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.saleQty}
                     onChange={(e) =>
                       handleItemChange(
@@ -459,18 +474,18 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="p-2">{item.quantity ?? 0}</td>
+                <td className="px-3 py-2">{item.quantity ?? 0}</td>
 
-                <td className="p-2">
+                <td className="px-3 py-2 font-medium">
                   {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(2)}
                 </td>
 
-                <td className="p-2 text-center">
+                <td className="px-3 py-2 text-center">
                   <button
                     onClick={() => handleDeleteRow(index)}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 font-bold"
                   >
-                    X
+                    ✕
                   </button>
                 </td>
               </tr>
@@ -541,7 +556,7 @@ const AddSalesPage = () => {
             <label>Paid Amount:</label>
             <input
               type="number"
-              className="border p-1 w-full rounded-md"
+              className="border p-1 w-full rounded-md no-spinner"
               readOnly
               disabled
               value={PaidAmount}
