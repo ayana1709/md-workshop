@@ -47,7 +47,10 @@ const PurchaseOrder = () => {
   const navigate = useNavigate();
 
   // console.log(items);
-
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setCustomer((prev) => ({ ...prev, salesDate: today }));
+  }, []);
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
       api
@@ -158,7 +161,7 @@ const PurchaseOrder = () => {
       {/* Sales Info */}
       <div className="flex flex-col gap-4 mb-4 w-[85%] px-4">
         <div>
-          <label>Sales Date</label>
+          <label>Purchase Date</label>
           <input
             type="date"
             className="border p-2 w-full rounded-sm"
@@ -350,7 +353,7 @@ const PurchaseOrder = () => {
 
                 <td className="p-2">
                   <input
-                    className="border p-1 w-full"
+                    className="border p-1 w-full no-spinner"
                     value={item.part_number || ""}
                     onChange={(e) =>
                       handleItemChange(index, "part_number", e.target.value)
@@ -360,7 +363,7 @@ const PurchaseOrder = () => {
 
                 <td className="p-2">
                   <input
-                    className="border p-1 w-full"
+                    className="border p-1 w-full no-spinner"
                     value={item.brand || ""}
                     onChange={(e) =>
                       handleItemChange(index, "brand", e.target.value)
@@ -370,7 +373,7 @@ const PurchaseOrder = () => {
 
                 <td className="p-2">
                   <input
-                    className="border p-1 w-full"
+                    className="border p-1 w-full no-spinner"
                     value={item.unit || ""}
                     onChange={(e) =>
                       handleItemChange(index, "unit", e.target.value)
@@ -382,7 +385,7 @@ const PurchaseOrder = () => {
                   <input
                     type="number"
                     min="0"
-                    className="border p-1 w-full"
+                    className="border p-1 w-full no-spinner"
                     value={item.price}
                     onChange={(e) =>
                       handleItemChange(
@@ -398,7 +401,7 @@ const PurchaseOrder = () => {
                   <input
                     type="number"
                     min="1"
-                    className="border p-1 w-full"
+                    className="border p-1 w-full no-spinner"
                     value={item.saleQty}
                     onChange={(e) =>
                       handleItemChange(
