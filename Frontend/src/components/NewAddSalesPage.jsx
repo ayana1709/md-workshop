@@ -49,6 +49,10 @@ const NewAddSalesPage = () => {
   const navigate = useNavigate();
 
   console.log(items);
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setCustomer((prev) => ({ ...prev, salesDate: today }));
+  }, []);
 
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
@@ -126,11 +130,11 @@ const NewAddSalesPage = () => {
 
   // Calculations
   const subTotal = items.reduce(
-    (sum, item) => sum + item.unit_price * item.quantity,
+    (sum, item) => sum + item.unit_price * item.saleQty,
     0
   );
   const subtotal = items.reduce((acc, item) => {
-    return acc + item.quantity * item.unit_price;
+    return acc + item.saleQty * item.unit_price;
   }, 0);
 
   const vatAmount = (vatRate / 100) * subTotal;
@@ -374,119 +378,135 @@ const NewAddSalesPage = () => {
           </div>
 
           {/* Items Table */}
-          <table className="w-full border mb-4 text-sm">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="p-2">#</th>
-                <th className="p-2">Item Name</th>
-                <th className="p-2">Part Number</th>
-                <th className="p-2">Brand</th>
-                <th className="p-2">Unit</th>
-                <th className="p-2">Price</th>
-                <th className="p-2">Quantity</th>
-                <th className="p-2">Available</th>
-                <th className="p-2">Total</th>
-                <th className="p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item, index) => (
-                <tr key={index} className="border-t">
-                  <td className="p-2">{index + 1}</td>
-
-                  {/* Editable Fields */}
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.item_name || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "item_name", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={items[index]?.part_number || ""}
-                      onChange={(e) =>
-                        handlePartNumberChange(index, e.target.value)
-                      }
-                      placeholder="Enter Part Number"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.brand || ""}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        handleItemChange(index, "part_number", val);
-                        handlePartNumberChange(index, val);
-                      }}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="border p-1 w-full"
-                      value={item.unit || ""}
-                      onChange={(e) =>
-                        handleItemChange(index, "unit", e.target.value)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      type="number"
-                      className="border p-1 w-full"
-                      value={item.unit_price || 0}
-                      onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          "unit_price",
-                          parseFloat(e.target.value)
-                        )
-                      }
-                    />
-                  </td>
-
-                  {/* Sale Quantity (editable) */}
-                  <td>
-                    <input
-                      type="number"
-                      min="1"
-                      className="border p-1 w-full"
-                      value={item.saleQty}
-                      onChange={(e) =>
-                        handleItemChange(
-                          index,
-                          "saleQty",
-                          parseInt(e.target.value)
-                        )
-                      }
-                    />
-                  </td>
-
-                  {/* Available Quantity (readonly) */}
-                  <td>{item.quantity ?? 0}</td>
-
-                  {/* Row Total */}
-                  <td className="p-2">
-                    {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(2)}
-                  </td>
-
-                  {/* Delete Button */}
-                  <td className="p-2 text-center">
-                    <button
-                      onClick={() => handleDeleteRow(index)}
-                      className="text-red-500 text-center"
+          <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+            <table className="min-w-full border-collapse text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  {[
+                    "#",
+                    "Item name",
+                    "Part Number",
+                    "Brand",
+                    "Unit",
+                    "Price",
+                    "Quantity",
+                    "Available",
+                    "Total",
+                    "Action",
+                  ].map((header, i) => (
+                    <th
+                      key={i}
+                      className="px-3 py-2 text-left text-gray-700 font-semibold whitespace-nowrap"
                     >
-                      X
-                    </button>
-                  </td>
+                      {header}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {items.map((item, index) => (
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <td className="px-3 py-2">{index + 1}</td>
+
+                    <td className="px-3 py-2 min-w-[140px]">
+                      <input
+                        className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.item_name || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "item_name", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    <td className="px-3 py-2 min-w-[140px]">
+                      <input
+                        type="text"
+                        className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.part_number || ""}
+                        onChange={(e) =>
+                          handlePartNumberChange(index, e.target.value)
+                        }
+                        placeholder="Enter Part Number"
+                      />
+                    </td>
+
+                    <td className="px-3 py-2 min-w-[120px]">
+                      <input
+                        className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.brand || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleItemChange(index, "part_number", val);
+                          handlePartNumberChange(index, val);
+                        }}
+                      />
+                    </td>
+
+                    <td className="px-3 py-2">
+                      <input
+                        className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.unit || ""}
+                        onChange={(e) =>
+                          handleItemChange(index, "unit", e.target.value)
+                        }
+                      />
+                    </td>
+
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        className="border rounded-md px-2 py-1 w-full no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.unit_price || ""}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "unit_price",
+                            parseFloat(e.target.value)
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min="1"
+                        className="border rounded-md px-2 py-1 w-full no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        value={item.saleQty}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            "saleQty",
+                            parseInt(e.target.value)
+                          )
+                        }
+                      />
+                    </td>
+
+                    <td className="px-3 py-2">{item.quantity ?? 0}</td>
+
+                    <td className="px-3 py-2 font-medium">
+                      {((item.saleQty ?? 1) * (item.unit_price ?? 0)).toFixed(
+                        2
+                      )}
+                    </td>
+
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => handleDeleteRow(index)}
+                        className="text-red-500 hover:text-red-700 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <button
             onClick={handleAddRow}
