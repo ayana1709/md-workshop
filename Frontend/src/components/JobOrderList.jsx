@@ -199,102 +199,99 @@ const JobOrderList = () => {
 
   return (
     <div className="relative z-0 p-6 bg-white dark:bg-gray-700 shadow-lg rounded-lg dark:text-white">
-      <div className="w-full flex phone:flex-col laptop:flex-row gap-4 justify-start phone:mt-12 desktop:mt-0 mb-4">
+      <div className="flex flex-col laptop:flex-row gap-4 mb-4">
         {selectedRows.length > 0 ? (
-          <div className="flex gap-2 items-center overflow-hidden">
+          // Bulk Action Buttons
+          <div className="flex gap-2 items-center">
             <button
               onClick={() =>
                 navigate("/bulk-add-to-work-order", {
                   state: { selectedRows },
                 })
               }
-              className="border-none text-white hover:bg-green-800 px-4 py-2 rounded-md bg-green-500 transition-all duration-500"
+              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
             >
               Add to Work
             </button>
-
             <button
-              className="border-none text-white hover:bg-green-800 px-4 py-2 rounded-md bg-blue-500 transition-all duration-500"
               onClick={() => handleAction("Pending")}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
             >
               Request Spare
             </button>
             <button
-              className="border-none text-white hover:bg-green-800 px-4 py-2 rounded-md bg-red-500 transition-all duration-500"
               onClick={() => deleteSelectedRows(selectedRows)}
+              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
             >
               Delete
             </button>
           </div>
         ) : (
-          <div>
-            <div className="flex gap-2">
-              <div className="laptop:w-[30%] desktop:w-[10%] overflow-hidden">
-                <select
-                  className="w-full text-sm bg-white dark:bg-gray-800 dark:text-white text-gray-700 hover:cursor-pointer px-2 py-2 overflow-hidden border-2 border-green-500 focus:border-green-600 focus:ring-0 focus:outline-none ring-0 outline-none rounded-md transition-all duration-300"
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
-                >
-                  {[5, 10, 20, 50].map((num) => (
-                    <option key={num} value={num} className="text-sm">
-                      View{num}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          // Filters & Search
+          <div className="w-full space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+            {/* Items per Page */}
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-md dark:bg-gray-800 dark:text-white transition"
+            >
+              {[5, 10, 20, 50].map((num) => (
+                <option key={num} value={num}>
+                  View {num}
+                </option>
+              ))}
+            </select>
 
-              <div className="desktop:w-[14%] relative">
-                <input
-                  type="text" // Use text input to prevent default placeholder
-                  onFocus={(e) => (e.target.type = "date")} // Change to date on focus
-                  onBlur={(e) =>
-                    (e.target.type = e.target.value ? "date" : "text")
-                  } // Keep text type if empty
-                  className="dark:bg-gray-800 dark:text-white placeholder:dark:text-white placeholder:text-sm w-full border-2 border-green-500 focus:border-green-600 focus:cursor-pointer ring-0 outline-none focus:ring-0 focus:outline-none rounded-lg px-2 py-2 transition-all duration-300"
-                  placeholder="Select Start Date" // Custom placeholder
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
+            {/* Start Date */}
+            <input
+              type="text"
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
+              placeholder="Start Date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
+            />
 
-              <div className="desktop:w-[14%] relative">
-                <input
-                  type="text"
-                  onFocus={(e) => (e.target.type = "date")}
-                  onBlur={(e) =>
-                    (e.target.type = e.target.value ? "date" : "text")
-                  }
-                  className="placeholder:dark:text-white dark:bg-gray-800 placeholder:text-sm w-full border-2 border-green-500 focus:border-green-600 focus:cursor-pointer ring-0 outline-none focus:ring-0 focus:outline-none rounded-lg px-2 py-2 transition-all duration-300"
-                  placeholder="Select End Date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
+            {/* End Date */}
+            <input
+              type="text"
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
+              placeholder="End Date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
+            />
 
-              <div className="desktop:w-[10%] px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 dark:bg-green-700 hover:cursor-pointer hover:shadow-md transition-all duration-300">
-                <button onClick={handleFilter} className="w-full text-white">
-                  Filter
-                </button>
-              </div>
-              <div className="desktop:w-[15%] border-2 border-green-500 flex items-center px-2 rounded-lg dark:bg-gray-800 overflow-hidden">
-                <FiSearch className="text-gray-600 dark:text-white" />
-                <input
-                  type="text"
-                  className="w-full dark:bg-transparent placeholder:dark:text-white border-none focus:ring-0 focus:outline-none ml-2 rounded-md"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="absolute z-[9999999] mx-auto phone:top-2 phone:right-6 tablet:top-6 desktop:right-6">
-              <ButtonRepairOperation
-                tableData={repairs}
-                headers={headers}
-                filename="repair"
-                headerMappings={headerMappings}
+            {/* Filter Button */}
+            <button
+              onClick={handleFilter}
+              className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+            >
+              Filter
+            </button>
+
+            {/* Search */}
+            <div className="flex items-center w-full sm:w-auto px-2 border-2 border-green-500 rounded-lg dark:bg-gray-800">
+              <FiSearch className="text-gray-600 dark:text-white" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-2 py-1 dark:bg-transparent border-none focus:ring-0 placeholder:dark:text-white"
               />
             </div>
+
+            {/* Export / Actions */}
+            <ButtonRepairOperation
+              tableData={repairs}
+              headers={headers}
+              filename="repair"
+              headerMappings={headerMappings}
+              className="w-full sm:w-auto"
+            />
           </div>
         )}
       </div>
