@@ -171,7 +171,7 @@ export const columns = ({
       );
     },
   },
-
+  // part number
   {
     accessorKey: "part_number",
     header: "Part Number",
@@ -201,43 +201,19 @@ export const columns = ({
       );
     },
   },
-  // {
-  //   accessorKey: "description",
-  //   header: "Description",
-  // },
-  {
-    accessorKey: "quantity",
-    header: "Quantity",
-    cell: ({ row }) => {
-      const [openModal, setOpenModal] = useState(false);
-      return (
-        <div className="relative flex items-center gap-2">
-          {row.original.quantity}
-          <Button
-            size="icon"
-            variant="outline"
-            onClick={() => setOpenModal(true)}
-          >
-            <IoMdArrowDropdown />
-          </Button>
-          {openModal && (
-            <div className="absolute z-[9999]">
-              <EditFieldModal
-                item={row.original}
-                field="quantity"
-                onClose={() => setOpenModal(false)}
-                setItems={setItems}
-              />
-            </div>
-          )}
-        </div>
-      );
-    },
-  },
   {
     accessorKey: "brand",
     header: "Brand",
   },
+  {
+    accessorKey: "unit",
+    header: "Unit",
+  },
+  // {
+  //   accessorKey: "description",
+  //   header: "Description",
+  // },
+
   {
     accessorKey: "purchase_price",
     header: "Pr Price",
@@ -269,7 +245,7 @@ export const columns = ({
     },
   },
   {
-    accessorKey: "unit_price",
+    accessorKey: "selling_price",
     header: "Sp Price",
     cell: ({ row }) => {
       const [openPopover, setOpenPopover] = useState(false);
@@ -319,7 +295,8 @@ export const columns = ({
           <Popover open={openPopover} onOpenChange={setOpenPopover}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
-                {row.original.unit_price} <IoMdArrowDropdown className="ml-1" />
+                {row.original.selling_price}{" "}
+                <IoMdArrowDropdown className="ml-1" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[300px]">
@@ -357,6 +334,35 @@ export const columns = ({
                 setItems={(updatedItem) =>
                   handleNewPrice(updatedItem.unit_price)
                 }
+              />
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "quantity",
+    header: "Quantity",
+    cell: ({ row }) => {
+      const [openModal, setOpenModal] = useState(false);
+      return (
+        <div className="relative flex items-center gap-2">
+          {row.original.quantity}
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={() => setOpenModal(true)}
+          >
+            <IoMdArrowDropdown />
+          </Button>
+          {openModal && (
+            <div className="absolute z-[9999]">
+              <EditFieldModal
+                item={row.original}
+                field="quantity"
+                onClose={() => setOpenModal(false)}
+                setItems={setItems}
               />
             </div>
           )}
