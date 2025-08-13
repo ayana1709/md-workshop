@@ -17,6 +17,14 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,8 +43,9 @@ export default function AddStore() {
 
   const [loading, setLoading] = useState(false);
 
+  const placeholderImage = "/images/placeholder.png";
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [imagePreview, setImagePreview] = useState(placeholderImage);
 
   // UI toggles for collapsible sub-sections
   const [showPriceExtras, setShowPriceExtras] = useState(false);
@@ -135,325 +144,330 @@ export default function AddStore() {
                   Add Store Item
                 </CardTitle>
               </div>
-              {/* <div className="text-sm text-gray-500">የእቃ መታወቂያን ይዘው ያስገቡ</div> */}
             </CardHeader>
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <CardContent className="p-6 space-y-6 bg-white">
-                {/* Image */}
-                <div className="flex gap-6 items-start">
-                  {/* Main fields (two-column responsive) */}
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="mb-2 font-bold">Item Image </Label>
-                      {imagePreview ? (
-                        <img
-                          src={imagePreview}
-                          alt="preview"
-                          className="w-36 h-36 object-cover rounded-md border"
-                        />
-                      ) : (
-                        <div className="w-36 h-36 rounded-md border bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-500">No image</span>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2 mt-3">
-                        <label className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">
-                          📁
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageChange}
-                          />
-                        </label>
-                        {imagePreview && (
-                          <Button
-                            variant="destructive"
-                            onClick={() => {
-                              setImageFile(null);
-                              setImagePreview(null);
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        )}
-                      </div>
+                {/* Item Image */}
+                <div>
+                  <Label className="mb-2 font-bold flex items-center gap-2">
+                    📷 Item Image
+                  </Label>
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt="preview"
+                      className="w-36 h-36 object-cover rounded-md border-gray-700"
+                    />
+                  ) : (
+                    <div className="w-36 h-36 rounded-md border bg-gray-300 flex items-center justify-center">
+                      <span className="text-gray-500">No image</span>
                     </div>
-                    {/* Code (readonly) */}
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label className="mb-1 font-bold">Item Code</Label>
-                      <Input
-                        {...register("***")}
-                        placeholder="***"
-                        disabled
-                        className="font-bold bg-gray-50"
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <label className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">
+                      📁 Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageChange}
                       />
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Item Name</Label>
-                      <Input
-                        {...register("item_name", {
-                          required: "የእቃ ስም ያስፈልጋል",
-                        })}
-                        placeholder="የእቃ ስም እዚህ ያስገቡ"
-                        className={`font-bold ${
-                          errors.item_name ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors.item_name && (
-                        <p className="text-red-600 text-sm mt-1">
-                          {errors.item_name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Part Number</Label>
-                      <Input
-                        {...register("part_number")}
-                        placeholder="ፓርት ቁጥር ያስገቡ"
-                      />
-                      {errors.part_number && (
-                        <p className="text-red-600 text-sm mt-1">
-                          {errors.part_number.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Unit</Label>
-                      <Input {...register("unit")} placeholder="pcs" />
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Unit Price</Label>
-                      <Input
-                        type="number"
-                        {...register("unit_price", {
-                          required: "የአንዱ ዋጋ ያስፈልጋል",
-                          min: { value: 0, message: "አንዱ ዋጋ ≥ 0 ሊሆን አለበት" },
-                        })}
-                        placeholder="0.00"
-                        className={`no-spinner font-bold ${
-                          errors.unit_price ? "border-red-500" : ""
-                        }`}
-                      />
-                      {errors.unit_price && (
-                        <p className="text-red-600 text-sm mt-1">
-                          {errors.unit_price.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Purchase Price</Label>
-                      <Input
-                        type="number"
-                        {...register("purchase_price")}
-                        placeholder="0.00"
-                        className="no-spinner"
-                      />
-                    </div>
-
-                    {/* Selling price + toggle extras */}
-                    <div className="col-span-1 sm:col-span-1">
-                      <Label className="mb-1 font-bold">Selling Price</Label>
-                      <div className="flex items-end gap-2">
-                        <Input
-                          type="number"
-                          {...register("selling_price", {
-                            required: "የሽያጭ ዋጋ ያስፈልጋል",
-                          })}
-                          placeholder="0.00"
-                          className={`flex-1 no-spinner ${
-                            errors.selling_price ? "border-red-500" : ""
-                          }`}
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          className="p-2"
-                          onClick={() => setShowPriceExtras((s) => !s)}
-                          aria-expanded={showPriceExtras}
-                          aria-controls="price-extras"
-                        >
-                          <FiPlus />
-                        </Button>
-                      </div>
-                      {errors.selling_price && (
-                        <p className="text-red-600 text-sm mt-1">
-                          {errors.selling_price.message}
-                        </p>
-                      )}
-
-                      <AnimatePresence>
-                        {showPriceExtras && (
-                          <motion.div
-                            id="price-extras"
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.22 }}
-                            className="mt-3 grid grid-cols-2 gap-2"
-                          >
-                            <div>
-                              <Label className="mb-1 font-bold">
-                                Least Price
-                              </Label>
-                              <Input
-                                type="number"
-                                {...register("least_price")}
-                                placeholder="0.00"
-                                className="no-spinner"
-                              />
-                            </div>
-                            <div>
-                              <Label className="mb-1 font-bold">
-                                Maximum Price
-                              </Label>
-                              <Input
-                                type="number"
-                                {...register("maximum_price")}
-                                placeholder="0.00"
-                                className="no-spinner"
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Quantity + low qty toggle */}
-                    <div>
-                      <Label className="mb-1 font-bold">Quantity</Label>
-                      <div className="flex items-end gap-2">
-                        <Input
-                          type="number"
-                          {...register("quantity", {
-                            required: "ብዛት ያስፈልጋል",
-                            min: { value: 0, message: "ብዛት ≥ 0 ሊሆን አለበት" },
-                          })}
-                          placeholder="0"
-                          className={`no-spinner ${
-                            errors.quantity ? "border-red-500" : ""
-                          }`}
-                        />
-                        <Button
-                          type="button"
-                          size="icon"
-                          onClick={() => setShowLowQty((s) => !s)}
-                        >
-                          <FiPlus />
-                        </Button>
-                      </div>
-                      {errors.quantity && (
-                        <p className="text-red-600 text-sm mt-1">
-                          {errors.quantity.message}
-                        </p>
-                      )}
-
-                      <AnimatePresence>
-                        {showLowQty && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.22 }}
-                            className="mt-3"
-                          >
-                            <Label className="mb-1 font-bold">
-                              Low Quantity
-                            </Label>
-                            <Input
-                              type="number"
-                              {...register("low_quantity")}
-                              placeholder="0"
-                              className="no-spinner"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    <div>
-                      <Label className="mb-1 font-bold">Location</Label>
-                      <Input
-                        {...register("location")}
-                        placeholder="የእቃው ቦታ ያስገቡ"
-                      />
-                    </div>
-
-                    {/* Other - collapsible block */}
-                    <div className="col-span-1 sm:col-span-2">
-                      <Label
-                        className="font-bold flex items-center justify-between cursor-pointer"
-                        onClick={() => setShowOther((s) => !s)}
+                    </label>
+                    {imagePreview && (
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setImageFile(null);
+                          setImagePreview(null);
+                        }}
                       >
-                        <span>Other</span>
-                        <IoChevronDown
-                          className={`transition-transform ${
-                            showOther ? "rotate-180" : ""
-                          }`}
-                        />
-                      </Label>
-
-                      <AnimatePresence>
-                        {showOther && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.22 }}
-                            className="mt-3 grid grid-cols-2 gap-2"
-                          >
-                            <div>
-                              <Label className="mb-1 font-bold">Brand</Label>
-                              <Input
-                                {...register("brand")}
-                                placeholder="ምርት ብራንድ"
-                              />
-                            </div>
-                            <div>
-                              <Label className="mb-1 font-bold">Model</Label>
-                              <Input {...register("model")} placeholder="ሞዴል" />
-                            </div>
-                            <div>
-                              <Label className="mb-1 font-bold">
-                                Manufacturer
-                              </Label>
-                              <Input
-                                {...register("manufacturer")}
-                                placeholder="አምራች"
-                              />
-                            </div>
-                            <div>
-                              <Label className="mb-1 font-bold">
-                                Manufacturing Date
-                              </Label>
-                              <Input
-                                type="date"
-                                {...register("manufacturing_date")}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Total Price (readonly computed) */}
-                    {/* <div className="col-span-1 sm:col-span-2">
-                      <Label className="mb-1 font-bold">Total Price</Label>
-                      <Input
-                        {...register("total_price")}
-                        placeholder="0.00"
-                        disabled
-                        className="bg-gray-50 font-bold"
-                      />
-                    </div> */}
+                        Cancel
+                      </Button>
+                    )}
                   </div>
+                </div>
+
+                {/* Item Code */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    🏷️ Item Code
+                  </Label>
+                  <Input
+                    {...register("******")}
+                    placeholder="*******"
+                    disabled
+                    className="font-bold bg-gray-50 border-gray-700"
+                  />
+                </div>
+
+                {/* Item Name */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    📝 Item Name
+                  </Label>
+                  <Input
+                    {...register("item_name", {
+                      required: "Item Name is required",
+                    })}
+                    placeholder="Enter item name"
+                    className={`font-bold ${
+                      errors.item_name ? "border-red-500" : "border-gray-700"
+                    }`}
+                  />
+
+                  {errors.item_name && (
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.item_name.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Part Number */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    🔢 Part Number
+                  </Label>
+                  <Input
+                    {...register("part_number")}
+                    placeholder="Enter part number"
+                    className="border-gray-700"
+                  />
+                </div>
+
+                {/* Brand */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    🏭 Brand
+                  </Label>
+                  <Input
+                    {...register("brand")}
+                    placeholder="Brand name"
+                    className="border-gray-700"
+                  />
+                </div>
+
+                {/* Unit */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    📦 Unit
+                  </Label>
+                  <Select
+                    onValueChange={(value) => setValue("unit", value)} // set form value
+                    defaultValue={watch("unit") || ""} // show current value
+                  >
+                    <SelectTrigger className="border border-gray-300">
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pcs">pcs</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="box">box</SelectItem>
+                      <SelectItem value="pack">pack</SelectItem>
+                      <SelectItem value="set">set</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Unit Price */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    💰 Unit Price
+                  </Label>
+                  <Input
+                    type="number"
+                    {...register("unit_price", {
+                      required: "Unit price is required",
+                      min: { value: 0, message: "Unit price ≥ 0" },
+                    })}
+                    placeholder="0.00"
+                    className={`no-spinner ${
+                      errors.unit_price ? "border-red-500" : "border-gray-700"
+                    }`}
+                  />
+                  {errors.unit_price && (
+                    <p className="text-red-600 text-sm mt-1">
+                      {errors.unit_price.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Purchase Price */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    🛒 Purchase Price
+                  </Label>
+                  <Input
+                    type="number"
+                    {...register("purchase_price")}
+                    placeholder="0.00"
+                    className="border-gray-700"
+                  />
+                </div>
+
+                {/* Selling Price */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    💵 Selling Price
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      {...register("selling_price", {
+                        required: "Selling price required",
+                      })}
+                      placeholder="0.00"
+                      className={`flex-1 no-spinner ${
+                        errors.selling_price
+                          ? "border-red-500"
+                          : "border-gray-700"
+                      }`}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      onClick={() => setShowPriceExtras((s) => !s)}
+                    >
+                      <FiPlus />
+                    </Button>
+                  </div>
+                  <AnimatePresence>
+                    {showPriceExtras && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="mt-3 grid grid-cols-2 gap-2"
+                      >
+                        <div>
+                          <Label className="mb-1 font-bold flex items-center gap-2">
+                            💲 Least Price
+                          </Label>
+                          <Input
+                            type="number"
+                            {...register("least_price")}
+                            placeholder="0.00"
+                            className="border-gray-700"
+                          />
+                        </div>
+                        <div>
+                          <Label className="mb-1 font-bold flex items-center gap-2">
+                            💲 Maximum Price
+                          </Label>
+                          <Input
+                            type="number"
+                            {...register("maximum_price")}
+                            placeholder="0.00"
+                            className="border-gray-700"
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Quantity */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    🔢 Quantity
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      {...register("quantity", {
+                        required: "Quantity required",
+                        min: { value: 0, message: "Quantity ≥ 0" },
+                      })}
+                      placeholder="0"
+                      className={`no-spinner ${
+                        errors.quantity ? "border-red-500" : "border-gray-700"
+                      }`}
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      onClick={() => setShowLowQty((s) => !s)}
+                    >
+                      <FiPlus />
+                    </Button>
+                  </div>
+                  <AnimatePresence>
+                    {showLowQty && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="mt-3"
+                      >
+                        <Label className="mb-1 font-bold flex items-center gap-2">
+                          ⚠️ Low Quantity
+                        </Label>
+                        <Input
+                          type="number"
+                          {...register("low_quantity")}
+                          placeholder="0"
+                          className="border-gray-700"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    📍 Location
+                  </Label>
+                  <Input
+                    {...register("location")}
+                    placeholder="Location"
+                    className="border-gray-700"
+                  />
+                </div>
+
+                {/* Other collapsible */}
+                <div>
+                  <Label
+                    className="font-bold flex items-center justify-between cursor-pointer"
+                    onClick={() => setShowOther((s) => !s)}
+                  >
+                    <span>⚙️ Other</span>
+                    <IoChevronDown
+                      className={`transition-transform ${
+                        showOther ? "rotate-180" : "border-gray-700"
+                      }`}
+                    />
+                  </Label>
+                  <AnimatePresence>
+                    {showOther && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                        className="mt-3 space-y-2"
+                      >
+                        <Input
+                          {...register("model")}
+                          placeholder="Model"
+                          className="border-gray-700"
+                        />
+                        <Input
+                          {...register("manufacturer")}
+                          placeholder="Manufacturer"
+                          className="border-gray-700"
+                        />
+                        <Input
+                          type="date"
+                          {...register("manufacturing_date")}
+                          className="border-gray-700"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </CardContent>
 
