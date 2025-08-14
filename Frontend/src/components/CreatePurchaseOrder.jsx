@@ -157,7 +157,7 @@ const CreatePurchaseOrder = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
@@ -165,18 +165,21 @@ const CreatePurchaseOrder = () => {
       <div className="flex flex-col flex-1">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <main className="p-6">
-          <h2 className="pl-4 text-xl font-semibold mb-4 text-gray-800 uppercase tracking-wider">
-            Add Sales
+        <main className="p-4 sm:p-6 lg:p-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800 uppercase tracking-wide">
+            Add New Purchase
           </h2>
 
           {/* Sales Info */}
-          <div className="flex flex-col gap-4 mb-4 w-[85%] px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-white p-4 rounded-lg shadow">
+            {/* Purchase Date */}
             <div>
-              <label>Purchase Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Purchase Date
+              </label>
               <input
                 type="date"
-                className="border p-2 w-full rounded-sm"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
                 value={customer.salesDate}
                 onChange={(e) =>
                   setCustomer({ ...customer, salesDate: e.target.value })
@@ -184,12 +187,15 @@ const CreatePurchaseOrder = () => {
               />
             </div>
 
+            {/* Supplier Name */}
             <div className="relative">
-              <label>Supplier Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Supplier Name
+              </label>
               <input
                 type="text"
-                className="border p-2 w-full rounded-sm"
-                placeholder="supplier name"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                placeholder="Supplier name"
                 value={customer.supplierName}
                 onChange={(e) =>
                   setCustomer({ ...customer, supplierName: e.target.value })
@@ -198,17 +204,20 @@ const CreatePurchaseOrder = () => {
               <button
                 type="button"
                 onClick={() => setShowCustomerInfo((prev) => !prev)}
-                className="absolute -right-[6%] text-sm text-blue-600 underline"
+                className="absolute right-2 top-8 p-1 rounded-full hover:bg-gray-200"
               >
-                <CiSquareMore size={36} className="text-gray-600" />
+                <CiSquareMore size={24} className="text-gray-600" />
               </button>
             </div>
 
+            {/* Company Name */}
             <div>
-              <label>Company Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Company Name
+              </label>
               <input
                 type="text"
-                className="border p-2 w-full rounded-sm"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
                 placeholder="Company Name"
                 value={customer.companyName}
                 onChange={(e) =>
@@ -217,11 +226,14 @@ const CreatePurchaseOrder = () => {
               />
             </div>
 
+            {/* Tin Number */}
             <div>
-              <label>Tin Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tin Number
+              </label>
               <input
                 type="text"
-                className="border p-2 w-full rounded-sm"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
                 placeholder="Tin Number"
                 value={customer.tinNumber}
                 onChange={(e) =>
@@ -229,206 +241,131 @@ const CreatePurchaseOrder = () => {
                 }
               />
             </div>
+
+            {/* Reference Number */}
             <div>
-              <label>Reference Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reference Number
+              </label>
               <input
                 type="text"
-                className="border p-2 w-full rounded-sm"
-                placeholder="reference number"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                placeholder="Reference number"
                 value={customer.referenceNumber}
                 onChange={(e) =>
                   setCustomer({ ...customer, referenceNumber: e.target.value })
                 }
               />
             </div>
+
+            {/* Remark */}
             <div>
-              <label>Remark</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Remark
+              </label>
               <input
                 type="text"
-                className="border p-2 w-full rounded-sm"
-                placeholder="remark"
+                className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                placeholder="Remark"
                 value={customer.remark}
                 onChange={(e) =>
                   setCustomer({ ...customer, remark: e.target.value })
                 }
               />
             </div>
-
-            {showCustomerInfo && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border bg-gray-50 rounded-md">
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Mobile Number"
-                  value={customer.mobile}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, mobile: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Office Phone"
-                  value={customer.office}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, office: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Phone"
-                  value={customer.phone}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, phone: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Website"
-                  value={customer.website}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, website: e.target.value })
-                  }
-                />
-                <input
-                  type="email"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Email"
-                  value={customer.email}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, email: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Address"
-                  value={customer.address}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, address: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Bank Account"
-                  value={customer.bank}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, bank: e.target.value })
-                  }
-                />
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded-sm"
-                  placeholder="Other Info"
-                  value={customer.other}
-                  onChange={(e) =>
-                    setCustomer({ ...customer, other: e.target.value })
-                  }
-                />
-              </div>
-            )}
           </div>
 
+          {/* Additional Supplier Info */}
+          {showCustomerInfo && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-gray-50 p-4 rounded-lg border">
+              {[
+                { key: "mobile", placeholder: "Mobile Number" },
+                { key: "office", placeholder: "Office Phone" },
+                { key: "phone", placeholder: "Phone" },
+                { key: "website", placeholder: "Website" },
+                { key: "email", placeholder: "Email", type: "email" },
+                { key: "address", placeholder: "Address" },
+                { key: "bank", placeholder: "Bank Account" },
+                { key: "other", placeholder: "Other Info" },
+              ].map((field, i) => (
+                <input
+                  key={i}
+                  type={field.type || "text"}
+                  className="border rounded-md p-2 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                  placeholder={field.placeholder}
+                  value={customer[field.key]}
+                  onChange={(e) =>
+                    setCustomer({ ...customer, [field.key]: e.target.value })
+                  }
+                />
+              ))}
+            </div>
+          )}
+
           {/* Items Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full border mb-4 text-sm">
-              <thead>
-                <tr className="bg-gray-100 text-left">
-                  <th className="p-2 whitespace-nowrap">#</th>
-                  <th className="p-2 whitespace-nowrap">Item Name</th>
-                  <th className="p-2 whitespace-nowrap">Part Number</th>
-                  <th className="p-2 whitespace-nowrap">Brand</th>
-                  <th className="p-2 whitespace-nowrap">Unit</th>
-                  <th className="p-2 whitespace-nowrap">Price</th>
-                  <th className="p-2 whitespace-nowrap">Quantity</th>
-                  <th className="p-2 whitespace-nowrap">Action</th>
+          <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow mb-4">
+            <table className="min-w-[900px] border-collapse text-sm">
+              <thead className="bg-gray-100 text-gray-700 sticky top-0">
+                <tr>
+                  {[
+                    "#",
+                    "Item Name",
+                    "Part Number",
+                    "Brand",
+                    "Unit",
+                    "Price",
+                    "Quantity",
+                    "Action",
+                  ].map((header, i) => (
+                    <th
+                      key={i}
+                      className="px-4 py-3 text-left font-semibold border-b border-gray-200 whitespace-nowrap"
+                    >
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {items.map((item, index) => (
-                  <tr key={index} className="border-t hover:bg-gray-50">
-                    <td className="p-2 whitespace-nowrap">{index + 1}</td>
-
-                    <td className="p-2">
-                      <input
-                        className="border p-1 w-full"
-                        value={item.item_name || ""}
-                        onChange={(e) =>
-                          handleItemChange(index, "item_name", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2">
-                      <input
-                        className="border p-1 w-full no-spinner"
-                        value={item.part_number || ""}
-                        onChange={(e) =>
-                          handleItemChange(index, "part_number", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2">
-                      <input
-                        className="border p-1 w-full no-spinner"
-                        value={item.brand || ""}
-                        onChange={(e) =>
-                          handleItemChange(index, "brand", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2">
-                      <input
-                        className="border p-1 w-full no-spinner"
-                        value={item.unit || ""}
-                        onChange={(e) =>
-                          handleItemChange(index, "unit", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2">
-                      <input
-                        type="number"
-                        min="0"
-                        className="border p-1 w-full no-spinner"
-                        value={item.price}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "price",
-                            parseFloat(e.target.value)
-                          )
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2">
-                      <input
-                        type="number"
-                        min="1"
-                        className="border p-1 w-full no-spinner"
-                        value={item.saleQty}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "saleQty",
-                            parseInt(e.target.value)
-                          )
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2 text-center whitespace-nowrap">
+                  <tr
+                    key={index}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-2">{index + 1}</td>
+                    {[
+                      "item_name",
+                      "part_number",
+                      "brand",
+                      "unit",
+                      "price",
+                      "saleQty",
+                    ].map((key, i) => (
+                      <td key={i} className="px-4 py-2">
+                        <input
+                          type={
+                            key === "price" || key === "saleQty"
+                              ? "number"
+                              : "text"
+                          }
+                          className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                          value={item[key] || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              index,
+                              key,
+                              key === "price" || key === "saleQty"
+                                ? parseFloat(e.target.value) || 0
+                                : e.target.value
+                            )
+                          }
+                        />
+                      </td>
+                    ))}
+                    <td className="px-4 py-2 text-center">
                       <button
                         onClick={() => handleDeleteRow(index)}
-                        className="text-lg text-red-500 hover:text-red-700"
-                        aria-label={`Delete item ${item.item_name}`}
+                        className="text-red-500 hover:text-red-700 font-bold text-lg"
                       >
                         ×
                       </button>
@@ -439,22 +376,29 @@ const CreatePurchaseOrder = () => {
             </table>
           </div>
 
+          {/* Add Row Button */}
           <button
             onClick={handleAddRow}
-            className="rounded-sm mb-4 my-4 px-4 py-1 border bg-gray-200 hover:bg-gray-300 transition-all duration-all"
+            className="rounded-md mb-6 px-4 py-2 border bg-gray-200 hover:bg-gray-300 transition"
           >
-            Add Row
+            + Add Row
           </button>
 
           {/* Buttons */}
-          <div className="mt-6 flex gap-4 justify-end py-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
             <button
               onClick={handleSubmit}
               className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
             >
               Save Changes
             </button>
-            <button className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400">
+            <button
+              onClick={() => {
+                setCustomer({});
+                setItems([]);
+              }}
+              className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400"
+            >
               Reset
             </button>
           </div>
