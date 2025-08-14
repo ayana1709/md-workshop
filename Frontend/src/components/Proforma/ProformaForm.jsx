@@ -119,7 +119,7 @@ function ProformaForm() {
             <div ref={printRef} className="print-container">
               <ProformaHeader formData={formData} setFormData={setFormData} />
               <ProformaTable formData={formData} setFormData={setFormData} />
-              <ProformaTotals formData={formData} />
+              {/* <ProformaTotals formData={formData} /> */}
               <ProformaFooter formData={formData} setFormData={setFormData} />
             </div>
 
