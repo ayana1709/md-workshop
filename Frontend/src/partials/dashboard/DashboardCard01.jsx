@@ -3,8 +3,6 @@ import { Link } from "react-router-dom";
 import LineChart from "../../charts/LineChart01";
 import { chartAreaGradient } from "../../charts/ChartjsConfig";
 import EditMenu from "../../components/DropdownEditMenu";
-
-// Import utilities
 import { tailwindConfig, hexToRGB } from "../../utils/Utils";
 
 function DashboardCard01() {
@@ -38,7 +36,6 @@ function DashboardCard01() {
       "01-01-2025",
     ],
     datasets: [
-      // Indigo line
       {
         data: [
           732, 610, 610, 504, 504, 504, 349, 349, 504, 342, 504, 610, 391, 192,
@@ -46,8 +43,7 @@ function DashboardCard01() {
         ],
         fill: true,
         backgroundColor: function (context) {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
+          const { ctx, chartArea } = context.chart;
           return chartAreaGradient(ctx, chartArea, [
             {
               stop: 0,
@@ -59,7 +55,7 @@ function DashboardCard01() {
               stop: 1,
               color: `rgba(${hexToRGB(
                 tailwindConfig().theme.colors.violet[500]
-              )}, 0.2)`,
+              )}, 0.15)`,
             },
           ]);
         },
@@ -68,13 +64,8 @@ function DashboardCard01() {
         pointRadius: 0,
         pointHoverRadius: 3,
         pointBackgroundColor: tailwindConfig().theme.colors.violet[500],
-        pointHoverBackgroundColor: tailwindConfig().theme.colors.violet[500],
-        pointBorderWidth: 0,
-        pointHoverBorderWidth: 0,
-        clip: 20,
-        tension: 0.2,
+        tension: 0.25,
       },
-      // Gray line
       {
         data: [
           532, 532, 532, 404, 404, 314, 314, 314, 314, 314, 234, 314, 234, 234,
@@ -82,74 +73,69 @@ function DashboardCard01() {
         ],
         borderColor: `rgba(${hexToRGB(
           tailwindConfig().theme.colors.gray[500]
-        )}, 0.25)`,
+        )}, 0.3)`,
         borderWidth: 2,
         pointRadius: 0,
-        pointHoverRadius: 3,
-        pointBackgroundColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
-        )}, 0.25)`,
-        pointHoverBackgroundColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
-        )}, 0.25)`,
-        pointBorderWidth: 0,
-        pointHoverBorderWidth: 0,
-        clip: 20,
-        tension: 0.2,
+        tension: 0.25,
       },
     ],
   };
 
   return (
-    <div className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 bg-white dark:bg-gray-800 shadow-sm rounded-xl">
-      <div className="px-5 pt-5">
-        <header className="flex justify-between items-start mb-2">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
-            Payment
-          </h2>
-          {/* Menu button */}
-          <EditMenu align="right" className="relative inline-flex">
-            <li>
-              <Link
-                className="font-medium text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-200 flex py-1 px-3"
-                to="#0"
-              >
-                Option 1
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="font-medium text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-200 flex py-1 px-3"
-                to="#0"
-              >
-                Option 2
-              </Link>
-            </li>
-            <li>
-              <Link
-                className="font-medium text-sm text-red-500 hover:text-red-600 flex py-1 px-3"
-                to="#0"
-              >
-                Remove
-              </Link>
-            </li>
-          </EditMenu>
-        </header>
-        <div className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-1">
-          This month
-        </div>
-        <div className="flex items-start">
-          <div className="text-3xl font-bold text-gray-800 dark:text-gray-100 mr-2">
-            24,780
-          </div>
-          <div className="text-sm font-medium text-green-700 px-1.5 bg-green-500/20 rounded-full">
-            +49%
-          </div>
-        </div>
+    <div
+      className="flex flex-col col-span-full sm:col-span-6 xl:col-span-4 
+      bg-gradient-to-br from-white via-gray-50 to-violet-50 
+      dark:from-gray-800 dark:via-gray-900 dark:to-violet-950 
+      shadow-lg rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+    >
+      {/* Header */}
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+          💳 Payment Overview
+        </h2>
+        <EditMenu align="right">
+          <li>
+            <Link
+              className="px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+              to="#"
+            >
+              Option 1
+            </Link>
+          </li>
+          <li>
+            <Link
+              className="px-3 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+              to="#"
+            >
+              Option 2
+            </Link>
+          </li>
+          <li>
+            <Link
+              className="px-3 py-1 text-sm text-red-500 hover:bg-red-100 dark:hover:bg-red-900 rounded"
+              to="#"
+            >
+              Remove
+            </Link>
+          </li>
+        </EditMenu>
       </div>
-      {/* Chart built with Chart.js 3 */}
-      <div className="grow max-sm:max-h-[128px] xl:max-h-[128px]">
-        {/* Change the height attribute to adjust the chart height */}
+
+      {/* Stats */}
+      <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+        This Month
+      </div>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-50">
+          24,780
+        </span>
+        <span className="text-xs font-bold text-green-700 dark:text-green-400 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 animate-bounce">
+          +49%
+        </span>
+      </div>
+
+      {/* Chart */}
+      <div className="h-32 w-full">
         <LineChart data={chartData} width={389} height={128} />
       </div>
     </div>

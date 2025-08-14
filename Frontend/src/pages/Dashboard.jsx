@@ -48,12 +48,9 @@ function Dashboard() {
           <div className="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
             {/* Dashboard actions */}
             <DashboardStatics />
-            {/* <ChartContainer /> */}
 
             {/* Cards */}
             <div className="grid grid-cols-12 gap-6 py-6">
-              {/* <ChartContainer /> */}
-              {/* Line chart (Acme Plus) */}
               <DashboardCard01 />
               {/* Line chart (Acme Advanced) */}
               <DashboardCard02 />
@@ -66,19 +63,6 @@ function Dashboard() {
               {/* Bar chart (Direct vs Indirect) */}
               <DashboardCard12 />
               <DashboardCard04 />
-              {/* Line chart (Real Time Value) */}
-              {/* <DashboardCard05 /> */}
-              {/* Line chart (Sales Over Time) */}
-              {/* <DashboardCard08 /> */}
-              {/* Stacked bar chart (Sales VS Refunds) */}
-              {/* <DashboardCard09 /> */}
-              {/* Card (Customers) */}
-              {/* <DashboardCard10 /> */}
-              {/* Card (Reasons for Refunds) */}
-              {/* <DashboardCard11 /> */}
-              {/* Card (Recent Activity) */}
-              {/* Card (Income/Expenses) */}
-              {/* <DashboardCard13 /> */}
             </div>
           </div>
         </main>

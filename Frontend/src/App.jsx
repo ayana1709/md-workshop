@@ -293,7 +293,6 @@ function App() {
           <Route path="canceled" element={<Canceled />} />
         </Route>
         <Route path="/print" element={<PrintJobOrder />} />
-
         <Route path="/print-summary/:jobId" element={<PrintSummary />} />
         {/* <Route path="/send-to-payment/:id" element={<SendPayment />} /> */}
         <Route path="/send-to-payment/:jobId" element={<SendPayment />} />
@@ -329,7 +328,6 @@ function App() {
         <Route path="/add-payment" element={<AddPayment />} />
         <Route path="/proforma" element={<ProformaForm />} />
         <Route path="/manage-proforma" element={<ManageProforma />} />
-
         <Route path="/setting" element={<CompanySettings />} />
         <Route path="/proforma-print/:id" element={<ProformaPrint />} />
       </Routes>

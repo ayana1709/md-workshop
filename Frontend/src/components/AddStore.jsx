@@ -66,7 +66,7 @@ export default function AddStore() {
       item_name: "",
       part_number: "",
       unit: "",
-      unit_price: "",
+      // unit_price: "",
       purchase_price: "",
       selling_price: "",
       quantity: "",
@@ -116,7 +116,7 @@ export default function AddStore() {
       if (imageFile) {
         fd.append("image", imageFile);
       } else {
-        const defaultImagePath = "/images/default.jpg"; // public folder path
+        const defaultImagePath = "../../public/images/default.jpg"; // public folder path
         const response = await fetch(defaultImagePath);
         const blob = await response.blob();
         fd.append("image", blob, "default.jpg");
@@ -264,9 +264,9 @@ export default function AddStore() {
                   </Label>
                   <Select
                     onValueChange={(value) => setValue("unit", value)} // set form value
-                    defaultValue={watch("unit") || ""} // show current value
+                    defaultValue={watch("unit") || "pcs"} // default to 'pcs' if no value
                   >
-                    <SelectTrigger className="border border-gray-300">
+                    <SelectTrigger className="border border-gray-700">
                       <SelectValue placeholder="Select unit" />
                     </SelectTrigger>
                     <SelectContent>
@@ -281,7 +281,7 @@ export default function AddStore() {
                 </div>
 
                 {/* Unit Price */}
-                <div>
+                {/* <div>
                   <Label className="mb-1 font-bold flex items-center gap-2">
                     💰 Unit Price
                   </Label>
@@ -301,7 +301,7 @@ export default function AddStore() {
                       {errors.unit_price.message}
                     </p>
                   )}
-                </div>
+                </div> */}
 
                 {/* Purchase Price */}
                 <div>

@@ -253,7 +253,7 @@ export const columns = ({
       const [priceHistory, setPriceHistory] = useState([
         {
           date: new Date().toISOString().split("T")[0],
-          value: row.original.unit_price,
+          value: row.original.selling_price,
         },
       ]);
       const formatNumber = (value) => {
@@ -267,7 +267,7 @@ export const columns = ({
         }).format(num);
       };
 
-      const rawUnitPrice = Number(row.original.unit_price || 0);
+      const rawUnitPrice = Number(row.original.selling_price || 0);
       const rawQuantity = Number(row.original.quantity || 0);
 
       const vat = rawUnitPrice * 0.15;
@@ -275,10 +275,10 @@ export const columns = ({
       const totalWithVat = unitWithVat * rawQuantity;
 
       // Only format when displaying
-      console.log("Unit Price:", formatNumber(rawUnitPrice));
-      console.log("VAT:", formatNumber(vat));
-      console.log("Unit + VAT:", formatNumber(unitWithVat));
-      console.log("Total with VAT:", formatNumber(totalWithVat));
+      // console.log("Unit Price:", formatNumber(rawUnitPrice));
+      // console.log("VAT:", formatNumber(vat));
+      // console.log("Unit + VAT:", formatNumber(unitWithVat));
+      // console.log("Total with VAT:", formatNumber(totalWithVat));
 
       const handleNewPrice = (newPrice) => {
         setPriceHistory((prev) => [
@@ -301,7 +301,7 @@ export const columns = ({
             </PopoverTrigger>
             <PopoverContent className="w-[300px]">
               <div className="text-sm space-y-1">
-                <div>Unit Price: {row.original.unit_price}</div>
+                <div> Selling Price : {row.original.selling_price}</div>
                 <div>Unit VAT: {vat}</div>
                 <div>Unit Price with VAT: {unitWithVat}</div>
                 <div>Total Price with VAT: {totalWithVat}</div>
@@ -329,10 +329,10 @@ export const columns = ({
             <div className="absolute z-[9999]">
               <EditFieldModal
                 item={row.original}
-                field="unit_price"
+                field="selling_price"
                 onClose={() => setShowEditModal(false)}
                 setItems={(updatedItem) =>
-                  handleNewPrice(updatedItem.unit_price)
+                  handleNewPrice(updatedItem.selling_price)
                 }
               />
             </div>
