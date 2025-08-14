@@ -2,8 +2,9 @@ import plugin from "tailwindcss/plugin";
 import forms from "@tailwindcss/forms";
 
 export default {
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{js,jsx}"],
-  darkMode: ["class", "class"],
+
   theme: {
     extend: {
       clipPath: {
@@ -188,6 +189,7 @@ export default {
       },
     },
   },
+
   plugins: [
     forms,
     plugin(({ addVariant, e }) => {
@@ -199,7 +201,5 @@ export default {
         });
       });
     }),
-    // Uncomment below if using tailwindcss-animate
-    // require("tailwindcss-animate"),
   ],
 };
