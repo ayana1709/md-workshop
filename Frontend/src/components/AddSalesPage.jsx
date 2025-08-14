@@ -23,7 +23,7 @@ const AddSalesPage = () => {
   const [otherInfo, setOtherInfo] = useState("");
   const [paymentType, setPaymentType] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("Full Payment");
-  const [remark, setRemark] = useState("");
+  const [remark, setRemark] = useState("sold");
   const [customer, setCustomer] = useState({
     salesDate: "",
     customerName: "",
@@ -607,7 +607,6 @@ const AddSalesPage = () => {
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
             >
-              <option value="">-- Select Remark --</option>
               <option value="Sold">Sold</option>
               <option value="Pending">Pending</option>
               <option value="On Credit">On Credit</option>

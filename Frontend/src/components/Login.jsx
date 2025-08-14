@@ -29,7 +29,7 @@ const Login = ({ onLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { showPassword, setShowPassword } = useStores();
   const [bgClass, setBgClass] = useState(
-    localStorage.getItem("loginBg") || backgrounds[4].class // Default = custom image
+    localStorage.getItem("loginBg") || backgrounds[3].class // Default = custom image
   );
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
