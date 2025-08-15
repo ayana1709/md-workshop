@@ -129,7 +129,7 @@ function ProformaHeader({ formData, setFormData }) {
           "preparedBy",
           "Enter Preparer Name"
         )}
-        {renderInput("Payment Before", "ክፍያ በፊት", "paymentBefore", "", "date")}
+        {renderInput("Payment Before", "ክፍያ በፊት", "paymentBefore", "")}
         {renderInput("Notes", "ማስታወሻ", "notes", "Any notes")}
         {/* {renderInput("Signature", "ፊርማ", "signature", "Enter Signature")} */}
       </div>

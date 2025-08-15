@@ -41,6 +41,14 @@ function ProformaForm() {
   const [spareVat, setSpareVat] = useState(false);
   const [otherCost, setOtherCost] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [summary, setSummary] = useState({
+    total: 0,
+    totalVat: 0,
+    grossTotal: 0,
+    withholding: 0,
+    netPay: 0,
+    netPayInWords: "",
+  });
 
   const printRef = useRef();
 
@@ -73,17 +81,24 @@ function ProformaForm() {
     setLoading(true);
 
     try {
+      // Prepare payload
       const payload = {
-        ...formData,
-        labourRows,
-        spareRows,
-        labourVat,
-        spareVat,
-        otherCost,
-        discount,
+        ...formData, // Proforma header data
+        labourRows, // Labour table rows
+        spareRows, // Spare table rows
+        labourVat, // Labour VAT toggle
+        spareVat, // Spare VAT toggle
+        otherCost, // Other costs
+        discount, // Discount
+        summary, // Computed summary (total, VAT, gross, netPay, etc.)
       };
 
+      console.log("Proforma Payload:", payload); // For testing
+
+      // Send to backend
       const { data } = await api.post("/proformas", payload);
+
+      // Update local state if needed
       setProformas((prev) => [...prev, data]);
 
       Swal.fire({
@@ -160,6 +175,7 @@ function ProformaForm() {
                 setOtherCost={setOtherCost}
                 discount={discount}
                 setDiscount={setDiscount}
+                setSummary={setSummary} // ✅ pass setter
               />
             </div>
 

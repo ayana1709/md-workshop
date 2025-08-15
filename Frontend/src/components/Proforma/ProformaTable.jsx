@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+
 import { toWords } from "number-to-words";
 
 const numberToWords = (num) => {
@@ -24,26 +26,8 @@ function ProformaTable({
   setOtherCost,
   discount,
   setDiscount,
+  setSummary, // ✅ new
 }) {
-  // Labour and Spare rows
-  const [labourRows, setLabourRows] = useState([
-    { description: "", unit: "", estTime: "", cost: "", total: 0 },
-  ]);
-  const [spareRows, setSpareRows] = useState([
-    { description: "", unit: "", brand: "", qty: "", unitPrice: "", total: 0 },
-  ]);
-
-  // VAT toggles
-  const [labourVat, setLabourVat] = useState(false);
-  const [spareVat, setSpareVat] = useState(false);
-
-  // Other costs and discount
-  const [otherCost, setOtherCost] = useState(0);
-  const [discount, setDiscount] = useState(0);
-
-  const vatRate = 0.15;
-  const withholdingRate = 0.02;
-
   // Handlers for Labour
   const handleLabourChange = (index, field, value) => {
     const updated = [...labourRows];
@@ -70,6 +54,17 @@ function ProformaTable({
     setSpareRows(updated);
   };
 
+  useEffect(() => {
+    setSummary({
+      total,
+      totalVat,
+      grossTotal,
+      withholding,
+      netPay,
+      netPayInWords: numberToWords(netPay),
+    });
+  }, [labourRows, spareRows, labourVat, spareVat, otherCost, discount]);
+
   // Row controls
   const addLabourRow = () =>
     setLabourRows([
@@ -93,17 +88,16 @@ function ProformaTable({
   const removeSpareRow = (i) =>
     setSpareRows(spareRows.filter((_, idx) => idx !== i));
 
+  const vatRate = 0.15;
+  const withholdingRate = 0.02;
   // Subtotals
   const labourSubtotal = labourRows.reduce((sum, r) => sum + (r.total || 0), 0);
   const spareSubtotal = spareRows.reduce((sum, r) => sum + (r.total || 0), 0);
-
   // Apply VAT if selected
   const labourVatAmount = labourVat ? labourSubtotal * vatRate : 0;
   const spareVatAmount = spareVat ? spareSubtotal * vatRate : 0;
-
   const labourTotal = labourSubtotal + labourVatAmount;
   const spareTotal = spareSubtotal + spareVatAmount;
-
   // Proforma Summary Calculations
   const total = labourTotal + spareTotal;
   const totalVat = labourVatAmount + spareVatAmount;
@@ -126,7 +120,7 @@ function ProformaTable({
       {/* === LABOUR TABLE === */}
       <div className="overflow-hidden border rounded-xl shadow-lg bg-white">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-100 to-blue-200 flex-wrap gap-2">
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r  flex-wrap gap-2">
           <h2 className="font-bold text-blue-900 text-lg">Labour</h2>
           <button onClick={addLabourRow} className={btn} type="button">
             + Add Row
@@ -244,8 +238,8 @@ function ProformaTable({
       {/* === SPARE CHANGE TABLE === */}
       <div className="overflow-hidden border rounded-xl shadow-lg bg-white">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-100 to-emerald-200 flex-wrap gap-2">
-          <h2 className="font-bold text-emerald-900 text-lg">Spare Change</h2>
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r  flex-wrap gap-2">
+          <h2 className="font-bold text-blue-900 text-lg">Spare Change</h2>
           <button onClick={addSpareRow} className={btn} type="button">
             + Add Row
           </button>
