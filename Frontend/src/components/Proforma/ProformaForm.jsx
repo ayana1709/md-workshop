@@ -7,8 +7,6 @@ import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
 import ProformaHeader from "./ProformaHeader";
 import ProformaTable from "./ProformaTable";
-import ProformaTotals from "./ProformaTotals";
-import ProformaFooter from "./ProformaFooter";
 import { useStores } from "@/contexts/storeContext";
 
 function ProformaForm() {
@@ -19,24 +17,31 @@ function ProformaForm() {
   const [formData, setFormData] = useState({
     jobId: "",
     date: format(new Date(), "yyyy-MM-dd"),
+    refNum: "",
+    customerName: "",
     product_name: "",
     types_of_jobs: "",
-    customerName: "",
-    items: [
-      {
-        description: "",
-        quantity: 1,
-        materialCost: 0,
-        laborCost: 0,
-        totalCost: 0,
-      },
-    ],
+    customerTin: "",
+    validityDate: "",
+    deliveryDate: "",
     preparedBy: "",
-    deliveryTime: "",
+    paymentBefore: "",
     notes: "",
   });
 
-  // Ref for printable section
+  const [labourRows, setLabourRows] = useState([
+    { description: "", unit: "", estTime: "", cost: 0, total: 0 },
+  ]);
+
+  const [spareRows, setSpareRows] = useState([
+    { description: "", unit: "", brand: "", qty: 0, unitPrice: 0, total: 0 },
+  ]);
+
+  const [labourVat, setLabourVat] = useState(false);
+  const [spareVat, setSpareVat] = useState(false);
+  const [otherCost, setOtherCost] = useState(0);
+  const [discount, setDiscount] = useState(0);
+
   const printRef = useRef();
 
   const handlePrint = useReactToPrint({
@@ -44,10 +49,41 @@ function ProformaForm() {
     documentTitle: `Proforma_${formData.jobId || "Invoice"}`,
   });
 
+  const validateForm = () => {
+    const requiredFields = [
+      "jobId",
+      "customerName",
+      "product_name",
+      "types_of_jobs",
+    ];
+    const missing = requiredFields.filter((field) => !formData[field]);
+    if (missing.length > 0) {
+      Swal.fire(
+        "Validation Error",
+        `Please fill in required fields: ${missing.join(", ")}`,
+        "warning"
+      );
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) return;
     setLoading(true);
+
     try {
-      const { data } = await api.post("/proformas", formData);
+      const payload = {
+        ...formData,
+        labourRows,
+        spareRows,
+        labourVat,
+        spareVat,
+        otherCost,
+        discount,
+      };
+
+      const { data } = await api.post("/proformas", payload);
       setProformas((prev) => [...prev, data]);
 
       Swal.fire({
@@ -59,16 +95,9 @@ function ProformaForm() {
         cancelButtonText: "No, Thanks",
       }).then((result) => {
         if (result.isConfirmed) {
-          // Open the print page for this proforma in a new tab
-          const printWindow = window.open(
-            `/proforma-print/${data.id}?print=true`,
-            "_blank"
-          );
-          // Reset form after giving the browser a moment to open the page
-          setTimeout(resetForm, 500);
-        } else {
-          resetForm();
+          window.open(`/proforma-print/${data.id}?print=true`, "_blank");
         }
+        resetForm();
       });
     } catch (error) {
       console.error("Proforma save failed:", error);
@@ -82,48 +111,58 @@ function ProformaForm() {
     setFormData({
       jobId: "",
       date: format(new Date(), "yyyy-MM-dd"),
+      refNum: "",
+      customerName: "",
       product_name: "",
       types_of_jobs: "",
-      customerName: "",
-      items: [
-        {
-          description: "",
-          quantity: 1,
-          materialCost: 0,
-          laborCost: 0,
-          totalCost: 0,
-        },
-      ],
+      customerTin: "",
+      validityDate: "",
+      deliveryDate: "",
       preparedBy: "",
-      deliveryTime: "",
+      paymentBefore: "",
       notes: "",
     });
+    setLabourRows([
+      { description: "", unit: "", estTime: "", cost: 0, total: 0 },
+    ]);
+    setSpareRows([
+      { description: "", unit: "", brand: "", qty: 0, unitPrice: 0, total: 0 },
+    ]);
+    setLabourVat(false);
+    setSpareVat(false);
+    setOtherCost(0);
+    setDiscount(0);
   };
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      {/* Main content */}
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
         <main className="p-6">
           <div className="max-w-6xl mx-auto p-6 bg-white shadow-md rounded-md">
             <h1 className="text-2xl font-semibold mb-6 text-center">
               Proforma Invoice
             </h1>
 
-            {/* Printable Section */}
-            <div ref={printRef} className="print-container">
+            <div ref={printRef} className="print-container space-y-6">
               <ProformaHeader formData={formData} setFormData={setFormData} />
-              <ProformaTable formData={formData} setFormData={setFormData} />
-              {/* <ProformaTotals formData={formData} /> */}
-              <ProformaFooter formData={formData} setFormData={setFormData} />
+              <ProformaTable
+                labourRows={labourRows}
+                setLabourRows={setLabourRows}
+                spareRows={spareRows}
+                setSpareRows={setSpareRows}
+                labourVat={labourVat}
+                setLabourVat={setLabourVat}
+                spareVat={spareVat}
+                setSpareVat={setSpareVat}
+                otherCost={otherCost}
+                setOtherCost={setOtherCost}
+                discount={discount}
+                setDiscount={setDiscount}
+              />
             </div>
 
-            {/* Action buttons */}
             <div className="flex justify-end gap-4 mt-6">
               <button
                 onClick={handleSubmit}

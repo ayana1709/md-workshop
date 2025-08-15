@@ -11,7 +11,20 @@ const numberToWords = (num) => {
   return words.charAt(0).toUpperCase() + words.slice(1) + " Birr";
 };
 
-function ProformaTable() {
+function ProformaTable({
+  labourRows,
+  setLabourRows,
+  spareRows,
+  setSpareRows,
+  labourVat,
+  setLabourVat,
+  spareVat,
+  setSpareVat,
+  otherCost,
+  setOtherCost,
+  discount,
+  setDiscount,
+}) {
   // Labour and Spare rows
   const [labourRows, setLabourRows] = useState([
     { description: "", unit: "", estTime: "", cost: "", total: 0 },
@@ -112,24 +125,30 @@ function ProformaTable() {
     <div className="space-y-10 p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* === LABOUR TABLE === */}
       <div className="overflow-hidden border rounded-xl shadow-lg bg-white">
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-100 to-blue-200">
-          <h2 className="font-bold text-blue-900">Labour</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-100 to-blue-200 flex-wrap gap-2">
+          <h2 className="font-bold text-blue-900 text-lg">Labour</h2>
           <button onClick={addLabourRow} className={btn} type="button">
             + Add Row
           </button>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse text-sm md:text-base">
             <thead>
               <tr>
-                <th className={tableHeaderStyle}>#</th>
-                <th className={tableHeaderStyle}>Work Description</th>
-                <th className={tableHeaderStyle}>Unit</th>
-                <th className={tableHeaderStyle}>Est Time</th>
-                <th className={tableHeaderStyle}>Cost</th>
-                <th className={tableHeaderStyle}>Total</th>
-                <th className={tableHeaderStyle}>Action</th>
+                <th className={`${tableHeaderStyle} min-w-[50px]`}>#</th>
+                <th className={`${tableHeaderStyle} min-w-[220px]`}>
+                  Work Description
+                </th>
+                <th className={`${tableHeaderStyle} min-w-[150px]`}>Unit</th>
+                <th className={`${tableHeaderStyle} min-w-[150px]`}>
+                  Est Time
+                </th>
+                <th className={`${tableHeaderStyle} min-w-[150px]`}>Cost</th>
+                <th className={`${tableHeaderStyle} min-w-[150px]`}>Total</th>
+                <th className={`${tableHeaderStyle} min-w-[100px]`}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -146,7 +165,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleLabourChange(i, "description", e.target.value)
                       }
-                      className={input}
+                      className={`${input} w-full min-w-[180px]`}
                       placeholder="Describe work..."
                     />
                   </td>
@@ -157,7 +176,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleLabourChange(i, "unit", e.target.value)
                       }
-                      className={input}
+                      className={`${input} w-full min-w-[140px]`}
                       placeholder="hr / job"
                     />
                   </td>
@@ -168,8 +187,8 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleLabourChange(i, "estTime", e.target.value)
                       }
-                      className={`${input} text-right no-arrows`}
-                      placeholder="0"
+                      className={`${input} w-full text-right no-arrows min-w-[140px]`}
+                      placeholder=""
                     />
                   </td>
                   <td className={cell}>
@@ -179,17 +198,19 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleLabourChange(i, "cost", e.target.value)
                       }
-                      className={`${input} text-right no-arrows`}
+                      className={`${input} w-full text-right no-arrows min-w-[140px]`}
                       placeholder="0.00"
                     />
                   </td>
-                  <td className={`${cell} text-right font-semibold`}>
+                  <td
+                    className={`${cell} text-right font-semibold min-w-[90px]`}
+                  >
                     {row.total.toFixed(2)}
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} min-w-[80px]`}>
                     <button
                       onClick={() => removeLabourRow(i)}
-                      className="text-red-600 hover:text-red-800 text-sm"
+                      className="text-red-600 hover:text-red-800 text-sm md:text-base"
                       type="button"
                       title="Delete row"
                     >
@@ -203,16 +224,14 @@ function ProformaTable() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 flex flex-col md:flex-row justify-between gap-4">
-          <div className="text-sm text-gray-600">
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={labourVat}
-                onChange={() => setLabourVat((v) => !v)}
-              />
-              <span>Add VAT ({(vatRate * 100).toFixed(0)}%)</span>
-            </label>
+        <div className="p-4 flex flex-col md:flex-row justify-between gap-4 text-sm md:text-base">
+          <div className="text-gray-600 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={labourVat}
+              onChange={() => setLabourVat((v) => !v)}
+            />
+            <span>Add VAT ({(vatRate * 100).toFixed(0)}%)</span>
           </div>
           <div className="text-right space-y-1">
             <div>Subtotal: {labourSubtotal.toFixed(2)}</div>
@@ -224,25 +243,31 @@ function ProformaTable() {
 
       {/* === SPARE CHANGE TABLE === */}
       <div className="overflow-hidden border rounded-xl shadow-lg bg-white">
-        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-100 to-emerald-200">
-          <h2 className="font-bold text-emerald-900">Spare Change</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-100 to-emerald-200 flex-wrap gap-2">
+          <h2 className="font-bold text-emerald-900 text-lg">Spare Change</h2>
           <button onClick={addSpareRow} className={btn} type="button">
             + Add Row
           </button>
         </div>
 
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse text-sm md:text-base">
             <thead>
               <tr>
-                <th className={tableHeaderStyle}>#</th>
-                <th className={tableHeaderStyle}>Item Description</th>
-                <th className={tableHeaderStyle}>Unit</th>
-                <th className={tableHeaderStyle}>Brand</th>
-                <th className={tableHeaderStyle}>Qty</th>
-                <th className={tableHeaderStyle}>Unit Price</th>
-                <th className={tableHeaderStyle}>Total</th>
-                <th className={tableHeaderStyle}>Action</th>
+                <th className={`${tableHeaderStyle} min-w-[50px]`}>#</th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>
+                  Item Description
+                </th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>Unit</th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>Brand</th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>Qty</th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>
+                  Unit Price
+                </th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>Total</th>
+                <th className={`${tableHeaderStyle} min-w-[140px]`}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -259,7 +284,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleSpareChange(i, "description", e.target.value)
                       }
-                      className={input}
+                      className={`${input} w-full min-w-[140px]`}
                       placeholder="Describe item..."
                     />
                   </td>
@@ -270,7 +295,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleSpareChange(i, "unit", e.target.value)
                       }
-                      className={input}
+                      className={`${input} w-full min-w-[140px]`}
                       placeholder="pcs / set"
                     />
                   </td>
@@ -281,7 +306,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleSpareChange(i, "brand", e.target.value)
                       }
-                      className={input}
+                      className={`${input} w-full min-w-[140px]`}
                       placeholder="Brand"
                     />
                   </td>
@@ -292,7 +317,7 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleSpareChange(i, "qty", e.target.value)
                       }
-                      className={`${input} text-right no-arrows`}
+                      className={`${input} w-full text-right no-arrows min-w-[140px]`}
                       placeholder="0"
                     />
                   </td>
@@ -303,17 +328,19 @@ function ProformaTable() {
                       onChange={(e) =>
                         handleSpareChange(i, "unitPrice", e.target.value)
                       }
-                      className={`${input} text-right no-arrows`}
+                      className={`${input} w-full text-right no-arrows min-w-[140px]`}
                       placeholder="0.00"
                     />
                   </td>
-                  <td className={`${cell} text-right font-semibold`}>
+                  <td
+                    className={`${cell} text-right font-semibold min-w-[140px]`}
+                  >
                     {row.total.toFixed(2)}
                   </td>
-                  <td className={cell}>
+                  <td className={`${cell} min-w-[140px]`}>
                     <button
                       onClick={() => removeSpareRow(i)}
-                      className="text-red-600 hover:text-red-800 text-sm"
+                      className="text-red-600 hover:text-red-800 text-sm md:text-base"
                       type="button"
                       title="Delete row"
                     >
@@ -327,16 +354,14 @@ function ProformaTable() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 flex flex-col md:flex-row justify-between gap-4">
-          <div className="text-sm text-gray-600">
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={spareVat}
-                onChange={() => setSpareVat((v) => !v)}
-              />
-              <span>Add VAT ({(vatRate * 100).toFixed(0)}%)</span>
-            </label>
+        <div className="p-4 flex flex-col md:flex-row justify-between gap-4 text-sm md:text-base">
+          <div className="text-gray-600 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={spareVat}
+              onChange={() => setSpareVat((v) => !v)}
+            />
+            <span>Add VAT ({(vatRate * 100).toFixed(0)}%)</span>
           </div>
           <div className="text-right space-y-1">
             <div>Subtotal: {spareSubtotal.toFixed(2)}</div>
@@ -347,62 +372,79 @@ function ProformaTable() {
       </div>
 
       {/* === PROFORMA SUMMARY === */}
+      {/* === PROFORMA SUMMARY === */}
       <div className="w-full max-w-2xl ml-auto rounded-2xl border shadow-lg p-6 bg-white">
         <h3 className="text-lg font-bold text-blue-600 mb-4 border-b pb-2">
           Proforma Summary
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm md:text-base">
+          {/* Total */}
+          <div className="flex flex-wrap items-center justify-between bg-gray-50 rounded-lg px-3 py-2 gap-2">
             <span>Total</span>
-            <span className="font-medium">{total.toFixed(2)} Birr</span>
+            <span className="font-medium whitespace-nowrap">
+              {total.toFixed(2)} Birr
+            </span>
           </div>
 
-          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+          {/* Total VAT */}
+          <div className="flex flex-wrap items-center justify-between bg-gray-50 rounded-lg px-3 py-2 gap-2">
             <span>Total VAT</span>
-            <span className="font-medium">{totalVat.toFixed(2)} Birr</span>
+            <span className="font-medium whitespace-nowrap">
+              {totalVat.toFixed(2)} Birr
+            </span>
           </div>
 
-          <div className="flex items-center justify-between rounded-lg px-3 py-2 border">
+          {/* Other Cost */}
+          <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
             <span>Other Cost</span>
             <input
               type="number"
               value={otherCost}
               onChange={(e) => setOtherCost(e.target.value)}
-              className={`${input} w-28 text-right no-arrows`}
+              className={`${input} w-full sm:w-28 text-right no-arrows`}
               placeholder="0.00"
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg px-3 py-2 border">
+          {/* Discount */}
+          <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
             <span>Discount</span>
             <input
               type="number"
               value={discount}
               onChange={(e) => setDiscount(e.target.value)}
-              className={`${input} w-28 text-right no-arrows`}
+              className={`${input} w-full sm:w-28 text-right no-arrows`}
               placeholder="0.00"
             />
           </div>
 
-          <div className="flex items-center justify-between bg-yellow-50 rounded-lg px-3 py-2 sm:col-span-2">
+          {/* Withholding */}
+          <div className="flex flex-wrap items-center justify-between bg-yellow-50 rounded-lg px-3 py-2 gap-2 sm:col-span-2">
             <span>Withholding / Withdrawal (2%)</span>
-            <span className="font-medium">{withholding.toFixed(2)} Birr</span>
+            <span className="font-medium whitespace-nowrap">
+              {withholding.toFixed(2)} Birr
+            </span>
           </div>
 
-          <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2 sm:col-span-2">
+          {/* Gross Total */}
+          <div className="flex flex-wrap items-center justify-between bg-green-50 rounded-lg px-3 py-2 gap-2 sm:col-span-2">
             <span className="font-semibold">Gross Total</span>
-            <span className="font-semibold">{grossTotal.toFixed(2)} Birr</span>
+            <span className="font-semibold whitespace-nowrap">
+              {grossTotal.toFixed(2)} Birr
+            </span>
           </div>
 
-          <div className="flex items-center justify-between bg-green-100 rounded-lg px-3 py-2 sm:col-span-2">
+          {/* Net Pay */}
+          <div className="flex flex-wrap items-center justify-between bg-green-100 rounded-lg px-3 py-2 gap-2 sm:col-span-2">
             <span className="font-bold text-green-700">Net Pay</span>
-            <span className="font-bold text-green-700">
+            <span className="font-bold text-green-700 whitespace-nowrap">
               {netPay.toFixed(2)} Birr
             </span>
           </div>
         </div>
 
+        {/* In Words */}
         <div className="mt-4 text-sm italic text-gray-600">
           <span className="font-semibold">In Words:</span>{" "}
           {numberToWords(netPay)}
