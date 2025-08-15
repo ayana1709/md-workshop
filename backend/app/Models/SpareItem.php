@@ -8,4 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 class SpareItem extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'proforma_id',
+        'description',
+        'quantity',
+        'unit_price',
+        'total',
+    ];
+
+    public function proforma()
+    {
+        return $this->belongsTo(Proforma::class);
+    }
 }

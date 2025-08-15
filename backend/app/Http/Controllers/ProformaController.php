@@ -7,8 +7,9 @@ use App\Models\Proforma;
 
 class ProformaController extends Controller
 {
-    public function store(Request $request)
-    {
+public function store(Request $request)
+{
+    try {
         $validated = $request->validate([
             'jobId' => 'nullable|string',
             'date' => 'required|date',
@@ -19,21 +20,21 @@ class ProformaController extends Controller
             'product_name' => 'required|string',
             'types_of_jobs' => 'required|string',
             'refNum' => 'nullable|string',
-            'validityDate' => 'nullable|date',
+            'validityDate' => 'nullable|string', // ✅ allow letters
             'notes' => 'nullable|string',
             'paymentBefore' => 'nullable|numeric',
             'discount' => 'nullable|numeric',
             'otherCost' => 'nullable|numeric',
 
-            'labourRows' => 'required|array',
-            'labourRows.*.description' => 'required|string',
+            'labourRows' => 'nullable|array',
+            'labourRows.*.description' => 'nullable|string',
             'labourRows.*.unit' => 'nullable|string',
             'labourRows.*.estTime' => 'nullable|numeric',
             'labourRows.*.cost' => 'nullable|numeric',
             'labourRows.*.total' => 'nullable|numeric',
 
-            'spareRows' => 'required|array',
-            'spareRows.*.description' => 'required|string',
+            'spareRows' => 'nullable|array',
+            'spareRows.*.description' => 'nullable|string',
             'spareRows.*.unit' => 'nullable|string',
             'spareRows.*.brand' => 'nullable|string',
             'spareRows.*.qty' => 'nullable|numeric',
@@ -52,9 +53,8 @@ class ProformaController extends Controller
             'summary.netPayInWords' => 'required|string',
         ]);
 
-        // Create the main Proforma
         $proforma = Proforma::create([
-            'job_id' => $validated['jobId'],
+            'job_id' => $validated['jobId'] ?? null,
             'date' => $validated['date'],
             'customer_name' => $validated['customerName'],
             'customer_tin' => $validated['customerTin'] ?? null,
@@ -78,32 +78,42 @@ class ProformaController extends Controller
             'net_pay_in_words' => $validated['summary']['netPayInWords'],
         ]);
 
-        // Save labour rows
-        foreach ($validated['labourRows'] as $labour) {
-            $proforma->labourItems()->create([
-                'description' => $labour['description'],
-                'unit' => $labour['unit'] ?? null,
-                'est_time' => $labour['estTime'] ?? null,
-                'cost' => $labour['cost'] ?? null,
-                'total' => $labour['total'] ?? null,
-            ]);
+        if (!empty($validated['labourRows'])) {
+            foreach ($validated['labourRows'] as $labour) {
+                $proforma->labourItems()->create([
+                    'description' => $labour['description'] ?? null,
+                    'unit' => $labour['unit'] ?? null,
+                    'est_time' => $labour['estTime'] ?? null,
+                    'cost' => $labour['cost'] ?? null,
+                    'total' => $labour['total'] ?? null,
+                ]);
+            }
         }
 
-        // Save spare rows
-        foreach ($validated['spareRows'] as $spare) {
-            $proforma->spareItems()->create([
-                'description' => $spare['description'],
-                'unit' => $spare['unit'] ?? null,
-                'brand' => $spare['brand'] ?? null,
-                'qty' => $spare['qty'] ?? null,
-                'unit_price' => $spare['unitPrice'] ?? null,
-                'total' => $spare['total'] ?? null,
-            ]);
+        if (!empty($validated['spareRows'])) {
+            foreach ($validated['spareRows'] as $spare) {
+                $proforma->spareItems()->create([
+                    'description' => $spare['description'] ?? null,
+                    'unit' => $spare['unit'] ?? null,
+                    'brand' => $spare['brand'] ?? null,
+                    'qty' => $spare['qty'] ?? null,
+                    'unit_price' => $spare['unitPrice'] ?? null,
+                    'total' => $spare['total'] ?? null,
+                ]);
+            }
         }
 
         return response()->json([
             'message' => 'Proforma created successfully',
             'id' => $proforma->id,
         ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
     }
+}
+
+
 }

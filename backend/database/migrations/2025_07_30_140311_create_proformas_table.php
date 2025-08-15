@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('prepared_by')->nullable();
             $table->date('delivery_date')->nullable();
             $table->string('ref_num')->nullable();
-            $table->date('validity_date')->nullable();
+            $table->string('validity_date')->nullable();
             $table->text('notes')->nullable();
             $table->decimal('payment_before', 15, 2)->default(0);
             $table->decimal('discount', 15, 2)->default(0);
