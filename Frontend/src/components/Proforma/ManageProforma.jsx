@@ -128,7 +128,7 @@ function ManageProforma() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (jobId) => {
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "This proforma will be permanently deleted!",
@@ -143,7 +143,7 @@ function ManageProforma() {
 
     try {
       // Adjust to your backend route: /proforma/{id} vs /proformas/{id}
-      await api.delete(`/proformas/${id}`);
+      await api.delete(`/proformas/${jobId}`);
       Swal.fire("Deleted!", "Proforma deleted successfully.", "success");
       fetchProformas();
     } catch (err) {
@@ -175,7 +175,7 @@ function ManageProforma() {
             onView={(jobId) => fetchProformaDetails(jobId, "view")}
             onPrint={(jobId) => fetchProformaDetails(jobId, "print")}
             onEdit={(jobId) => fetchProformaDetails(jobId, "edit")}
-            onDelete={(id) => handleDelete(id)}
+            onDelete={(jobId) => handleDelete(jobId)}
           />
         ),
       },
@@ -204,9 +204,9 @@ function ManageProforma() {
           <div className="max-w-7xl mx-auto bg-white p-6 shadow rounded-lg">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-xl font-bold">Manage Proformas</h1>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              {/* <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 + New Proforma
-              </button>
+              </button> */}
             </div>
 
             <input
