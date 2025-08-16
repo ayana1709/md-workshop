@@ -33,8 +33,8 @@ Built for **speed, efficiency, and real-time updates**.
 
 ## 📸 Screenshots / Demo
 
---- <img srs="./Frontend/src/images/md1.jpg "/>
---- <img srs="./Frontend/src/images/md2.jpg "/>
+ <img srs="./Frontend/src/images/md1.jpg "/>
+<img srs="./Frontend/src/images/md2.jpg "/>
 
 ## ⚡ Getting Started
 
