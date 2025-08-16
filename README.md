@@ -30,8 +30,8 @@ Built for **speed, efficiency, and real-time updates**.
 ---
 
 ## 📸 Screenshots / Demo  
-👉 *(Add your UI screenshots or demo GIFs here)*  
-
+👉
+<img  srs="https://github.com/ayana1709/md-workshop/issues/1#issuecomment-3193871688" alt="https://github.com/ayana1709/md-workshop/issues/1#issuecomment-3193871688"> 
 ---
 
 ## ⚡ Getting Started  
