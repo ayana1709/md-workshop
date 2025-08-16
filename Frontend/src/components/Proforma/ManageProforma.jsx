@@ -92,6 +92,7 @@ function ManageProforma() {
 
   // modal state (top-level, single source of truth)
   const [selectedProforma, setSelectedProforma] = useState(null);
+  console.log(selectedProforma);
   const [viewOpen, setViewOpen] = useState(false);
   const [printOpen, setPrintOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
