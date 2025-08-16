@@ -15,6 +15,7 @@ import { MoreVertical } from "lucide-react";
 import ViewProformaModal from "./ViewProformaModal";
 import PrintProformaModal from "./PrintProformaModal";
 import EditProformaModal from "./EditProformaModal";
+import { ChevronDown } from "lucide-react";
 
 /** Small component so we can use hooks safely */
 function ActionsCell({ row, onView, onPrint, onEdit, onDelete }) {
@@ -25,11 +26,12 @@ function ActionsCell({ row, onView, onPrint, onEdit, onDelete }) {
     <div className="relative">
       <button
         onClick={() => setOpenMenu((v) => !v)}
-        className="p-1 rounded bg-cyan-700 text-white hover:bg-cyan-600"
+        className="flex items-center gap-2 px-3 py-2 rounded-md bg-cyan-700 text-white font-medium shadow-sm hover:bg-cyan-600 transition"
         aria-haspopup="menu"
         aria-expanded={openMenu}
       >
-        <MoreVertical size={18} />
+        Actions
+        <ChevronDown size={18} className="text-white" />
       </button>
 
       {openMenu && (
