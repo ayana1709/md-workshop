@@ -10,14 +10,8 @@ function PrintProformaModal({ proforma, open, onClose }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
-      <div className="bg-white w-[90%] max-h-[95vh] overflow-y-auto rounded-lg shadow-lg p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-        >
-          ✖
-        </button>
-
+      <div className="bg-white w-[90%] max-w-[210mm] max-h-[95vh] overflow-y-auto rounded-lg shadow-lg p-6 relative">
+        {/* Printable Section */}
         <div id="print-section" className="text-black font-sans">
           {/* Header with red banner */}
           <div className="flex justify-between items-center bg-red-600 text-white p-4 mb-2">
@@ -27,7 +21,9 @@ function PrintProformaModal({ proforma, open, onClose }) {
             </div>
             {companyData.logo && (
               <img
-                src={`${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`}
+                src={`${import.meta.env.VITE_API_URL}/storage/${
+                  companyData.logo
+                }`}
                 alt="Logo"
                 className="h-16 object-contain"
               />
@@ -103,12 +99,21 @@ function PrintProformaModal({ proforma, open, onClose }) {
           </div>
         </div>
 
-        <button
-          onClick={handlePrint}
-          className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
-        >
-          Print Now
-        </button>
+        {/* Action Buttons */}
+        <div className="flex justify-end items-center gap-2 mt-4 no-print">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+          >
+            ✖ Close
+          </button>
+          <button
+            onClick={handlePrint}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            Print Now
+          </button>
+        </div>
       </div>
 
       {/* Print Styles */}
@@ -119,6 +124,7 @@ function PrintProformaModal({ proforma, open, onClose }) {
             #print-section, #print-section * { visibility: visible; }
             #print-section { position: absolute; left: 0; top: 0; width: 210mm; padding: 10mm; }
             #print-section table { page-break-inside: avoid; }
+            .no-print { display: none !important; }
           }
         `}
       </style>
