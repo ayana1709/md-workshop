@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import Swal from "sweetalert2";
 import { useReactToPrint } from "react-to-print";
@@ -7,6 +7,7 @@ import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
 import ProformaHeader from "./ProformaHeader";
 import ProformaTable from "./ProformaTable";
+import ProformaPrint from "./ProformaPrint"; // ✅ import your print layout
 import { useStores } from "@/contexts/storeContext";
 
 function ProformaForm() {
@@ -49,11 +50,13 @@ function ProformaForm() {
     netPay: 0,
     netPayInWords: "",
   });
+  // const [triggerPrint, setTriggerPrint] = useState(false);
 
+  // ✅ ref ONLY for printing component
   const printRef = useRef();
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef, // ✅ new API
     documentTitle: `Proforma_${formData.jobId || "Invoice"}`,
   });
 
@@ -81,36 +84,31 @@ function ProformaForm() {
     setLoading(true);
 
     try {
-      // Prepare payload
       const payload = {
-        ...formData, // Proforma header data
-        labourRows, // Labour table rows
-        spareRows, // Spare table rows
-        labourVat, // Labour VAT toggle
-        spareVat, // Spare VAT toggle
-        otherCost, // Other costs
-        discount, // Discount
-        summary, // Computed summary (total, VAT, gross, netPay, etc.)
+        ...formData,
+        labourRows,
+        spareRows,
+        labourVat,
+        spareVat,
+        otherCost,
+        discount,
+        summary,
       };
 
-      console.log("Proforma Payload:", payload); // For testing
-
-      // Send to backend
       const { data } = await api.post("/proformas", payload);
 
-      // Update local state if needed
       setProformas((prev) => [...prev, data]);
 
       Swal.fire({
         title: "Success!",
-        text: "Proforma created successfully. Do you want to print it?",
+        text: "Proforma created successfully. Print now?",
         icon: "success",
         showCancelButton: true,
         confirmButtonText: "Yes, Print",
         cancelButtonText: "No, Thanks",
       }).then((result) => {
         if (result.isConfirmed) {
-          window.open(`/proforma-print/${data.id}?print=true`, "_blank");
+          setTimeout(() => handlePrint(), 100);
         }
         resetForm();
       });
@@ -160,7 +158,8 @@ function ProformaForm() {
               Proforma Invoice
             </h1>
 
-            <div ref={printRef} className="print-container space-y-6">
+            {/* ✅ This part is just the interactive form (not printed) */}
+            <div className="space-y-6">
               <ProformaHeader formData={formData} setFormData={setFormData} />
               <ProformaTable
                 labourRows={labourRows}
@@ -175,7 +174,7 @@ function ProformaForm() {
                 setOtherCost={setOtherCost}
                 discount={discount}
                 setDiscount={setDiscount}
-                setSummary={setSummary} // ✅ pass setter
+                setSummary={setSummary}
               />
             </div>
 
@@ -190,6 +189,20 @@ function ProformaForm() {
             </div>
           </div>
         </main>
+      </div>
+
+      {/* ✅ Hidden printable component */}
+
+      <div style={{ display: "none" }}>
+        <ProformaPrint
+          ref={printRef}
+          data={{
+            ...formData,
+            labour_items: labourRows,
+            spare_items: spareRows,
+            summary,
+          }}
+        />
       </div>
     </div>
   );

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
 import api from "@/api";
-import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   useReactTable,
@@ -12,6 +11,77 @@ import {
   getFilteredRowModel,
   flexRender,
 } from "@tanstack/react-table";
+import { MoreVertical } from "lucide-react";
+import ViewProformaModal from "./ViewProformaModal";
+import PrintProformaModal from "./PrintProformaModal";
+import EditProformaModal from "./EditProformaModal";
+
+/** Small component so we can use hooks safely */
+function ActionsCell({ row, onView, onPrint, onEdit, onDelete }) {
+  const [openMenu, setOpenMenu] = useState(false);
+  const { job_id, id } = row.original;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpenMenu((v) => !v)}
+        className="p-1 rounded bg-cyan-700 text-white hover:bg-cyan-600"
+        aria-haspopup="menu"
+        aria-expanded={openMenu}
+      >
+        <MoreVertical size={18} />
+      </button>
+
+      {openMenu && (
+        <div
+          className="absolute right-0 mt-2 w-36 bg-white border rounded shadow-lg z-20"
+          role="menu"
+        >
+          <button
+            onClick={() => {
+              setOpenMenu(false);
+              onView(job_id);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+            role="menuitem"
+          >
+            View
+          </button>
+          <button
+            onClick={() => {
+              setOpenMenu(false);
+              onPrint(job_id);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+            role="menuitem"
+          >
+            Print
+          </button>
+          <button
+            onClick={() => {
+              setOpenMenu(false);
+              onEdit(job_id);
+            }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+            role="menuitem"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => {
+              setOpenMenu(false);
+              onDelete(id); // delete usually by DB id
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            role="menuitem"
+          >
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ManageProforma() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,13 +90,19 @@ function ManageProforma() {
   const [error, setError] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  // modal state (top-level, single source of truth)
+  const [selectedProforma, setSelectedProforma] = useState(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [printOpen, setPrintOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+
   useEffect(() => {
     fetchProformas();
   }, []);
 
   const fetchProformas = async () => {
     try {
-      const res = await api.get("/proforma");
+      const res = await api.get("/proformas");
       setProformas(res.data);
       setError(null);
     } catch (err) {
@@ -34,6 +110,20 @@ function ManageProforma() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /** <-- keep this OUTSIDE handleDelete */
+  const fetchProformaDetails = async (jobId, type) => {
+    try {
+      const res = await api.get(`/proformas/${jobId}`); // endpoint returns by job_id
+      setSelectedProforma(res.data);
+      if (type === "view") setViewOpen(true);
+      if (type === "print") setPrintOpen(true);
+      if (type === "edit") setEditOpen(true);
+    } catch (err) {
+      console.error("Failed to fetch proforma details", err);
+      Swal.fire("Error", "Failed to load proforma.", "error");
     }
   };
 
@@ -48,39 +138,30 @@ function ManageProforma() {
       confirmButtonText: "Yes, delete it!",
     });
 
-    if (result.isConfirmed) {
-      try {
-        await api.delete(`/proforma/${id}`);
-        Swal.fire("Deleted!", "Proforma deleted successfully.", "success");
-        fetchProformas();
-      } catch (err) {
-        console.error("Delete failed:", err);
-        Swal.fire("Error", "Something went wrong!", "error");
-      }
+    if (!result.isConfirmed) return;
+
+    try {
+      // Adjust to your backend route: /proforma/{id} vs /proformas/{id}
+      await api.delete(`/proformas/${id}`);
+      Swal.fire("Deleted!", "Proforma deleted successfully.", "success");
+      fetchProformas();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      Swal.fire("Error", "Something went wrong!", "error");
     }
   };
 
   const columns = useMemo(
     () => [
+      { accessorKey: "id", header: "#", cell: (info) => info.row.index + 1 },
+      { accessorKey: "date", header: "Date" },
+      { accessorKey: "job_id", header: "Job ID" },
+      { accessorKey: "customer_name", header: "Customer" },
+      { accessorKey: "product_name", header: "Product Name" },
+      { accessorKey: "ref_num", header: "Ref Num" },
+      { accessorKey: "delivery_date", header: "Delivery Date" },
       {
-        accessorKey: "id",
-        header: "#",
-        cell: (info) => info.row.index + 1,
-      },
-      {
-        accessorKey: "date",
-        header: "Date",
-      },
-      {
-        accessorKey: "customer_name",
-        header: "Customer",
-      },
-      {
-        accessorKey: "product_name",
-        header: "Product Name",
-      },
-      {
-        accessorKey: "net_total",
+        accessorKey: "net_pay",
         header: "Net Total",
         cell: (info) => `${Number(info.getValue()).toFixed(2)} Birr`,
       },
@@ -88,30 +169,17 @@ function ManageProforma() {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => (
-          <div className="flex gap-2 justify-center">
-            <Link
-              to={`/proforma/view/${row.original.id}`}
-              className="text-blue-600 hover:underline"
-            >
-              View
-            </Link>
-            <Link
-              to={`/proforma/print/${row.original.id}`}
-              className="text-green-600 hover:underline"
-            >
-              Print
-            </Link>
-            <button
-              onClick={() => handleDelete(row.original.id)}
-              className="text-red-600 hover:underline"
-            >
-              Delete
-            </button>
-          </div>
+          <ActionsCell
+            row={row}
+            onView={(jobId) => fetchProformaDetails(jobId, "view")}
+            onPrint={(jobId) => fetchProformaDetails(jobId, "print")}
+            onEdit={(jobId) => fetchProformaDetails(jobId, "edit")}
+            onDelete={(id) => handleDelete(id)}
+          />
         ),
       },
     ],
-    []
+    [] // functions are stable in this component; if you prefer, add them to deps
   );
 
   const table = useReactTable({
@@ -135,15 +203,11 @@ function ManageProforma() {
           <div className="max-w-7xl mx-auto bg-white p-6 shadow rounded-lg">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-xl font-bold">Manage Proformas</h1>
-              <Link
-                to="/proforma/create"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
+              <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 + New Proforma
-              </Link>
+              </button>
             </div>
 
-            {/* Search Input */}
             <input
               type="text"
               value={globalFilter ?? ""}
@@ -194,7 +258,6 @@ function ManageProforma() {
                   </tbody>
                 </table>
 
-                {/* Pagination */}
                 <div className="flex justify-between items-center mt-4">
                   <div>
                     <button
@@ -225,6 +288,24 @@ function ManageProforma() {
           </div>
         </main>
       </div>
+
+      {/* Top-level modals (controlled by viewOpen/printOpen/editOpen) */}
+      <ViewProformaModal
+        proforma={selectedProforma}
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+      />
+      <PrintProformaModal
+        proforma={selectedProforma}
+        open={printOpen}
+        onClose={() => setPrintOpen(false)}
+      />
+      <EditProformaModal
+        proforma={selectedProforma}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onUpdated={fetchProformas}
+      />
     </div>
   );
 }
