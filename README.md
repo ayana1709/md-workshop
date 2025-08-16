@@ -33,8 +33,13 @@ Built for **speed, efficiency, and real-time updates**.
 
 ## 📸 Screenshots / Demo
 
- <img srs="./Frontend/src/images/md1.jpg "/>
-<img srs="./Frontend/src/images/md2.jpg "/>
+<p align="center">
+  <img src="./Frontend/src/images/md1.jpg" alt="Dashboard Screenshot" width="600"/>
+</p>
+
+<p align="center">
+  <img src="./Frontend/src/images/md2.jpg" alt="Work Orders Screenshot" width="600"/>
+</p>
 
 ## ⚡ Getting Started
 
