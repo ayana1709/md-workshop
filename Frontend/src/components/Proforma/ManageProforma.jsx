@@ -70,7 +70,7 @@ function ActionsCell({ row, onView, onPrint, onEdit, onDelete }) {
           <button
             onClick={() => {
               setOpenMenu(false);
-              onDelete(id); // delete usually by DB id
+              onDelete(job_id); // delete usually by DB id
             }}
             className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
             role="menuitem"
