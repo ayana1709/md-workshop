@@ -1,81 +1,52 @@
-Workshop Management System for Merid Dinamo
-Project Overview
-This is a comprehensive workshop management system designed for Merid Dinamo. The application provides a centralized platform to streamline operations, from managing job orders and inventory to tracking finances and staff performance. It leverages a modern tech stack to ensure a responsive, efficient, and real-time experience.
+# 🚀 Workshop Management System – Merid Dinamo  
 
-Key Features
-The system is built to provide robust functionality across all aspects of workshop management:
+![Laravel](https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)  
+![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)  
+![MySQL](https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white)  
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)  
 
-Job Management:
+A modern, all-in-one platform to streamline **job orders, inventory, finances, staff, and reporting** for Merid Dinamo’s workshop.  
+Built for **speed, efficiency, and real-time updates**.  
 
-Job Acceptance: Easily accept and log new work orders from clients.
+---
 
-Progress Tracking: Monitor the real-time status of each job, from initial acceptance to completion.
+## ✨ Features  
+- **Jobs:** Accept, track, and complete work orders with progress monitoring.  
+- **Work Orders & Checklists:** Detailed logs + customizable checklists.  
+- **Inventory:** Real-time part tracking & product availability checks.  
+- **Finance:** Proforma invoices, income/expense tracking.  
+- **Reports:** Automated daily/weekly job & finance reports.  
+- **Staff & Roles:** Manage staff info with role-based access.  
+- **Real-time Alerts:** Instant notifications for jobs & updates.  
 
-Work Order & Checklists:
+---
 
-Detailed Work Orders: Create and track detailed work orders, including parts used and labor hours.
+## 🛠 Tech Stack  
+- **Backend:** Laravel  
+- **Frontend:** React + TailwindCSS  
+- **Database:** MySQL  
+- **Realtime:** Laravel Echo / WebSockets  
 
-Checklists: Utilize customizable checklists to ensure all necessary steps for a job are completed.
+---
 
-Inventory & Store Management:
+## 📸 Screenshots / Demo  
+👉 *(Add your UI screenshots or demo GIFs here)*  
 
-Real-time Inventory: Track parts and materials in the store with real-time updates as they are used in jobs.
+---
 
-Product Checks: Easily verify the availability of parts and products.
+## ⚡ Getting Started  
 
-Financial Tracking:
+### Prerequisites  
+- PHP >= 8.1  
+- Composer  
+- Node.js & npm  
+- MySQL  
 
-Proforma Invoices: Generate professional proforma invoices for clients.
-
-Income & Expenses: Log daily and weekly income and expenses to monitor the financial health of the workshop.
-
-Reporting & Analytics:
-
-Daily & Weekly Reports: Generate automated reports summarizing key metrics like job progress and financial status.
-
-Staff & Role Management:
-
-Staff Management: Manage all workshop staff, including their contact information and performance.
-
-Role-Based Access Control: Assign specific roles to staff members, ensuring they only have access to the features relevant to their job (e.g., technician, manager, storekeeper).
-
-Real-time Communication:
-
-The system includes real-time communication features to instantly notify staff of new jobs, status updates, or other critical information.
-
-Technologies Used
-This project is built using a powerful and scalable stack:
-
-Backend: Laravel for a robust and secure API.
-
-Frontend: React for a dynamic and interactive user interface.
-
-Database: MySQL to store and manage all application data.
-
-Styling: Tailwind CSS for fast, utility-first CSS styling and responsive design.
-
-Real-time Communication: Utilizes a real-time solution (e.g., Laravel Echo, Pusher, or WebSocket) to ensure instant updates across the platform.
-
-Getting Started
-Follow these steps to get a local copy of the project up and running.
-
-Prerequisites
-
-PHP (version 8.1 or higher)
-
-Composer
-
-Node.js & npm
-
-MySQL
-
-Installation
-
-Clone the repository:
-
+### Installation  
+```bash
+# Clone repo
 git clone https://github.com/your-username/your-repository-name.git
 cd your-repository-name
 
-Install Backend Dependencies:
-
+# Install backend dependencies
 composer install
