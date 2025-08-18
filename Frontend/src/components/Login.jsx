@@ -105,7 +105,7 @@ const Login = ({ onLogin }) => {
 
         {/* Titles */}
         <h2 className="text-center text-3xl font-extrabold text-gray-800 mb-1">
-          መክቢብ ዲናሞ
+         መክብብ ዲናሞ
         </h2>
         <h2 className="text-center text-2xl font-bold text-gray-700 mb-4">
           MEKBIB DINAMO

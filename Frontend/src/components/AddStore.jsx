@@ -42,7 +42,7 @@ export default function AddStore() {
 
   const [loading, setLoading] = useState(false);
 
-  const placeholderImage = "../../public/images/default.jpg";
+  const placeholderImage = "/images/default.jpg";
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(placeholderImage);
 
@@ -116,7 +116,7 @@ export default function AddStore() {
       if (imageFile) {
         fd.append("image", imageFile);
       } else {
-        const defaultImagePath = "../../public/images/default.jpg"; // public folder path
+        const defaultImagePath = "/images/default.jpg"; // public folder path
         const response = await fetch(defaultImagePath);
         const blob = await response.blob();
         fd.append("image", blob, "default.jpg");

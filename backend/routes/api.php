@@ -262,22 +262,21 @@ Route::put('/items/{item}', [ItemController::class, 'update']); // PUT /api/item
 Route::delete('/items/{item}', [ItemController::class, 'destroy']); // DELETE /api/items/{id} - Delete an item
 Route::patch('/items/{id}/update-field', [ItemController::class, 'updateField']);
 Route::post('/items/{id}/item-out', [ItemController::class, 'itemOut']);
-
 Route::post('/items/add-more', [ItemController::class, 'addMore']);
 Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems']);
+Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
+Route::post('/items/import', [ItemController::class, 'import']);
+
 
 
 
 
 // spare request
-Route::get('/spare-requests', [SpareRequestController::class, 'index']);
-
 //request item out route
+Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
 Route::patch('/request-item-out/{id}/approve', [RequestItemOutController::class, 'approve']);
 Route::delete('/request-item-out/{id}/reject', [RequestItemOutController::class, 'reject']);
-
-
 Route::get('/requested-items', [RequestItemOutController::class, 'getRequestedItems']);
 
 
@@ -334,7 +333,6 @@ Route::put('/sales/{id}', [SaleController::class, 'update']);
 
 Route::post('/purchases', [PurchaseOrderController::class, 'store']);
 Route::get('/purchases', [PurchaseOrderController::class, 'index']);
-Route::post('/items/import', [ItemController::class, 'import']);
 
 // payment  route 
 // use App\Http\Controllers\PaymentsController;
@@ -400,4 +398,3 @@ Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
 
 
-Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
