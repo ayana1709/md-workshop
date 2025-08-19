@@ -8,16 +8,21 @@ const JobOrderFooter = () => {
         {/* Left Side - Amharic Workshop Welcome Note */}
         <div className="w-1/2 bg-gray-100 p-4 rounded-md border text-[11px] leading-relaxed text-black shadow-sm">
           <h1 className="text-center text-[13px] font-extrabold mb-3 leading-snug">
-            ወደ እኛ የመጡትን በከበር እንመርታለን። <br />
-            እባኮትን የእቃውን አገልግሎት ደንብ ያንብቡና ያረጋግጡ።
+            ውድ ደንበኞቻችን
           </h1>
+
+          <p className="mb-3">
+            መርጠውን ሲለመጡ በጣም እናመሰግናለን። በአገልግሎታችን ላይ ሲጠቀሙ ከሚከተሉት መመሪያዎች ጋር እባኮትን
+            ይጠብቁ፦
+          </p>
 
           <ul className="space-y-2 text-[11px]">
             {[
-              "ከላይ የተጠቀሱት አገልግሎቶችን በፈቃድ እንዲደርሱ እስማማለሁ።",
-              "እባኮትን ልዩ ንብረቶችን ከመኪናው ያወጡ፤ ላልተዘጋጀ ነገር ኃላፊነት አናውም።",
-              "ለፍተሻ መኪናውን ከግቢ ውጭ ማሽከርከር እንችላለን።",
-              "አገልግሎቱ ከተጠናቀቀ በኋላ በዕለት 1000 ብር የእንቅስቃሴ ክፍያ ይጨምራል።",
+              "ለጥገና ያስረከቡትን ንብረት መረከቢያ ወረቀት መያዝዎን ያረጋግጡ።",
+              "ለጥገና የሚያስፈልጉ መለዋወጫዎችን በተጠየቁ ጊዜ በፍጥነት በማቅረብ ይተባበሩን።",
+              "ያስረከቡትን ንብረት ጥገናው እንዲሁ ባለቀ ጊዜ እናሳውቃለን። በቀጠሮ በመገኘት ንብረቶን መረከብ ይኖርቦታል።",
+              "ጥገናው እንዳለቀ የመጀመሪያ ጊዜ መረከብ እንዲፈጸም ይጠይቃል።",
+              "ንብረቶን በጊዜው ባልተረከቡ ከሆነ፣ ለቆየበት ጊዜ ተጨማሪ ኪፊያ ይከፍላሉ።",
             ].map((item, index) => (
               <li key={index} className="flex items-start gap-2">
                 <IoMdArrowDropright

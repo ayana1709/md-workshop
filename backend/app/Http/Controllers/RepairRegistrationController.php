@@ -269,10 +269,22 @@ public function getVehiclesByRepairId($id)
 public function totalRepairs()
 {
     try {
-        $count = RepairRegistration::count();
-        return response()->json(['total_repairs' => $count]);
+        // Get all jobs and group them by status
+        $statusCounts = RepairRegistration::select('status')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status'); // returns an associative array like ['not started' => 5, 'completed' => 3]
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $statusCounts
+        ]);
     } catch (\Exception $e) {
-        return response()->json(['error' => 'Error fetching total repairs', 'message' => $e->getMessage()], 500);
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error fetching repairs count',
+            'details' => $e->getMessage()
+        ], 500);
     }
 }
 

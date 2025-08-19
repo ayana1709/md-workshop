@@ -145,29 +145,39 @@ const JobDetailsRightSection = ({ printData }) => {
           <li className="flex">
             <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              A daily fee of 1000 ETB applies for vehicles not collected after
-              service completion.
+              Please make sure you{" "}
+              <span className="font-semibold">keep your receipt slip</span> for
+              the property submitted for repair.
             </p>
           </li>
           <li className="flex">
             <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              Please remove all personal belongings before handing over the
-              product or vehicle.
+              Provide any required spare parts promptly when requested, to avoid
+              delay.
             </p>
           </li>
           <li className="flex">
             <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              We are not liable for unreported issues or undocumented parts
-              during handover.
+              Once your repair is completed, we will notify you. Please collect
+              your property by appointment.
             </p>
           </li>
           <li className="flex">
             <IoMdArrowDropright className="mt-[2px]" size={12} />
             <p className="ml-2">
-              By signing below, you confirm and approve the listed services and
-              estimates.
+              Property must be collected at the{" "}
+              <span className="font-semibold">first notification</span> after
+              repair completion.
+            </p>
+          </li>
+          <li className="flex">
+            <IoMdArrowDropright className="mt-[2px]" size={12} />
+            <p className="ml-2">
+              If the property is not collected on time, an additional{" "}
+              <span className="font-semibold">storage fee</span> will be
+              charged.
             </p>
           </li>
         </ul>
