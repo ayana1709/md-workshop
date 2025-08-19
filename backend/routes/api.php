@@ -357,8 +357,7 @@ Route::delete('/payments/by-job/{job_id}', [PaymentController::class, 'destroyBy
 
 
 
-// dailly Cheacklist 
-// routes/api.php
+
 
 // Route::post('/daily-progress', [DailyProgressController::class, 'store']);
 Route::get('/work-orders/{job_card_no}/average-progress', [WorkOrderController::class, 'getAverageProgressByJobCardNo']);
@@ -380,11 +379,11 @@ Route::post('/job-delivery-status/batch', [PostDriveTestController::class, 'batc
 
 
 
-
-Route::post('/proformas', [ProformaController::class, 'store']);
 // Route::get('/proforma', [ProformaController::class, 'index']);
 // Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
 // Route::get('/proformas/{id}', [ProformaController::class, 'show']);
+
+Route::post('/proformas', [ProformaController::class, 'store']);
 Route::get('/proformas', [ProformaController::class, 'index']);
 Route::get('/proformas/{jobId}', [ProformaController::class, 'show']);
 Route::put('/proformas/{jobId}', [ProformaController::class, 'update']);

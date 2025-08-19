@@ -477,8 +477,10 @@ export default function RepairRegistrationForm() {
                         rows={5}
                       />
                     </div>
+
+                    {/* Jobs To Be Done */}
                     {/* job to be done */}
-                    <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-auto">
+                    <div className="mt-10 border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-4 overflow-x-auto">
                       <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
                         Jobs To Be Done /የሚደረጉ ስራዎች
                         <span className="text-gray-400 text-sm dark:text-gray-200">
@@ -487,81 +489,87 @@ export default function RepairRegistrationForm() {
                         </span>
                       </h3>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Job Description</th>
-                            <th className="p-2 border text-right">
-                              Estimated Price (ETB)
-                            </th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.job_description.map((job, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`task-${index}`}
-                                  type="text"
-                                  value={job.task}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "task",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder={`Task ${index + 1}`}
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={job.price}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder="0.00"
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.job_description.length > 1) {
-                                      const updated = [
-                                        ...formData.job_description,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        job_description: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                      <div className="min-w-[600px]">
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-3 border text-left">
+                                Job Description
+                              </th>
+                              <th className="p-3 border text-right">
+                                Estimated Price (ETB)
+                              </th>
+                              <th className="p-3 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.job_description.map((job, index) => (
+                              <tr
+                                key={index}
+                                className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
+                                <td className="p-2 border">
+                                  <input
+                                    id={`task-${index}`}
+                                    type="text"
+                                    value={job.task}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "task",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder={`Task ${index + 1}`}
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="number"
+                                    value={job.price}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder="0.00"
+                                    className="w-full px-3 py-2 rounded-md text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.job_description.length > 1) {
+                                        const updated = [
+                                          ...formData.job_description,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          job_description: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
                         Total Estimated Price/ጠቅላላ የተገመተው ዋጋ:{" "}
@@ -569,140 +577,152 @@ export default function RepairRegistrationForm() {
                       </div>
                     </div>
 
-                    {/* spare chage  */}
-                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-auto">
+                    {/* spare change */}
+                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-x-auto">
                       <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Spare Change /መለዋወጫ ለውጥ{" "}
+                        Spare Change /መለዋወጫ ለውጥ
                         <span className="text-gray-400 text-sm dark:text-gray-200">
+                          {" "}
                           (Optional)
                         </span>
                       </h3>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Item Name</th>
-                            <th className="p-2 border">Part Number</th>
-                            <th className="p-2 border text-center">Qty</th>
-                            <th className="p-2 border text-center">
-                              Unit Price
-                            </th>
-                            <th className="p-2 border text-right">Total</th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.spare_change.map((item, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`spare-item-${index}`}
-                                  type="text"
-                                  value={item.item}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "item",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border">
-                                <input
-                                  type="text"
-                                  value={item.part_number || ""}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "part_number",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="Part #"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.qty}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "qty",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.unit_price}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "unit_price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={item.total_price.toFixed(2)}
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.spare_change.length > 1) {
-                                      const updated = [
-                                        ...formData.spare_change,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        spare_change: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                      <div className="min-w-[900px]">
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-3 border text-left">
+                                Item Name
+                              </th>
+                              <th className="p-3 border text-left">
+                                Part Number
+                              </th>
+                              <th className="p-3 border text-center w-32">
+                                Qty
+                              </th>
+                              <th className="p-3 border text-center w-40">
+                                Unit Price
+                              </th>
+                              <th className="p-3 border text-right w-44">
+                                Total
+                              </th>
+                              <th className="p-3 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.spare_change.map((item, index) => (
+                              <tr
+                                key={index}
+                                className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
+                                <td className="p-2 border">
+                                  <input
+                                    type="text"
+                                    value={item.item}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "item",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border">
+                                  <input
+                                    type="text"
+                                    value={item.part_number || ""}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "part_number",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Part #"
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "qty",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    placeholder="0"
+                                    className="w-full px-3 py-2 rounded-md text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="number"
+                                    value={item.unit_price}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "unit_price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    placeholder="0"
+                                    className="w-full px-3 py-2 rounded-md text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    value={item.total_price.toFixed(2)}
+                                    className="w-full px-3 py-2 rounded-md text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.spare_change.length > 1) {
+                                        const updated = [
+                                          ...formData.spare_change,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          spare_change: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
                         Total Spare Change Price/ጠቅላላ የመለዋወጫ ለውጥ ዋጋ:{" "}
                         {getSpareChangeTotal().toLocaleString()} ETB
                       </div>
                     </div>
+
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 mt-4">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Upload Image / የምስል መጫኛ
