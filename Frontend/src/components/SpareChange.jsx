@@ -43,7 +43,14 @@ const SpareChange = () => {
     );
   };
 
+  const [isAddingRow, setIsAddingRow] = useState(false);
+
   const addRow = async (jobCardNo) => {
+    if (isAddingRow) {
+      Swal.fire("Please wait!", "Still adding the previous row...", "warning");
+      return;
+    }
+
     // ✅ Prevent adding if last row is unfilled
     if (rows.length > 0 && isRowEmpty(rows[rows.length - 1])) {
       Swal.fire(
@@ -53,6 +60,8 @@ const SpareChange = () => {
       );
       return;
     }
+
+    setIsAddingRow(true); // 🚀 lock
 
     try {
       const response = await api.get(`/spare-changes?job_card_no=${jobCardNo}`);
@@ -86,6 +95,8 @@ const SpareChange = () => {
     } catch (error) {
       console.error("Error fetching work details:", error);
       Swal.fire("Error!", "Failed to fetch work order details.", "error");
+    } finally {
+      setIsAddingRow(false); // ✅ unlock
     }
   };
 
@@ -393,60 +404,48 @@ const SpareChange = () => {
           {/* Job Card No */}
 
           <button
-            onClick={addRow}
-            className="mt-4 mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 "
+            onClick={() => addRow(id)}
+            disabled={isAddingRow}
+            className={`mt-4 mb-4 px-4 py-2 rounded text-white ${
+              isAddingRow
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
           >
-            + Add New Spare
+            {isAddingRow ? "Adding..." : "+ Add New Spare"}
           </button>
-          <div className="overflow-x-auto">
-            <table className="table-fixed min-w-full table-auto w-full border-collapse border border-gray-800 overflow-x-auto">
-              <thead className="bg-gray-800 text-white text-left text-sm">
+
+          <div className="overflow-x-auto rounded-lg shadow-md border border-gray-300">
+            <table className="min-w-[900px] w-full table-auto border-collapse">
+              <thead className="bg-gray-800 text-white text-sm">
                 <tr>
-                  <th className="border-2 border-gray-300 p-2 w-[40px]">ID</th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
-                    Item Name
-                  </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px]">
-                    Part Number
-                  </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
-                    Brand
-                  </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px]">Qty</th>
-
-                  <th className="border-2 border-gray-300 p-2 w-[70px]">
-                    Condition
-                  </th>
-                  <th className="border-2 border-gray-300 p-2 w-[70px]">
-                    Unit price
-                  </th>
-
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
-                    Total Price
-                  </th>
-
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
-                    Actions
-                  </th>
+                  <th className="border p-2 w-10">ID</th>
+                  <th className="border p-2 w-20">Item Name</th>
+                  <th className="border p-2 w-20">Part Number</th>
+                  <th className="border p-2 w-20">Brand</th>
+                  <th className="border p-2 w-20">Qty</th>
+                  <th className="border p-2 w-20">Condition</th>
+                  <th className="border p-2 w-20">Unit Price</th>
+                  <th className="border p-2 w-28">Total Price</th>
+                  <th className="border p-2 w-32">Actions</th>
                 </tr>
               </thead>
 
-              <tbody>
+              <tbody className="text-sm font-medium">
                 {[...workDetails, ...rows].map((row, index) => {
                   const isFetchedData = workDetails.some(
                     (workRow) => workRow.id === row.id
                   );
                   const isEditing = editingRow === row.id;
+
                   return (
                     <tr
                       key={`${row.id}-${index}`}
-                      className="border-t border-gray-300 hover:bg-gray-50 hover:dark:bg-gray-600"
+                      className="border-t hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <td className="border-2 border-gray-300 p-2 text-center font-medium ">
-                        {index + 1}
-                      </td>
-                      {/* Model */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border p-2 text-center">{index + 1}</td>
+
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.itemname
                         ) : (
@@ -460,17 +459,17 @@ const SpareChange = () => {
                             onChange={(e) =>
                               handleChange(row.id, "itemname", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[100px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           />
                         )}
                       </td>
 
-                      {/* Work Type */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.partnumber
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.partnumber
@@ -479,14 +478,12 @@ const SpareChange = () => {
                             onChange={(e) =>
                               handleChange(row.id, "partnumber", e.target.value)
                             }
-                            type="number"
-                            className="no-spinner w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[80px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200 appearance-none"
                           />
                         )}
                       </td>
 
-                      {/* Brand  */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.brand
                         ) : (
@@ -498,20 +495,17 @@ const SpareChange = () => {
                             onChange={(e) =>
                               handleChange(row.id, "brand", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[80px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           />
                         )}
                       </td>
 
-                      {/* request quantity  */}
-                      <td
-                        className="border-2 border-gray-300 p-2 font-medium"
-                        key={row.id}
-                      >
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.requestquantity
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.requestquantity
@@ -524,13 +518,12 @@ const SpareChange = () => {
                                 e.target.value
                               )
                             }
-                            type="number"
-                            className="no-spinner w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-[100px] min-w-[60px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200 appearance-none no-spinner"
                           />
                         )}
                       </td>
-                      {/* Assign to  */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.condition
                         ) : (
@@ -543,19 +536,20 @@ const SpareChange = () => {
                             onChange={(e) =>
                               handleChange(row.id, "condition", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[60px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
                           >
-                            <option value="new">new </option>
-                            <option value="used">used</option>
+                            <option value="new">New</option>
+                            <option value="used">Used</option>
                           </select>
                         )}
                       </td>
-                      {/*  unit price  */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+
+                      <td className="border p-2">
                         {isFetchedData && !isEditing ? (
                           row.unitprice
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.unitprice
@@ -564,29 +558,23 @@ const SpareChange = () => {
                             onChange={(e) =>
                               handleChange(row.id, "unitprice", e.target.value)
                             }
-                            type="number"
-                            className=" no-spinner w-full border-gray-300 rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[60px] sm:w-auto border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200 appearance-none no-spinner"
                           />
                         )}
                       </td>
-                      {/*  Total price  */}
 
-                      {/* Total Price */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
-                        {row.totalprice || "0.00"}
-                      </td>
+                      <td className="border p-2">{row.totalprice || "0.00"}</td>
 
-                      {/* Actions - Dropdown Menu */}
-                      <td className="border-2 border-gray-300 p-2 text-left relative font-medium">
+                      <td className="border p-2 relative">
                         <button
                           onClick={() =>
                             setDropdownOpen(
                               dropdownOpen === index ? null : index
                             )
                           }
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded flex items-center space-x-1 relative dark:bg-gray-800 dark:text-gray-200"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded flex items-center space-x-1 dark:bg-gray-800 dark:text-gray-200"
                         >
-                          Action <FiChevronDown size={18} />
+                          Action <FiChevronDown size={16} />
                         </button>
 
                         {dropdownOpen === index && (
@@ -597,7 +585,6 @@ const SpareChange = () => {
                             >
                               <FiEye className="mr-2" /> View
                             </button>
-
                             {editingRow === row.id ? (
                               <button
                                 onClick={handleSave}
