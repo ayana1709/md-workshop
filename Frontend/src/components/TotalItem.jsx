@@ -115,23 +115,14 @@ const TotalItem = () => {
   const handleDownloadTemplate = () => {
     const templateData = [
       {
-        code: "",
-        part_number: "",
         item_name: "",
+        part_number: "",
         brand: "",
-        model: "",
         unit: "",
-        quantity: "",
         purchase_price: "",
         selling_price: "",
-        least_price: "",
-        maximum_price: "",
-        minimum_quantity: "",
-        low_quantity: "",
+        quantity: "",
         location: "",
-        manufacturer: "",
-        manufacturing_date: "",
-        image: "",
       },
     ];
     const ws = XLSX.utils.json_to_sheet(templateData, { skipHeader: false });

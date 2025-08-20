@@ -367,23 +367,15 @@ public function import(Request $request)
         ['items' => $normalizedItems],
         [
             'items' => 'required|array',
-            'items.*.code' => 'nullable|string|max:20',
-            'items.*.part_number' => 'nullable|string|max:255',
             'items.*.item_name' => 'nullable|string|max:255',
+            'items.*.part_number' => 'nullable|string|max:255',
             'items.*.brand' => 'nullable|string|max:255',
-            'items.*.model' => 'nullable|string|max:255',
             'items.*.unit' => 'nullable|string|max:255',
-            'items.*.quantity' => 'nullable|integer|min:0',
             'items.*.purchase_price' => 'nullable|numeric|min:0',
             'items.*.selling_price' => 'nullable|numeric|min:0',
-            'items.*.least_price' => 'nullable|numeric|min:0',
-            'items.*.maximum_price' => 'nullable|numeric|min:0',
-            'items.*.minimum_quantity' => 'nullable|integer|min:0',
-            'items.*.low_quantity' => 'nullable|integer|min:0',
+            'items.*.quantity' => 'nullable|integer|min:0',
             'items.*.location' => 'nullable|string|max:255',
-            'items.*.manufacturer' => 'nullable|string|max:255',
-            'items.*.manufacturing_date' => 'nullable|date',
-            'items.*.image' => 'nullable|string',
+            'items.*.image' => 'nullable|string|max:255', // allow image but optional
         ]
     )->validate();
 
@@ -397,7 +389,6 @@ public function import(Request $request)
         ->get()
         ->keyBy('part_number');
 
-    $toInsert = [];
     $updatedItems = [];
     $newItems = [];
 
@@ -411,14 +402,24 @@ public function import(Request $request)
             $item['total_price'] = $quantity * $purchasePrice;
         }
 
+        // Always assign default image if missing
+        if (empty($item['image'])) {
+            $item['image'] = 'defaults/default.jpg'; // 👈 put your default image path here
+        }
+
         if ($partNumber && $existingItems->has($partNumber)) {
             // Update existing
             $existing = $existingItems[$partNumber];
-            $existing->fill(array_filter($item, fn ($v) => !is_null($v))); // update non-null fields
+            $existing->fill(array_filter($item, fn ($v) => !is_null($v))); 
             $existing->quantity += $quantity;
             $existing->total_price = $existing->quantity * ($existing->purchase_price ?? 0);
-            $existing->save();
 
+            // Ensure existing item also has image
+            if (empty($existing->image)) {
+                $existing->image = 'defaults/item.png';
+            }
+
+            $existing->save();
             $updatedItems[] = $existing;
         } else {
             // New item
@@ -431,9 +432,10 @@ public function import(Request $request)
         'message' => 'Items imported successfully',
         'inserted' => count($newItems),
         'updated' => count($updatedItems),
-        'items' => array_merge($newItems, $updatedItems), // send to frontend
+        'items' => array_merge($newItems, $updatedItems),
     ]);
 }
+
 
 
 
