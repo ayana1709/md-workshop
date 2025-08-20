@@ -82,7 +82,7 @@ export const columns = ({
       // Build the full image URL (adjust base URL as needed)
       const imageUrl = row.original.image
         ? `${import.meta.env.VITE_API_URL}/storage/${row.original.image}`
-        : "/defaults/default.jpg";
+        : "items/default.jpg";
 
       return (
         <>
@@ -463,13 +463,16 @@ export const columns = ({
             </div>
           )}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogContent className="bg-white p-0 rounded-md shadow-md w-[40%] max-h-[90vh] overflow-y-auto">
-              <div className="border-b p-3 flex items-center gap-2">
-                <h2>Item Details</h2>
+            <DialogContent className="bg-white p-0 rounded-lg shadow-lg w-full max-w-2xl sm:max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="border-b p-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Item Details
+                </h2>
               </div>
 
-              <div className="px-6 py-4">
-                <div className="space-y-3">
+              <div className="px-4 sm:px-6 py-6">
+                <div className="space-y-4">
                   {[
                     {
                       label: "Item Code:",
@@ -477,34 +480,20 @@ export const columns = ({
                     },
                     { label: "Item Name:", value: row.original.item_name },
                     { label: "Part Number:", value: row.original.part_number },
-                    {
-                      label: "Measurement:",
-                      value: row.original.measurement || "N/A",
-                    },
-                    {
-                      label: "Description:",
-                      value: row.original.description || "N/A",
-                      type: "textarea",
-                    },
                     { label: "Brand:", value: row.original.brand },
-                    { label: "Origin:", value: row.original.origin || "N/A" },
                     {
-                      label: "Category:",
-                      value: row.original.category || "N/A",
+                      label: "Pr Price:",
+                      value: row.original.purchase_price || "0",
                     },
-                    { label: "Group:", value: row.original.group || "N/A" },
-                    { label: "Mark:", value: row.original.mark || "N/A" },
+                    {
+                      label: "Selling Price:",
+                      value: row.original.selling_price || "0",
+                    },
                     { label: "Model:", value: row.original.model || "N/A" },
                     {
                       label: "Manufacturer:",
                       value: row.original.manufacturer || "N/A",
                     },
-                    {
-                      label: "Manufacturing Date:",
-                      value: row.original.manufacturing_date || "N/A",
-                    },
-
-                    // 🆕 Added Fields
                     {
                       label: "Location:",
                       value: row.original.location || "N/A",
@@ -526,45 +515,41 @@ export const columns = ({
                       value: row.original.least_price || "0",
                     },
                     {
-                      label: "Standard Price:",
-                      value: row.original.unit_price || "0.00",
+                      label: "Maximum Price:",
+                      value: row.original.maximum_price || "0",
                     },
                     {
                       label: "Item Added On:",
                       value: row.original.created_at
                         ? new Date(row.original.created_at)
                             .toISOString()
-                            .replace("T", "-")
+                            .replace("T", " ")
                             .substring(0, 19)
                         : "N/A",
                     },
                   ].map((field, index) => (
-                    <div key={index} className="flex items-start gap-2">
-                      <label className="w-40 text-right text-sm font-medium pt-1">
+                    <div
+                      key={index}
+                      className="flex flex-col sm:flex-row sm:items-center gap-2"
+                    >
+                      <label className="sm:w-40 text-sm font-medium text-gray-700">
                         {field.label}
                       </label>
-                      {field.type === "textarea" ? (
-                        <textarea
-                          value={field.value}
-                          readOnly
-                          className="flex-1 text-sm border border-gray-300 bg-gray-100 px-2 py-1 rounded-sm"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={field.value}
-                          readOnly
-                          className="flex-1 text-sm border border-gray-300 bg-gray-100 px-2 py-1 rounded-sm"
-                        />
-                      )}
+                      <input
+                        type="text"
+                        value={field.value}
+                        readOnly
+                        className="flex-1 text-sm border border-gray-300 bg-gray-100 px-3 py-2 rounded-md"
+                      />
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 text-right">
+                {/* Actions */}
+                <div className="mt-8 text-right">
                   <Button
                     onClick={() => setIsModalOpen(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded-sm"
+                    className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700"
                   >
                     Close
                   </Button>
@@ -572,6 +557,7 @@ export const columns = ({
               </div>
             </DialogContent>
           </Dialog>
+
           {selectedItem && (
             <EditItemModal
               open={isEditOpen}
