@@ -404,7 +404,7 @@ public function import(Request $request)
 
         // Always assign default image if missing
         if (empty($item['image'])) {
-            $item['image'] = 'defaults/default.jpg'; // 👈 put your default image path here
+            $item['image'] = 'items/default.jpg'; // 👈 put your default image path here
         }
 
         if ($partNumber && $existingItems->has($partNumber)) {

@@ -82,7 +82,7 @@ export const columns = ({
       // Build the full image URL (adjust base URL as needed)
       const imageUrl = row.original.image
         ? `${import.meta.env.VITE_API_URL}/storage/${row.original.image}`
-        : "/placeholder.png";
+        : "/defaults/default.jpg";
 
       return (
         <>
