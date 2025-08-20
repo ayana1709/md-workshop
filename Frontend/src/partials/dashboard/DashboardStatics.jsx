@@ -93,7 +93,7 @@ function DashboardStatics() {
           </div>
 
           {/* Status badges for Repairs */}
-          {card.isStatusCard && (
+          {/* {card.isStatusCard && (
             <div className="flex space-x-2 mt-1 justify-end flex-wrap">
               {Object.entries(card.value).map(([status, count], idx) => (
                 <div
@@ -106,7 +106,7 @@ function DashboardStatics() {
                 </div>
               ))}
             </div>
-          )}
+          )} */}
         </div>
       ))}
     </div>

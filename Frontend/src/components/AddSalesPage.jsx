@@ -366,9 +366,10 @@ const AddSalesPage = () => {
       </div>
 
       {/* Items Table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+      {/* Items Table */}
+      <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
         <table className="min-w-full border-collapse text-sm">
-          <thead className="bg-gray-100">
+          <thead className="bg-gray-100 sticky top-0 z-10">
             <tr>
               {[
                 "#",
@@ -399,7 +400,7 @@ const AddSalesPage = () => {
               >
                 <td className="px-3 py-2">{index + 1}</td>
 
-                <td className="px-3 py-2 min-w-[140px]">
+                <td className="px-3 py-2 min-w-[160px]">
                   <input
                     className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.item_name || ""}
@@ -409,7 +410,7 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="px-3 py-2 min-w-[140px]">
+                <td className="px-3 py-2 min-w-[160px]">
                   <input
                     type="text"
                     className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
@@ -421,7 +422,7 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="px-3 py-2 min-w-[120px]">
+                <td className="px-3 py-2 min-w-[140px]">
                   <input
                     className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.brand || ""}
@@ -433,7 +434,7 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 min-w-[100px]">
                   <input
                     className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.unit || ""}
@@ -443,7 +444,7 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 min-w-[120px]">
                   <input
                     type="number"
                     className="border rounded-md px-2 py-1 w-full no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
@@ -458,7 +459,7 @@ const AddSalesPage = () => {
                   />
                 </td>
 
-                <td className="px-3 py-2">
+                <td className="px-3 py-2 min-w-[120px]">
                   <input
                     type="number"
                     min="1"
