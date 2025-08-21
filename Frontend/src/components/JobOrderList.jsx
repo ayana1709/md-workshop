@@ -430,23 +430,30 @@ const JobOrderList = () => {
                     </span>
                   </td>
 
-                  <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    <button
-                      onClick={() => setDropdownOpen(repair.id)}
-                      className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
-                    >
-                      Action <FiChevronDown className="ml-1" />
-                    </button>
-                    {dropdownOpen === repair.id && (
-                      <DropdownButton
-                        repair={repair}
-                        id={repair.id}
-                        type="repair"
-                        handlePrint={handlePrint}
-                        handleDelete={handleDelete}
-                        handlePrintsummary={() => handlePrintsummary(repair.id)}
-                      />
-                    )}
+                  <td className="border border-table-border px-2 py-3 text-sm text-center relative">
+                    <div className="relative inline-block w-full">
+                      <button
+                        onClick={() => setDropdownOpen(repair.id)}
+                        className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
+                      >
+                        Action <FiChevronDown className="ml-1" />
+                      </button>
+
+                      {dropdownOpen === repair.id && (
+                        <div className="absolute left-0 mt-0 w-20 bg-white border rounded shadow-lg z-50">
+                          <DropdownButton
+                            repair={repair}
+                            id={repair.id}
+                            type="repair"
+                            handlePrint={handlePrint}
+                            handleDelete={handleDelete}
+                            handlePrintsummary={() =>
+                              handlePrintsummary(repair.id)
+                            }
+                          />
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
