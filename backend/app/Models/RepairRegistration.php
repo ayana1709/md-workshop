@@ -13,7 +13,7 @@ class RepairRegistration extends Model
     protected $fillable = [
         'job_id',
         'customer_name',
-        'customer_type',
+        // 'customer_type',
         'mobile',
         'types_of_jobs',
         'received_date',
@@ -22,7 +22,7 @@ class RepairRegistration extends Model
         'priority',
         'product_name',
         'serial_code',
-        'customer_observation',
+        // 'customer_observation',
         'spare_change',
         'job_description',
         'received_by',
@@ -31,7 +31,7 @@ class RepairRegistration extends Model
     ];
 
     protected $casts = [
-        'customer_observation' => 'array',
+        // 'customer_observation' => 'array',
         'spare_change' => 'array',
         'job_description' => 'array',
     ];

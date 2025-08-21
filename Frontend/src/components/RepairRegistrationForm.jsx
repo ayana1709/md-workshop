@@ -29,7 +29,7 @@ export default function RepairRegistrationForm() {
 
   const [formData, setFormData] = useState({
     customer_name: "",
-    customer_type: "",
+    // customer_type: "",
     mobile: "",
     types_of_jobs: "",
     received_date: "",
@@ -38,7 +38,7 @@ export default function RepairRegistrationForm() {
     priority: "",
     product_name: "",
     serial_code: "",
-    customer_observation: ["1. "], // Default starts with "1. "
+    // customer_observation: ["1. "], // Default starts with "1. "
     spare_change: [
       { item: "1. ", part_number: "", qty: "", unit_price: "", total_price: 0 },
     ],
@@ -97,8 +97,15 @@ export default function RepairRegistrationForm() {
     }
   };
 
+  // state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSubmitting) return; // 🚫 prevent double submit
+    setIsSubmitting(true);
+
     try {
       // Normalize customer observation
       const formattedCustomerObservation = Array.isArray(
@@ -118,7 +125,6 @@ export default function RepairRegistrationForm() {
       const formDataToSend = new FormData();
       formDataToSend.append("payload", JSON.stringify(payloadData));
 
-      // ✅ Add image to FormData if available
       if (formData.image) {
         formDataToSend.append("image", formData.image);
       }
@@ -126,9 +132,7 @@ export default function RepairRegistrationForm() {
       console.log("Sending to backend:", JSON.stringify(payloadData, null, 2));
 
       const response = await api.post("/repairs", formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success(response.data.message, {
@@ -136,17 +140,15 @@ export default function RepairRegistrationForm() {
         autoClose: 1000,
       });
 
-      setRepairData(payloadData); // Store repair details
-      setIsPrintModalOpen(true); // Open modal
+      setRepairData(payloadData);
+      setIsPrintModalOpen(true);
     } catch (error) {
       console.error("Error submitting form:", error.response?.data || error);
-
       const errorMessage =
         error.response?.data?.message || "Failed to submit form.";
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(errorMessage, { position: "top-right", autoClose: 3000 });
+    } finally {
+      setIsSubmitting(false); // ✅ re-enable button
     }
   };
 
@@ -241,6 +243,29 @@ export default function RepairRegistrationForm() {
       return total + (isNaN(price) ? 0 : price);
     }, 0);
   };
+  const addJobRow = () => {
+    const newRowNumber = formData.job_description.length + 1;
+    const newJobs = [
+      ...formData.job_description,
+      { task: `Task ${newRowNumber}`, price: "" },
+    ];
+    setFormData({ ...formData, job_description: newJobs });
+  };
+
+  const addSpareRow = () => {
+    const newRowNumber = formData.spare_change.length + 1;
+    const newItems = [
+      ...formData.spare_change,
+      {
+        item: `${newRowNumber}. `,
+        part_number: "",
+        qty: "",
+        unit_price: "",
+        total_price: 0,
+      },
+    ];
+    setFormData({ ...formData, spare_change: newItems });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -309,25 +334,6 @@ export default function RepairRegistrationForm() {
                           ))}
                         </ul>
                       )}
-                    </div>
-
-                    <div>
-                      <label className="dark:text-gray-200">
-                        Customer Type/ የደንበኛ አይነት
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="customer_type"
-                        value={formData.customer_type}
-                        onChange={handleChange}
-                        placeholder="የደንበኛው አይነት"
-                        className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                        required
-                      >
-                        <option value="">Select Type</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Contract">Contract</option>
-                      </select>
                     </div>
 
                     <div>
@@ -460,34 +466,28 @@ export default function RepairRegistrationForm() {
                   </div>
 
                   {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
-                  <div className="flex flex-col gap-4 mt-6">
-                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                      <h3 className="font-semibold mb-2 dark:text-gray-200">
-                        Customer Observation /የደንበኛ ምልከታ
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          {" "}
-                          (Optional)
-                        </span>
-                      </h3>
-                      <textarea
-                        value={formData.customer_observation.join("\n")}
-                        onChange={handleCustomerObservationChange}
-                        onKeyDown={handleCustomerObservationKeyDown}
-                        className="w-full border border-gray-300 dark:text-white p-2 rounded mb-2 dark:bg-gray-800 placeholder:dark:text-gray-100 min-h-[100px]"
-                        rows={5}
-                      />
-                    </div>
 
+                  <div className="flex flex-col gap-4 mt-6">
                     {/* Jobs To Be Done */}
-                    {/* job to be done */}
                     <div className="mt-10 border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-4 overflow-x-auto">
-                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Jobs To Be Done /የሚደረጉ ስራዎች
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          {" "}
-                          (Optional)
-                        </span>
-                      </h3>
+                      <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-black z-10 py-2 shadow-sm">
+                        <h3 className="font-semibold dark:text-gray-200 text-lg">
+                          Jobs To Be Done /የሚደረጉ ስራዎች
+                          <span className="text-gray-400 text-sm dark:text-gray-200">
+                            {" "}
+                            (Optional)
+                          </span>
+                        </h3>
+
+                        {/* Always visible button */}
+                        <button
+                          type="button"
+                          onClick={addJobRow}
+                          className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition"
+                        >
+                          + Add Row
+                        </button>
+                      </div>
 
                       <div className="min-w-[600px]">
                         <table className="w-full text-sm border-collapse">
@@ -572,22 +572,32 @@ export default function RepairRegistrationForm() {
                       </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
-                        Total Estimated Price/ጠቅላላ የተገመተው ዋጋ:{" "}
+                        Total Estimated Price:{" "}
                         {getTotalEstimatedPrice().toLocaleString()} ETB
                       </div>
                     </div>
-
-                    {/* spare change */}
+                    {/* Spare Change */}
                     <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-x-auto">
-                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Spare Change /መለዋወጫ ለውጥ
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          {" "}
-                          (Optional)
-                        </span>
-                      </h3>
+                      <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-black z-10 py-2 shadow-sm">
+                        <h3 className="font-semibold dark:text-gray-200 text-lg">
+                          Spare Change /መለዋወጫ ለውጥ
+                          <span className="text-gray-400 text-sm dark:text-gray-200">
+                            {" "}
+                            (Optional)
+                          </span>
+                        </h3>
 
-                      <div className="min-w-[900px]">
+                        {/* Always visible button */}
+                        <button
+                          type="button"
+                          onClick={addSpareRow}
+                          className="px-3 py-1.5 rounded-md bg-green-600 text-white text-sm font-medium hover:bg-green-500 transition"
+                        >
+                          + Add Row
+                        </button>
+                      </div>
+
+                      <div className="min-w-[800px]">
                         <table className="w-full text-sm border-collapse">
                           <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
                             <tr>
@@ -718,7 +728,7 @@ export default function RepairRegistrationForm() {
                       </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
-                        Total Spare Change Price/ጠቅላላ የመለዋወጫ ለውጥ ዋጋ:{" "}
+                        Total Spare Change Price:{" "}
                         {getSpareChangeTotal().toLocaleString()} ETB
                       </div>
                     </div>
@@ -757,7 +767,6 @@ export default function RepairRegistrationForm() {
                       Sub Total Estimated Price/ንዑስ ጠቅላላ የተገመተው ዋጋ:{" "}
                       {getGrandTotal().toLocaleString()} ETB
                     </div>
-
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Received By /የተቀባይ ስም
@@ -777,12 +786,16 @@ export default function RepairRegistrationForm() {
                 </div>
               </div>
             </div>
-
             <button
               type="submit"
-              className="mt-6 bg-blue-600 hover:bg-blue-700 text-white p-2 w-full hover:shadow-lg focus:shadow-sm rounded transition-all duration-500"
+              disabled={isSubmitting}
+              className={`mt-6 p-2 w-full rounded transition-all duration-500 ${
+                isSubmitting
+                  ? "bg-gray-400 text-white cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg focus:shadow-sm"
+              }`}
             >
-              Submit
+              {isSubmitting ? "Saving..." : "Save"}
             </button>
           </form>
         </main>

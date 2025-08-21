@@ -50,7 +50,7 @@ public function store(Request $request)
 
     $validated = validator($payload, [
         'customer_name' => 'required|string|max:255',
-        'customer_type' => 'required|string|max:255',
+        // 'customer_type' => 'required|string|max:255',
         'mobile' => 'required|string|max:20',
         'types_of_jobs' => 'nullable|string',
         'received_date' => 'required|date',
@@ -59,7 +59,7 @@ public function store(Request $request)
         'priority' => 'required|string',
         'product_name' => 'nullable|string|max:255', // ✅ added
         'serial_code' => 'nullable|string|max:255',  // ✅ added
-        'customer_observation' => 'nullable|array',
+        // 'customer_observation' => 'nullable|array',
         'spare_change' => 'nullable|array',
         'job_description' => 'nullable|array',
         'received_by' => 'nullable|string',
@@ -92,7 +92,7 @@ if ($request->hasFile('image')) {
         $repair = new RepairRegistration();
         $repair->job_id = $nextJobId;
         $repair->customer_name = $payload['customer_name'];
-        $repair->customer_type = $payload['customer_type'];
+        // $repair->customer_type = $payload['customer_type'];
         $repair->mobile = $payload['mobile'];
         $repair->types_of_jobs = $payload['types_of_jobs'] ?? null;
         $repair->received_date = $payload['received_date'];
@@ -101,7 +101,7 @@ if ($request->hasFile('image')) {
         $repair->priority = $payload['priority'];
         $repair->product_name = $payload['product_name'] ?? null; // ✅ added
         $repair->serial_code = $payload['serial_code'] ?? null;   // ✅ added
-        $repair->customer_observation = $payload['customer_observation'] ?? null;
+        // $repair->customer_observation = $payload['customer_observation'] ?? null;
         $repair->spare_change = $payload['spare_change'] ?? null;
         $repair->job_description = $payload['job_description'] ?? null;
         $repair->received_by = $payload['received_by'] ?? null;
