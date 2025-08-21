@@ -247,7 +247,7 @@ export default function RepairRegistrationForm() {
     const newRowNumber = formData.job_description.length + 1;
     const newJobs = [
       ...formData.job_description,
-      { task: `Task ${newRowNumber}`, price: "" },
+      { task: ` ${newRowNumber}.`, price: "" },
     ];
     setFormData({ ...formData, job_description: newJobs });
   };
@@ -472,7 +472,7 @@ export default function RepairRegistrationForm() {
                     <div className="mt-10 border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-4 overflow-x-auto">
                       <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-black z-10 py-2 shadow-sm">
                         <h3 className="font-semibold dark:text-gray-200 text-lg">
-                          Jobs To Be Done /የሚደረጉ ስራዎች
+                          Jobs To Be Done /የሚሰሩ ስራዎች
                           <span className="text-gray-400 text-sm dark:text-gray-200">
                             {" "}
                             (Optional)
@@ -786,17 +786,45 @@ export default function RepairRegistrationForm() {
                 </div>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`mt-6 p-2 w-full rounded transition-all duration-500 ${
-                isSubmitting
-                  ? "bg-gray-400 text-white cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg focus:shadow-sm"
-              }`}
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </button>
+            <div className="flex justify-center mt-6">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`inline-flex items-center justify-center gap-2 px-5 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                  isSubmitting
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                      />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </button>
+            </div>
           </form>
         </main>
       </div>
