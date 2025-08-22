@@ -269,7 +269,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
               <SidebarLinkGroup activecondition={pathname.includes("work")}>
                 {(handleClick) => (
                   <a
-                    href="/work/work-order-list"
+                    href="*#"
                     className={`block text-gray-800 dark:text-gray-100 truncate transition duration-150 ${
                       pathname.includes("work")
                         ? ""
@@ -295,13 +295,24 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                       >
                         <path d="M3 4a1 1 0 0 1 1-1h2V2a1 1 0 1 1 2 0v1h8V2a1 1 0 1 1 2 0v1h2a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4Zm1 5v11h16V9H4Zm2 2h3a1 1 0 1 1 0 2H6a1 1 0 1 1 0-2Zm0 4h5a1 1 0 1 1 0 2H6a1 1 0 1 1 0-2Z" />
                       </svg>
-                      <span
-                        className={`ml-4 text-sm font-medium whitespace-nowrap transition-opacity duration-200 ${
-                          sidebarExpanded ? "opacity-100" : "opacity-0"
-                        }`}
+                      <NavLink
+                        end
+                        to="/work/work-order-list"
+                        className={({ isActive }) =>
+                          "ml-4 text-sm font-medium " +
+                          (isActive
+                            ? "text-violet-500"
+                            : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                        }
                       >
-                        Work Order
-                      </span>
+                        <span
+                          className={`whitespace-nowrap transition-opacity duration-200 ${
+                            sidebarExpanded ? "opacity-100" : "opacity-0"
+                          }`}
+                        >
+                          Work order
+                        </span>
+                      </NavLink>
                     </div>
                   </a>
                 )}
