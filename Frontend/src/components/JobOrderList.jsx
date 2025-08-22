@@ -14,6 +14,7 @@ import PrintJobOrder from "./PrintJobOrder";
 import DropdownButton from "./DropdownButton";
 import ButtonRepairOperation from "./ButtonRepairOperation";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import DescriptionModal from "./DescriptionModal";
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -444,6 +445,7 @@ const JobOrderList = () => {
                           <DropdownButton
                             repair={repair}
                             id={repair.id}
+                            job_id={repair.job_id}
                             type="repair"
                             handlePrint={handlePrint}
                             handleDelete={handleDelete}

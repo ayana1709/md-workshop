@@ -12,7 +12,6 @@ class SpareChangeController extends Controller
     {
         $validatedData = $request->validate([
             'job_card_no' => 'required',
-            'plate_number' => 'required',
             'customer_name' => 'required',
             'repair_category' => 'required',
             'spare_change' => 'required|array',
@@ -63,7 +62,7 @@ class SpareChangeController extends Controller
         // Returning only one object with all work details merged
         $groupedData = [
             'job_card_no' => $job_card_no,
-            'plate_number' => $workOrders->first()->plate_number,
+            // 'plate_number' => $workOrders->first()->plate_number,
             'customer_name' => $workOrders->first()->customer_name,
             'repair_category' => $workOrders->first()->repair_category,
             'spare_change' => $mergedWorkDetails, // ✅ All work details combined

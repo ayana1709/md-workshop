@@ -11,7 +11,7 @@ class SpareChange extends Model
 
     protected $fillable = [
         'job_card_no',
-        'plate_number',
+        // 'plate_number',
         'customer_name',
         'repair_category',
         'spare_change', 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('spare_changes', function (Blueprint $table) {
             $table->id();
             $table->string('job_card_no');
-            $table->string('plate_number');
+            // $table->string('plate_number');
             $table->string('customer_name');
             $table->string('repair_category');
             $table->json('spare_change');

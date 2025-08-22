@@ -516,8 +516,8 @@ const AddToWorkOrder = () => {
                     )}
                   </div>
                 </div>
-                <div className="overflow-x-auto scroll-smooth rounded-md border border-gray-300 shadow-sm">
-                  <table className="min-w-[1100px] w-full table-auto border-collapse text-sm">
+                <div className="overflow-x-auto scroll-smooth rounded-md border border-gray-300 shadow-sm px-2 sm:px-4">
+                  <table className="min-w-[700px] w-full max-w-screen-lg mx-auto table-auto border-collapse text-sm">
                     <thead className="bg-gray-800 text-white sticky top-0 z-10">
                       <tr>
                         {[
@@ -535,7 +535,7 @@ const AddToWorkOrder = () => {
                         ].map((header, i) => (
                           <th
                             key={i}
-                            className="border-2 border-gray-400 px-3 py-2 font-medium text-center min-w-[120px] text-xs sm:text-sm"
+                            className="border-2 border-gray-400 px-2 sm:px-3 py-2 font-medium text-center min-w-[120px] text-[11px] sm:text-xs md:text-sm"
                           >
                             {header === "Time In / Out" ? (
                               <div className="flex flex-col text-[10px] sm:text-xs">

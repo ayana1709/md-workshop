@@ -42,6 +42,8 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\CompanySettingController;
+use App\Http\Controllers\RepairDetailController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -397,3 +399,10 @@ Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
 
 
+
+Route::prefix('repairsdetail')->group(function () {
+    Route::get('{jobId}', [RepairDetailController::class, 'show']);
+    Route::post('/', [RepairDetailController::class, 'store']);
+    Route::put('{jobId}', [RepairDetailController::class, 'update']);
+    Route::delete('{jobId}', [RepairDetailController::class, 'destroy']);
+});

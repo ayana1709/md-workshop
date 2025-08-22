@@ -126,6 +126,8 @@ import CompanySettings from "./components/CompanySettings";
 import NewAddSalesPage from "./components/NewAddSalesPage";
 import CreatePurchaseOrder from "./components/CreatePurchaseOrder";
 import ProformaPrint from "./components/Proforma/ProformaPrint";
+import DescriptionModal from "./components/DescriptionModal";
+import DescriptionPage from "./components/DescriptionModal";
 // import Outsource from "./components/Outsource";
 // import PrintInspection from "./components/PrintInspection";
 // import PrintWheel from "./components/PrintWheel";
@@ -330,6 +332,9 @@ function App() {
         <Route path="/manage-proforma" element={<ManageProforma />} />
         <Route path="/setting" element={<CompanySettings />} />
         <Route path="/proforma-print/:id" element={<ProformaPrint />} />
+        {/* <Route path="/description/:id" element={<DescriptionModal />} /> */}
+
+        <Route path="/description/:id" element={<DescriptionPage />} />
       </Routes>
     </StoreProvider>
   );

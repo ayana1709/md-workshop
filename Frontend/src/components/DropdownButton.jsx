@@ -4,10 +4,12 @@ import { useStores } from "../contexts/storeContext";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import Swal from "sweetalert2";
+import DescriptionModal from "./DescriptionModal";
 
 function DropdownButton({
   item,
   id,
+  job_id,
   handlePrint,
   handleDelete,
   handlePrintsummary,
@@ -21,13 +23,22 @@ function DropdownButton({
     setIsStatusModalOpen,
   } = useStores();
 
+  const [isDescriptionModalOpen, setIsDescriptionModalOpen] =
+    React.useState(false);
+
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      // ✅ Don’t close dropdown if clicking inside modal
+      const modal = document.querySelector("#description-modal");
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        (!modal || !modal.contains(event.target))
+      ) {
         setDropdownOpen(null);
       }
     };
@@ -67,6 +78,7 @@ function DropdownButton({
     }
 
     const routes = {
+      Task: `/description/${job_id}`,
       View: `/viewrepair/${id}`,
       Edit: `/edit-${type}/${id}`,
       Delete: `/delete/${id}`,
@@ -81,63 +93,69 @@ function DropdownButton({
   };
 
   return (
-    <div
-      ref={dropdownRef}
-      className="absolute pt-6 z-[999999999] right-2 top-32 -translate-y-1/2 mt-2 w-48 bg-white border border-green-300 rounded-md shadow-md"
-    >
+    <>
       <div
-        onClick={() => setDropdownOpen(null)}
-        className="cursor-pointer relative"
+        ref={dropdownRef}
+        className="absolute pt-6 z-[999999999] right-2 top-32 -translate-y-1/2 mt-2 w-48 bg-white border border-green-300 rounded-md shadow-md"
       >
-        <FaRegWindowClose
-          color="#ef4444"
-          className="absolute right-4 -top-2"
-          size={20}
-        />
+        <div
+          onClick={() => setDropdownOpen(null)}
+          className="cursor-pointer relative"
+        >
+          <FaRegWindowClose
+            color="#ef4444"
+            className="absolute right-4 -top-2"
+            size={20}
+          />
+        </div>
+
+        {[
+          "Task",
+          "View",
+          "Edit",
+          "Delete",
+          "Proceed to workorder",
+          "send to payment",
+          "Print job Card",
+          "Print Summary",
+          "change status",
+        ].map((option, index, arr) => (
+          <button
+            key={index}
+            className={`block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 ${
+              index !== arr.length - 1
+                ? "border-b border-gray-200"
+                : "border-t border-gray-200"
+            }`}
+            onClick={() => {
+              if (option === "Delete") {
+                setIsModalOpen(true);
+                setType(type);
+                setSelectedRepairId(id);
+                setDropdownOpen(null);
+              } else if (option === "change status") {
+                setIsStatusModalOpen(true);
+                setSelectedRepairId(id);
+                setDropdownOpen(null);
+              } else if (option === "Print Summary") {
+                handlePrintsummary(id);
+                setDropdownOpen(null);
+              } else if (option === "Print job Card") {
+                handlePrint(id);
+                setDropdownOpen(null);
+              } else {
+                handleNavigation(option, id);
+                setDropdownOpen(null);
+              }
+            }}
+          >
+            {option}
+          </button>
+        ))}
       </div>
 
-      {[
-        "View",
-        "Edit",
-        "Delete",
-        "Proceed to workorder",
-        "send to payment",
-        "Print job Card",
-        "Print Summary",
-        "change status",
-      ].map((option, index, arr) => (
-        <button
-          key={index}
-          className={`block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-200 ${
-            index !== arr.length - 1
-              ? "border-b border-gray-200"
-              : "border-t border-gray-200"
-          }`}
-          onClick={() => {
-            if (option === "Delete") {
-              setIsModalOpen(true);
-              setType(type);
-              setSelectedRepairId(id);
-            } else if (option === "change status") {
-              setIsStatusModalOpen(true);
-              setSelectedRepairId(id);
-              // } else if (option === "Print Summary") {
-              //   handlePrintsummary(item?.vehicles?.[0]?.plate_no);}
-            } else if (option === "Print Summary") {
-              handlePrintsummary(id); // Pass job id directly
-            } else if (option === "Print job Card") {
-              handlePrint(id);
-            } else {
-              handleNavigation(option, id);
-            }
-
-            setDropdownOpen(null);
-          }}
-        >
-          {option}
-        </button>
-      ))}
-    </div>
+      {/* 🔥 Place modal here so it actually renders */}
+    </>
   );
 }
 

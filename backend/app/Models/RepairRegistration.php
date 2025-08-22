@@ -48,4 +48,9 @@ class RepairRegistration extends Model
             $repair->job_id = str_pad($newJobId, 4, '0', STR_PAD_LEFT);
         });
     }
+    public function details()
+{
+    return $this->hasOne(RepairDetail::class, 'job_id', 'job_id');
+}
+
 }
