@@ -31,11 +31,11 @@ export default function RepairRegistrationForm() {
     customer_name: "",
     // customer_type: "",
     mobile: "",
-    types_of_jobs: "",
+    types_of_jobs: "Repair",
     received_date: "",
     estimated_date: "",
     promise_date: "",
-    priority: "",
+    priority: "Medium",
     product_name: "",
     serial_code: "",
     // customer_observation: ["1. "], // Default starts with "1. "
@@ -63,21 +63,42 @@ export default function RepairRegistrationForm() {
           : prevData.repair_category.filter((cat) => cat !== value),
       }));
     } else {
-      setFormData((prevData) => ({ ...prevData, [name]: value }));
+      setFormData((prevData) => {
+        let updatedData = { ...prevData, [name]: value };
+
+        // ✅ If both estimated_date (days) and received_date exist, calculate promise_date
+        if (
+          (name === "estimated_date" || name === "received_date") &&
+          updatedData.estimated_date &&
+          updatedData.received_date
+        ) {
+          try {
+            const received = new Date(updatedData.received_date);
+            const estimatedDays = parseInt(updatedData.estimated_date, 10);
+
+            if (!isNaN(received.getTime()) && !isNaN(estimatedDays)) {
+              const promise = new Date(received);
+              promise.setDate(received.getDate() + estimatedDays);
+
+              updatedData.promise_date = promise.toISOString().split("T")[0]; // format YYYY-MM-DD
+            }
+          } catch (error) {
+            console.error("Date calculation error:", error);
+          }
+        }
+
+        return updatedData;
+      });
     }
 
+    // customer search logic remains the same
     if (name === "customer_name" && value.length > 1) {
       try {
         const response = await api.get(`/search-customers?q=${value}`);
-        console.log("API Response:", response.data); // Debugging API response
-
-        // Ensure response is an array
         let data = response.data;
         if (!Array.isArray(data)) {
-          data = data.data || []; // Extract array from object
+          data = data.data || [];
         }
-
-        // setSuggestions(data.length ? data : [""]); // Show "No results" if empty
       } catch (error) {
         console.error("Error fetching customers:", error);
         setSuggestions([]);
@@ -370,21 +391,25 @@ export default function RepairRegistrationForm() {
                         <option value="installation">Installation</option>
                       </select>
                     </div>
+
                     <div>
                       <label className="dark:text-gray-200">
-                        E. Date/የሚገመተው ቀን{" "}
+                        E. Date/የሚገመተው ቀን (Days)
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           (Optional)
                         </span>
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         name="estimated_date"
                         value={formData.estimated_date}
                         onChange={handleChange}
+                        min="1"
+                        required
                         className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
+
                     <div>
                       <label className="dark:text-gray-200">
                         Received Date/የተቀበሉበት ቀን{" "}
@@ -416,6 +441,7 @@ export default function RepairRegistrationForm() {
                         className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
+
                     <div>
                       <label className="dark:text-gray-200 font-medium">
                         Priority/ቅድሚያ የሚሰጡዋቸውን{" "}
@@ -447,6 +473,7 @@ export default function RepairRegistrationForm() {
                       name="product_name"
                       value={formData.product_name}
                       onChange={handleChange}
+                      required
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>
@@ -461,6 +488,7 @@ export default function RepairRegistrationForm() {
                       name="serial_code"
                       value={formData.serial_code}
                       onChange={handleChange}
+                      required
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>
