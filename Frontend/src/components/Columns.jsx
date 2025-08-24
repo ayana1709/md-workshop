@@ -219,9 +219,13 @@ export const columns = ({
     header: "Pr Price",
     cell: ({ row }) => {
       const [openModal, setOpenModal] = useState(false);
+
       return (
         <div className="relative flex items-center gap-2">
+          {/* Display price */}
           {row.original.purchase_price}
+
+          {/* Edit button */}
           <Button
             size="icon"
             variant="outline"
@@ -229,21 +233,31 @@ export const columns = ({
           >
             <IoMdArrowDropdown />
           </Button>
+
+          {/* Edit Modal */}
           {openModal && (
-            <div className="absolute z-[9999]">
-              {" "}
-              <EditFieldModal
-                item={row.original}
-                field="purchase_price"
-                onClose={() => setOpenModal(false)}
-                setItems={setItems}
-              />
-            </div>
+            <EditFieldModal
+              item={row.original}
+              field="purchase_price"
+              onClose={() => setOpenModal(false)}
+              setItems={(updatedItem) => {
+                // Update parent items array state
+                setItems((prev) =>
+                  prev.map((i) =>
+                    i.id === row.original.id
+                      ? { ...i, purchase_price: updatedItem.purchase_price }
+                      : i
+                  )
+                );
+                setOpenModal(false); // close modal after saving
+              }}
+            />
           )}
         </div>
       );
     },
   },
+
   {
     accessorKey: "selling_price",
     header: "Sp Price",
@@ -341,6 +355,7 @@ export const columns = ({
       );
     },
   },
+
   {
     accessorKey: "quantity",
     header: "Quantity",
@@ -370,6 +385,25 @@ export const columns = ({
       );
     },
   },
+
+  {
+    id: "total_selling_price",
+    header: "Total SP",
+    cell: ({ row }) => {
+      const price = Number(row.original.selling_price || 0);
+      const qty = Number(row.original.quantity || 0);
+      const total = price * qty;
+
+      // Format number nicely
+      const formatted = new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(total);
+
+      return <span>{formatted}</span>;
+    },
+  },
+
   {
     accessorKey: "location",
     header: "Location",
@@ -489,6 +523,7 @@ export const columns = ({
                       label: "Selling Price:",
                       value: row.original.selling_price || "0",
                     },
+                    { label: "Quantity:", value: row.original.quantity || "0" },
                     { label: "Model:", value: row.original.model || "N/A" },
                     {
                       label: "Manufacturer:",
@@ -543,6 +578,37 @@ export const columns = ({
                       />
                     </div>
                   ))}
+
+                  {/* ✅ Totals */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="sm:w-40 text-sm font-medium text-gray-700">
+                      Total Purchasing Price:
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        (row.original.purchase_price || 0) *
+                        (row.original.quantity || 0)
+                      }
+                      readOnly
+                      className="flex-1 text-sm border border-gray-300 bg-gray-100 px-3 py-2 rounded-md"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <label className="sm:w-40 text-sm font-medium text-gray-700">
+                      Total Selling Price:
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        (row.original.selling_price || 0) *
+                        (row.original.quantity || 0)
+                      }
+                      readOnly
+                      className="flex-1 text-sm border border-gray-300 bg-gray-100 px-3 py-2 rounded-md"
+                    />
+                  </div>
                 </div>
 
                 {/* Actions */}

@@ -193,33 +193,31 @@ public function fetchSelectedItems(Request $request)
         return response()->json(['message' => 'Item deleted successfully']);
     }
 
-    public function updateField(Request $request, $id)
-    {
-        // Validate the request input
-        $request->validate([
-            'field' => 'required|string|in:quantity,unit_price,part_number', // Allowed fields
-            'value' => 'required|numeric|min:0', // Value must be numeric
-        ]);
+   public function updateField(Request $request, $id)
+{
+    $request->validate([
+        'field' => 'required|string|in:quantity,unit_price,part_number,purchase_price,selling_price', // added prices
+        'value' => 'required|numeric|min:0',
+    ]);
 
-        // Find the item by ID
-        $item = Item::findOrFail($id);
+    $item = Item::findOrFail($id);
 
-        // Update the requested field
-        $item->{$request->field} = $request->value;
+    // Update the requested field
+    $item->{$request->field} = $request->value;
 
-        // If updating quantity or unit price, recalculate total price
-        if ($request->field === 'quantity' || $request->field === 'unit_price') {
-            $item->total_price = $item->quantity * $item->unit_price;
-        }
-
-        // Save the updated item
-        $item->save();
-
-        return response()->json([
-            'message' => ucfirst($request->field) . ' updated successfully',
-            'item' => $item
-        ], 200);
+    // Recalculate total price if relevant
+    if (in_array($request->field, ['quantity', 'unit_price', 'purchase_price', 'selling_price'])) {
+        $item->total_price = ($item->quantity ?? 0) * ($item->unit_price ?? $item->purchase_price ?? 0);
     }
+
+    $item->save();
+
+    return response()->json([
+        'message' => ucfirst($request->field) . ' updated successfully',
+        'item' => $item
+    ], 200);
+}
+
 
 
 
