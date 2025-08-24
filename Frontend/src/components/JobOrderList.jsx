@@ -23,6 +23,11 @@ const JobOrderList = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [imageModal, setImageModal] = useState({ open: false, src: null });
+  // const [dropdownDirection, setDropdownDirection] = React.useState("down");
+  const [dropdownOpen, setDropdownOpen] = React.useState(null); // id or null
+  const [dropdownDirection, setDropdownDirection] = React.useState("down"); // "up" | "down"
+  const btnRefs = React.useRef({}); // id -> button element
+  const menuRefs = React.useRef({}); // id -> menu element
 
   console.log(selectedRows);
 
@@ -34,13 +39,13 @@ const JobOrderList = () => {
     setRepairs,
     printData,
     setPrintData,
-    dropdownOpen,
-    setDropdownOpen,
+    // dropdownOpen,
+    // setDropdownOpen,
     handleDelete,
     isStatusModalOpen,
     setIsStatusModalOpen,
   } = useStores();
-  console.log(dropdownOpen);
+  // console.log(dropdownOpen);
 
   const [showPrintModal, setShowPrintModal] = useState(false);
 
@@ -88,10 +93,6 @@ const JobOrderList = () => {
     };
     fetchRepairs();
   }, [selectedRows]);
-
-  const toggleDropdown = (id) => {
-    setDropdownOpen(dropdownOpen === id ? null : id);
-  };
 
   const handleFilter = () => {
     let filteredRepairs = repairs;
@@ -197,6 +198,83 @@ const JobOrderList = () => {
     pending: "bg-orange-500 text-white",
     completed: "bg-green-500 text-white",
   };
+
+  // at the top of JobOrderList component
+
+  const toggleDropdown = (id, e) => {
+    if (dropdownOpen === id) {
+      setDropdownOpen(null);
+      return;
+    }
+    const btn = btnRefs.current[id] ?? e?.currentTarget;
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const estimatedMenuHeight = 280; // fallback before we can measure
+      setDropdownDirection(
+        spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow
+          ? "up"
+          : "down"
+      );
+    }
+    setDropdownOpen(id);
+  };
+
+  // Re-evaluate once the menu is actually mounted (accurate height)
+  React.useLayoutEffect(() => {
+    if (!dropdownOpen) return;
+    const btn = btnRefs.current[dropdownOpen];
+    const menu = menuRefs.current[dropdownOpen];
+    if (!btn || !menu) return;
+
+    const btnRect = btn.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - btnRect.bottom;
+    const spaceAbove = btnRect.top;
+    const menuHeight = menu.offsetHeight;
+
+    const dir =
+      spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
+    setDropdownDirection(dir);
+  }, [dropdownOpen]);
+
+  // Close on outside click
+  React.useEffect(() => {
+    const onDown = (e) => {
+      if (!dropdownOpen) return;
+      const btn = btnRefs.current[dropdownOpen];
+      const menu = menuRefs.current[dropdownOpen];
+      if (btn?.contains(e.target) || menu?.contains(e.target)) return;
+      setDropdownOpen(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [dropdownOpen]);
+
+  // Recompute on scroll/resize (including scrolling parents)
+  React.useEffect(() => {
+    const recompute = () => {
+      if (!dropdownOpen) return;
+      const btn = btnRefs.current[dropdownOpen];
+      const menu = menuRefs.current[dropdownOpen];
+      if (!btn) return;
+
+      const rect = btn.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = menu?.offsetHeight ?? 280;
+
+      const dir =
+        spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
+      setDropdownDirection(dir);
+    };
+    window.addEventListener("resize", recompute);
+    window.addEventListener("scroll", recompute, true); // capture scroll on any container
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.removeEventListener("scroll", recompute, true);
+    };
+  }, [dropdownOpen]);
 
   return (
     <div className="relative z-0 p-6 bg-white dark:bg-gray-700 shadow-lg rounded-lg dark:text-white">
@@ -434,16 +512,21 @@ const JobOrderList = () => {
                   <td className="border border-table-border px-2 py-3 text-sm text-center relative">
                     <div className="relative inline-block w-full">
                       <button
-                        onClick={() => setDropdownOpen(repair.id)}
+                        ref={(el) => (btnRefs.current[repair.id] = el)}
+                        onClick={(e) => toggleDropdown(repair.id, e)}
                         className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
                       >
                         Action <FiChevronDown className="ml-1" />
                       </button>
 
                       {dropdownOpen === repair.id && (
-                        <div className="absolute left-0 mt-0 w-20 bg-white border rounded shadow-lg z-50">
+                        <div
+                          ref={(el) => (menuRefs.current[repair.id] = el)}
+                          className={`absolute left-0 w-28 bg-white border rounded shadow-lg z-50 
+      ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}`}
+                          style={{ maxHeight: "250px", overflowY: "auto" }} // 👈 important
+                        >
                           <DropdownButton
-                            repair={repair}
                             id={repair.id}
                             job_id={repair.job_id}
                             type="repair"
@@ -452,6 +535,7 @@ const JobOrderList = () => {
                             handlePrintsummary={() =>
                               handlePrintsummary(repair.id)
                             }
+                            onClose={() => setDropdownOpen(null)}
                           />
                         </div>
                       )}
@@ -463,24 +547,6 @@ const JobOrderList = () => {
           </tbody>
         </table>
       </div>
-
-      {imageModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
-          <div className="relative max-w-3xl w-full mx-4">
-            <img
-              src={imageModal.src}
-              alt="Full View"
-              className="w-full h-auto object-contain rounded-md"
-            />
-            <button
-              onClick={() => setImageModal({ open: false, src: null })}
-              className="absolute top-2 right-2 bg-white text-black px-3 py-1 rounded shadow-md"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="flex justify-between items-center mt-4">
         <button
@@ -511,6 +577,23 @@ const JobOrderList = () => {
           Next
         </button>
       </div>
+      {imageModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+          <div className="relative max-w-3xl w-full mx-4">
+            <img
+              src={imageModal.src}
+              alt="Full View"
+              className="w-full h-auto object-contain rounded-md"
+            />
+            <button
+              onClick={() => setImageModal({ open: false, src: null })}
+              className="absolute top-2 right-2 bg-white text-black px-3 py-1 rounded shadow-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
