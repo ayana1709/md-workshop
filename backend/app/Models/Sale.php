@@ -36,7 +36,7 @@ class Sale extends Model
     public function items()
     {
         return $this->belongsToMany(Item::class, 'sale_items')
-                    ->withPivot(['item_name', 'part_number', 'brand', 'unit', 'unit_price', 'sale_quantity'])
+                    ->withPivot(['item_name', 'part_number', 'brand', 'unit', 'selling_price', 'sale_quantity'])
                     ->withTimestamps();
     }
 }

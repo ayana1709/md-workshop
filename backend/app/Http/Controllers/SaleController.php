@@ -43,7 +43,7 @@ class SaleController extends Controller
         'items.*.item_name' => 'nullable|string',
         'items.*.brand' => 'nullable|string',
         'items.*.unit' => 'nullable|string',
-        'items.*.unit_price' => 'required|numeric',
+        'items.*.selling_price' => 'required|numeric',
         'items.*.sale_quantity' => 'required|integer|min:1',
     ]);
 
@@ -95,7 +95,7 @@ class SaleController extends Controller
                 'part_number'   => $itemData['part_number'],
                 'brand'         => $itemData['brand'],
                 'unit'          => $itemData['unit'],
-                'unit_price'    => $itemData['unit_price'],
+                'selling_price'    => $itemData['selling_price'],
                 'sale_quantity' => $itemData['sale_quantity'],
             ]);
 
@@ -152,7 +152,7 @@ public function update(Request $request, $id)
         'items.*.item_name' => 'nullable|string',
         'items.*.brand' => 'nullable|string',
         'items.*.unit' => 'nullable|string',
-        'items.*.unit_price' => 'required|numeric',
+        'items.*.selling_price' => 'required|numeric',
         'items.*.sale_quantity' => 'required|integer|min:1',
     ]);
 
@@ -178,7 +178,7 @@ public function update(Request $request, $id)
                 'part_number'   => $itemData['part_number'],
                 'brand'         => $itemData['brand'],
                 'unit'          => $itemData['unit'],
-                'unit_price'    => $itemData['unit_price'],
+                'selling_price'    => $itemData['selling_price'],
                 'sale_quantity' => $itemData['sale_quantity'],
             ]);
         }

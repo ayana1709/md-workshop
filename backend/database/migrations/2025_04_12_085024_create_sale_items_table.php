@@ -16,7 +16,7 @@ class CreateSaleItemsTable extends Migration
             $table->string('part_number')->nullable();
             $table->string('brand')->nullable();
             $table->string('unit')->nullable();
-            $table->decimal('unit_price', 10, 2);
+            $table->decimal('selling_price', 10, 2);
             $table->integer('sale_quantity')->default(1);
             $table->timestamps();
         });
