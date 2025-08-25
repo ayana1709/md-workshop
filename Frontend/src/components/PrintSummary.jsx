@@ -191,9 +191,9 @@ function PrintSummary({ jobId: propJobId }) {
     return sum + totalPriceForJob;
   }, 0);
 
-  console.log("Total OutSource Cost:", totalOutCost);
+  // console.log("Total OutSource Cost:", totalOutCost);
 
-  console.log(totalOutCost);
+  // console.log(totalOutCost);
 
   // Calculate VAT amounts
   const labourVAT = includeLabourVAT ? totalLaborCost * 0.15 : 0;

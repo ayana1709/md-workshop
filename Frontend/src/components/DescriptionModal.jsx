@@ -1,13 +1,15 @@
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import Swal from "sweetalert2";
 import Sidebar from "../partials/Sidebar";
 import Header from "../partials/Header";
 import BackButton from "./BackButton";
+import PrintableJobPage from "./PrintableJobPage";
+import { useReactToPrint } from "react-to-print";
 
-const DescriptionPage = () => {
+const DescriptionPage = ({}) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -80,6 +82,11 @@ const DescriptionPage = () => {
     if (id) fetchJobDetails();
   }, [id]);
 
+  const printRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef, // ✅ new API
+  });
   // Compute totals
   const totalTaskCost = tasks.reduce(
     (sum, t) => sum + parseFloat(t.cost || 0),
@@ -632,6 +639,17 @@ const DescriptionPage = () => {
               <label className="font-medium">Total Cost:</label>
               <p className="p-2 bg-gray-100 rounded">${totalCost}</p>
             </div>
+            <div style={{ display: "none" }}>
+              <PrintableJobPage
+                ref={printRef}
+                jobInfo={jobInfo}
+                tasks={tasks}
+                spares={spares}
+                otherCost={otherCost}
+                status={status}
+                totalCost={totalCost}
+              />
+            </div>
 
             {/* Buttons */}
             {/* Buttons */}
@@ -643,7 +661,7 @@ const DescriptionPage = () => {
                 Cancel
               </button>
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="px-4 py-2 bg-yellow-600 text-white rounded"
               >
                 Print
