@@ -112,21 +112,21 @@ function StoreProvider({ children }) {
     fetchItems();
   }, []);
 
+  useEffect(() => {
+    const fetchProformas = async () => {
+      try {
+        const response = await api.get("/proformas");
+        setProformas(response.data);
+      } catch (error) {
+        console.error("Failed to fetch proformas:", error);
+      }
+    };
+
+    fetchProformas();
+  }, []);
+
   const handleDelete = async (id, type) => {
     if (!id) return;
-
-    useEffect(() => {
-      const fetchProformas = async () => {
-        try {
-          const response = await api.get("/proformas");
-          setProformas(response.data);
-        } catch (error) {
-          console.error("Failed to fetch proformas:", error);
-        }
-      };
-
-      fetchProformas();
-    }, []);
 
     //     const handleDelete = async (id, type) => {
     //   try {
