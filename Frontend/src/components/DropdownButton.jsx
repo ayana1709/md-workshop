@@ -64,7 +64,7 @@ function DropdownButton({
   ];
 
   return (
-    <div className="bg-gray-300 rounded-md border border-green-300 shadow-md py-1">
+    <div className="bg-gray-200 rounded-md border border-green-300 shadow-md py-1">
       {/* optional close row */}
       <div className="flex justify-end px-2 py-1">
         <button

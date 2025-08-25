@@ -539,13 +539,14 @@ const JobOrderList = () => {
                       {dropdownOpen === repair.id && (
                         <div
                           ref={(el) => (menuRefs.current[repair.id] = el)}
-                          className={`absolute left-0 sm:left-auto sm:right-0 bg-white border rounded-md shadow-lg z-50 
-          ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
-        `}
+                          className={`absolute bg-white border rounded-md shadow-lg z-50
+    ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
+    right-0 sm:left-auto
+  `}
                           style={{
-                            minWidth: "8rem", // ensure usable on mobile
-                            maxWidth: "90vw", // prevents cutoff on tiny screens
-                            maxHeight: "250px", // scrollable menu
+                            minWidth: "8rem",
+                            maxWidth: "90vw",
+                            maxHeight: "250px",
                             overflowY: "auto",
                           }}
                         >
