@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api";
@@ -5,40 +6,66 @@ import Swal from "sweetalert2";
 import Sidebar from "../partials/Sidebar";
 import Header from "../partials/Header";
 import BackButton from "./BackButton";
+import { Pencil } from "lucide-react"; // edit icon
 
 const DescriptionPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // States
-  const [jobId, setJobId] = useState(id || "");
-  const [tasks, setTasks] = useState([{ name: "", cost: 0 }]);
-  const [labourStatus, setLabourStatus] = useState("not started");
-  const [spares, setSpares] = useState([{ name: "", cost: 0 }]);
+  // Job info
+  const [jobInfo, setJobInfo] = useState({
+    jobId: "",
+    customer_name: "",
+    mobile: "",
+    product_name: "",
+  });
+
+  // Data states
+  // Component states
+  const [tasks, setTasks] = useState([]);
+  const [spares, setSpares] = useState([]);
+  const [newTask, setNewTask] = useState(null); // <-- add this
+  const [newSpare, setNewSpare] = useState(null); // <-- optional
   const [otherCost, setOtherCost] = useState(0);
   const [status, setStatus] = useState("not started");
   const [progress, setProgress] = useState(0);
+  const [labourStatus, setLabourStatus] = useState("not started");
+
+  // For editing
+  const [editingTaskIndex, setEditingTaskIndex] = useState(null);
+  const [editingSpareIndex, setEditingSpareIndex] = useState(null);
+  // Add this function inside your component
+  const handleTaskDelete = (index) => {
+    setTasks(tasks.filter((_, i) => i !== index));
+  };
+
+  const handleSpareDelete = (index) => {
+    setSpares(spares.filter((_, i) => i !== index));
+  };
 
   // Load Job
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await api.get(`/repairsdetail/${id}`);
+        const response = await api.get(`/repairs/${id}`);
         const job = response.data;
 
-        setJobId(job.jobId || job.id || id);
-        // make sure backend returns jobId
-        setTasks(job.tasks || [{ name: "", cost: "" }]);
-        setLabourStatus(job.labourStatus || "not started");
-        setSpares(job.spares || [{ name: "", cost: "" }]);
-        setOtherCost(job.other_cost || 0);
+        setJobInfo({
+          jobId: job.jobId || job.id || id,
+          customer_name: job.customer_name || "",
+          mobile: job.mobile || "",
+          product_name: job.product_name || "",
+        });
+
+        setTasks(job.tasks || []);
+        setSpares(job.spares || []);
+        setOtherCost(job.otherCost || 0);
         setStatus(job.status || "not started");
         setProgress(job.progress || 0);
+        setLabourStatus(job.labourStatus || "not started");
       } catch (error) {
-        if (error.response?.status === 404) {
-          console.warn("No repair detail found yet, will create on save.");
-        } else {
+        if (error.response?.status !== 404) {
           console.error("Error fetching job:", error);
           Swal.fire("Error", "Failed to fetch job data", "error");
         }
@@ -47,29 +74,6 @@ const DescriptionPage = () => {
 
     if (id) fetchJob();
   }, [id]);
-
-  // Handlers
-  const addTask = () => setTasks([...tasks, { name: "", cost: "" }]);
-  const updateTask = (index, field, value) => {
-    const newTasks = [...tasks];
-    newTasks[index][field] = field === "cost" ? parseFloat(value) || "" : value;
-    setTasks(newTasks);
-  };
-
-  const addSpare = () => setSpares([...spares, { name: "", cost: "" }]);
-  const updateSpare = (index, field, value) => {
-    const newSpares = [...spares];
-    newSpares[index][field] =
-      field === "cost" ? parseFloat(value) || "" : value;
-    setSpares(newSpares);
-  };
-
-  const handleKeyDown = (e, type) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      type === "task" ? addTask() : addSpare();
-    }
-  };
 
   // Totals
   const totalTaskCost = tasks.reduce(
@@ -86,15 +90,12 @@ const DescriptionPage = () => {
   const handleSave = async () => {
     try {
       const payload = {
-        jobId, // 👈 required for POST
-        tasks: tasks.map((t) => ({
-          name: t.name || "",
-          cost: parseFloat(t.cost) || 0,
-        })),
-        spares: spares.map((s) => ({
-          name: s.name || "",
-          cost: parseFloat(s.cost) || 0,
-        })),
+        jobId: jobInfo.jobId,
+        customer_name: jobInfo.customer_name,
+        mobile: jobInfo.mobile,
+        product_name: jobInfo.product_name,
+        tasks,
+        spares,
         otherCost: parseFloat(otherCost) || 0,
         totalCost,
         labourStatus,
@@ -102,19 +103,16 @@ const DescriptionPage = () => {
         progress: parseInt(progress) || 0,
       };
 
-      console.log("Data to be sent:", payload);
-
-      // check existence by trying GET
       let exists = true;
       try {
-        await api.get(`/repairsdetail/${jobId}`);
+        await api.get(`/repairsdetail/${jobInfo.jobId}`);
       } catch (err) {
         if (err.response?.status === 404) exists = false;
         else throw err;
       }
 
       if (exists) {
-        await api.put(`/repairsdetail/${jobId}`, payload);
+        await api.put(`/repairsdetail/${jobInfo.jobId}`, payload);
       } else {
         await api.post(`/repairsdetail`, payload);
       }
@@ -130,19 +128,17 @@ const DescriptionPage = () => {
     }
   };
 
-  const handleClear = () => {
-    setTasks([{ name: "", cost: "" }]);
-    setSpares([{ name: "", cost: "" }]);
-    setOtherCost(0);
-    setStatus("not started");
-    setLabourStatus("not started");
-    setProgress(0);
+  // Inline update for task/spare
+  const handleTaskUpdate = (index, field, value) => {
+    const updated = [...tasks];
+    updated[index][field] = value;
+    setTasks(updated);
   };
-  const removeTask = (index) => {
-    setTasks(tasks.filter((_, i) => i !== index));
-  };
-  const removeSpare = (index) => {
-    setSpares(spares.filter((_, i) => i !== index));
+
+  const handleSpareUpdate = (index, field, value) => {
+    const updated = [...spares];
+    updated[index][field] = value;
+    setSpares(updated);
   };
 
   return (
@@ -160,252 +156,266 @@ const DescriptionPage = () => {
               Task Description
             </h2>
 
-            <div className="space-y-6">
-              {/* 1. Job ID */}
+            {/* Job Info */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="font-medium text-gray-700">Job ID:</label>
-                <input
-                  type="text"
-                  value={jobId}
-                  onChange={(e) => setJobId(e.target.value)}
-                  className="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="font-medium">Job ID:</label>
+                <p className="p-2 bg-gray-100 rounded">{jobInfo.jobId}</p>
               </div>
-
-              {/* 2. Tasks */}
               <div>
-                <div className="flex justify-between items-center">
-                  <label className="font-medium text-gray-700">Tasks:</label>
-                  <button
-                    type="button"
-                    onClick={addTask}
-                    className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
-                  >
-                    + Add Row
-                  </button>
-                </div>
-                <table className="w-full mt-2 border rounded-lg overflow-hidden">
-                  <thead className="bg-gray-100 text-gray-700">
-                    <tr>
-                      <th className="p-2 border">Task Name</th>
-                      <th className="p-2 border">Cost</th>
-                      <th className="p-2 border text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map((task, index) => (
-                      <tr key={index}>
-                        <td className="border p-1 flex items-center gap-1">
-                          <span className="text-gray-600">{index + 1}.</span>
-                          <input
-                            type="text"
-                            value={task.name}
-                            onChange={(e) =>
-                              updateTask(index, "name", e.target.value)
-                            }
-                            onKeyDown={(e) => handleKeyDown(e, "task")}
-                            className="w-full p-1 border rounded"
-                          />
-                        </td>
-
-                        <td className="border p-1">
-                          <input
-                            type="number"
-                            value={task.cost}
-                            onChange={(e) =>
-                              updateTask(index, "cost", e.target.value)
-                            }
-                            onKeyDown={(e) => handleKeyDown(e, "task")}
-                            className="w-full p-1 border rounded no-spinner"
-                          />
-                        </td>
-
-                        <td className="border p-1 text-center">
-                          <button
-                            onClick={() => removeTask(index)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <p className="mt-2 text-right font-medium text-gray-700">
-                  Total Task Cost: {totalTaskCost}
+                <label className="font-medium">Customer Name:</label>
+                <p className="p-2 bg-gray-100 rounded">
+                  {jobInfo.customer_name}
                 </p>
               </div>
-
-              {/* 3. Labour Status */}
               <div>
-                <label className="font-medium text-gray-700">
-                  Labour Status:
-                </label>
-                <select
-                  value={labourStatus}
-                  onChange={(e) => setLabourStatus(e.target.value)}
-                  className="w-full mt-1 p-2 border rounded-md"
-                >
-                  <option>not started</option>
-                  <option>started</option>
-                  <option>pending</option>
-                  <option>in progress</option>
-                  <option>completed</option>
-                </select>
+                <label className="font-medium">Mobile:</label>
+                <p className="p-2 bg-gray-100 rounded">{jobInfo.mobile}</p>
               </div>
-
-              {/* 4. Spares */}
               <div>
-                <div className="flex justify-between items-center">
-                  <label className="font-medium text-gray-700">Spares:</label>
-                  <button
-                    type="button"
-                    onClick={addSpare}
-                    className="px-3 py-1 bg-green-600 text-white rounded-md text-sm"
-                  >
-                    + Add Row
-                  </button>
-                </div>
-                <table className="w-full mt-2 border rounded-lg overflow-hidden">
-                  <thead className="bg-gray-100 text-gray-700">
-                    <tr>
-                      <th className="p-2 border">Spare Name</th>
-                      <th className="p-2 border">Cost</th>
-                      <th className="p-2 border w-10">X</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spares.map((spare, index) => (
-                      <tr key={index}>
-                        {/* Spare Name with number */}
-                        <td className="border p-1 flex items-center gap-1">
-                          <span className="text-gray-600">{index + 1}.</span>
-                          <input
-                            type="text"
-                            value={spare.name}
-                            onChange={(e) =>
-                              updateSpare(index, "name", e.target.value)
-                            }
-                            onKeyDown={(e) => handleKeyDown(e, "spare")}
-                            className="w-full p-1 border rounded"
-                          />
-                        </td>
-
-                        {/* Cost */}
-                        <td className="border p-1">
-                          <input
-                            type="number"
-                            value={spare.cost}
-                            onChange={(e) =>
-                              updateSpare(index, "cost", e.target.value)
-                            }
-                            onKeyDown={(e) => handleKeyDown(e, "spare")}
-                            className="w-full p-1 border rounded no-spinner"
-                          />
-                        </td>
-
-                        {/* Remove button */}
-                        <td className="border p-1 text-center">
-                          <button
-                            type="button"
-                            onClick={() => removeSpare(index)}
-                            className="text-red-500 hover:text-red-700 font-bold"
-                          >
-                            ✕
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <p className="mt-2 text-right font-medium text-gray-700">
-                  Total Spare Cost: {totalSpareCost}
+                <label className="font-medium">Product Name:</label>
+                <p className="p-2 bg-gray-100 rounded">
+                  {jobInfo.product_name}
                 </p>
-              </div>
-
-              {/* 5. Other Cost */}
-              <div>
-                <label className="font-medium text-gray-700">Other Cost:</label>
-                <input
-                  type="number"
-                  value={otherCost}
-                  onChange={(e) => setOtherCost(e.target.value)}
-                  className="w-full mt-1 p-2 border rounded-md no-spinner"
-                />
-              </div>
-
-              {/* 6. Total Cost */}
-              <div>
-                <label className="font-medium text-gray-700">Total Cost:</label>
-                <input
-                  type="number"
-                  value={totalCost}
-                  readOnly
-                  className="w-full mt-1 p-2 border rounded-md bg-gray-100"
-                />
-              </div>
-
-              {/* 7. Overall Status */}
-              <div>
-                <label className="font-medium text-gray-700">
-                  Overall Status:
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full mt-1 p-2 border rounded-md"
-                >
-                  <option>not started</option>
-                  <option>started</option>
-                  <option>pending</option>
-                  <option>in progress</option>
-                  <option>completed</option>
-                </select>
-              </div>
-
-              {/* 8. Progress */}
-              <div>
-                <label className="font-medium text-gray-700">Progress:</label>
-                <div className="flex items-center gap-4 mt-1">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={progress}
-                    onChange={(e) => setProgress(e.target.value)}
-                    className="flex-1"
-                  />
-                  <span className="font-semibold">{progress}%</span>
-                </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Progress */}
+            <div className="mb-6">
+              <label className="font-medium text-gray-700">Progress:</label>
+              <div className="flex items-center gap-4 mt-1">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={progress}
+                  onChange={(e) => setProgress(e.target.value)}
+                  className="flex-1"
+                />
+                <span className="font-semibold">{progress}%</span>
+              </div>
+            </div>
+
+            {/* Tasks Section */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-semibold text-lg text-gray-800">Tasks</h2>
+                <button
+                  onClick={() =>
+                    setNewTask({ name: "", cost: "", status: "not started" })
+                  }
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm shadow-sm transition"
+                >
+                  + Add Task
+                </button>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 text-gray-700 text-xs uppercase">
+                    <tr>
+                      <th className="p-3 w-[45%]">Task Name</th>
+                      <th className="p-3 w-[20%]">Cost</th>
+                      <th className="p-3 w-[20%]">Status</th>
+                      <th className="p-3 w-[15%] text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {tasks.map((task, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="p-3">
+                          {editingTaskIndex === i ? (
+                            <input
+                              value={task.name}
+                              onChange={(e) =>
+                                handleTaskUpdate(i, "name", e.target.value)
+                              }
+                              className="p-2 border rounded-md w-full text-sm"
+                              placeholder="Enter task name"
+                            />
+                          ) : (
+                            <span>{task.name}</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {editingTaskIndex === i ? (
+                            <input
+                              type="number"
+                              value={task.cost}
+                              onChange={(e) =>
+                                handleTaskUpdate(i, "cost", e.target.value)
+                              }
+                              className="p-2 border rounded-md w-full text-sm"
+                              placeholder="0.00"
+                            />
+                          ) : (
+                            <span>${task.cost}</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {editingTaskIndex === i ? (
+                            <select
+                              value={task.status}
+                              onChange={(e) =>
+                                handleTaskUpdate(i, "status", e.target.value)
+                              }
+                              className="p-2 border rounded-md w-full text-sm"
+                            >
+                              <option>not started</option>
+                              <option>started</option>
+                              <option>pending</option>
+                              <option>in progress</option>
+                              <option>completed</option>
+                            </select>
+                          ) : (
+                            <span className="capitalize">{task.status}</span>
+                          )}
+                        </td>
+                        <td className="p-3 flex justify-center gap-2">
+                          {editingTaskIndex === i ? (
+                            <button
+                              onClick={() => setEditingTaskIndex(null)}
+                              className="px-3 py-1 bg-blue-600 text-white rounded-md text-xs"
+                            >
+                              Save
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setEditingTaskIndex(i)}
+                                className="px-2 py-1 text-blue-600 hover:text-blue-800"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleTaskDelete(i)}
+                                className="px-2 py-1 text-red-600 hover:text-red-800"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* New Task Row Form */}
+                    {newTask && (
+                      <tr className="bg-gray-50">
+                        <td className="p-3">
+                          <input
+                            value={newTask.name}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, name: e.target.value })
+                            }
+                            className="p-2 border rounded-md w-full text-sm"
+                            placeholder="Enter task name"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            value={newTask.cost}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, cost: e.target.value })
+                            }
+                            className="p-2 border rounded-md w-full text-sm"
+                            placeholder="0.00"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <select
+                            value={newTask.status}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, status: e.target.value })
+                            }
+                            className="p-2 border rounded-md w-full text-sm"
+                          >
+                            <option>not started</option>
+                            <option>started</option>
+                            <option>pending</option>
+                            <option>in progress</option>
+                            <option>completed</option>
+                          </select>
+                        </td>
+                        <td className="p-3 flex justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setTasks([...tasks, newTask]);
+                              setNewTask(null);
+                            }}
+                            className="px-3 py-1 bg-green-600 text-white rounded-md text-xs"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setNewTask(null)}
+                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="mt-3 text-right font-medium text-gray-700">
+                Total Task Cost:{" "}
+                <span className="text-green-600">${totalTaskCost}</span>
+              </p>
+            </div>
+
+            {/* Other & Totals */}
+            <div className="mb-6">
+              <label className="font-medium">Other Cost:</label>
+              <input
+                type="number"
+                value={otherCost}
+                onChange={(e) => setOtherCost(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div className="mb-6">
+              <label className="font-medium">Total Cost:</label>
+              <p className="p-2 bg-gray-100 rounded">{totalCost}</p>
+            </div>
+
+            {/* Status */}
+            <div className="mb-6">
+              <label className="font-medium">Overall Status:</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full p-2 border rounded"
+              >
+                <option>not started</option>
+                <option>started</option>
+                <option>pending</option>
+                <option>in progress</option>
+                <option>completed</option>
+              </select>
+            </div>
+
+            {/* Buttons */}
             <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={handleClear}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-              >
-                Print
-              </button>
-              <button
                 onClick={() => navigate(-1)}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
+                className="px-4 py-2 border rounded"
               >
                 Cancel
               </button>
               <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-yellow-600 text-white rounded"
+              >
+                Print
+              </button>
+              <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded"
               >
                 Save
               </button>
@@ -413,56 +423,6 @@ const DescriptionPage = () => {
           </div>
         </main>
       </div>
-
-      {/* Remove number spinners */}
-      <style>
-        {`
-        .no-spinner::-webkit-inner-spin-button,
-        .no-spinner::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        .no-spinner {
-          -moz-appearance: textfield;
-        }
-
-        @media print {
-  body {
-    background: #fff; /* Ensure white background */
-    color: #000; /* Black text for printing */
-  }
-
-  /* Hide buttons and navigation */
-  .no-print {
-    display: none !important;
-  }
-
-  /* Table styling for print */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 1rem;
-  }
-
-  table th, table td {
-    border: 1px solid #000;
-    padding: 0.5rem;
-    font-size: 12pt;
-  }
-
-  /* Adjust layout for print */
-  .print-container {
-    padding: 1rem;
-  }
-
-  /* Avoid breaking tables across pages */
-  table, tr, td, th {
-    page-break-inside: avoid;
-  }
-}
-
-      `}
-      </style>
     </div>
   );
 };
