@@ -328,11 +328,7 @@ const TotalItem = () => {
             setIsItemModalOpen,
             setSelectedRepairId,
           })}
-          data={paginatedItems}
-          manualPagination
-          pageCount={totalPages}
-          pageIndex={currentPage - 1}
-          onPaginationChange={(page) => setCurrentPage(page + 1)}
+          data={filteredItems} // 👈 send all filtered items
         />
       </div>
     </div>

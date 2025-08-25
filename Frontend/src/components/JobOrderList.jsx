@@ -228,17 +228,24 @@ const JobOrderList = () => {
     const menu = menuRefs.current[dropdownOpen];
     if (!btn || !menu) return;
 
+    const menuHeight = menu.offsetHeight;
+
+    // Mobile breakpoint (sm: 640px)
+    if (window.innerWidth < 640) {
+      setDropdownDirection("down"); // always down on mobile
+      return;
+    }
+
     const btnRect = btn.getBoundingClientRect();
     const spaceBelow = window.innerHeight - btnRect.bottom;
     const spaceAbove = btnRect.top;
-    const menuHeight = menu.offsetHeight;
 
     const dir =
       spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
     setDropdownDirection(dir);
   }, [dropdownOpen]);
 
-  // Close on outside click
+  // Close on outside click (no change needed)
   React.useEffect(() => {
     const onDown = (e) => {
       if (!dropdownOpen) return;
@@ -251,7 +258,7 @@ const JobOrderList = () => {
     return () => document.removeEventListener("mousedown", onDown);
   }, [dropdownOpen]);
 
-  // Recompute on scroll/resize (including scrolling parents)
+  // Recompute on scroll/resize
   React.useEffect(() => {
     const recompute = () => {
       if (!dropdownOpen) return;
@@ -259,17 +266,24 @@ const JobOrderList = () => {
       const menu = menuRefs.current[dropdownOpen];
       if (!btn) return;
 
+      // Always down on mobile
+      if (window.innerWidth < 640) {
+        setDropdownDirection("down");
+        return;
+      }
+
       const rect = btn.getBoundingClientRect();
+      const menuHeight = menu?.offsetHeight ?? 280;
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const menuHeight = menu?.offsetHeight ?? 280;
 
       const dir =
         spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
       setDropdownDirection(dir);
     };
+
     window.addEventListener("resize", recompute);
-    window.addEventListener("scroll", recompute, true); // capture scroll on any container
+    window.addEventListener("scroll", recompute, true);
     return () => {
       window.removeEventListener("resize", recompute);
       window.removeEventListener("scroll", recompute, true);
@@ -511,20 +525,29 @@ const JobOrderList = () => {
 
                   <td className="border border-table-border px-2 py-3 text-sm text-center relative">
                     <div className="relative inline-block w-full">
+                      {/* Action Button */}
                       <button
                         ref={(el) => (btnRefs.current[repair.id] = el)}
                         onClick={(e) => toggleDropdown(repair.id, e)}
-                        className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
+                        className="bg-blue-700 text-white text-xs px-2 py-1 rounded-md flex flex-wrap items-center justify-center w-full sm:w-auto"
                       >
-                        Action <FiChevronDown className="ml-1" />
+                        Action
+                        <FiChevronDown className="ml-1" />
                       </button>
 
+                      {/* Dropdown Menu */}
                       {dropdownOpen === repair.id && (
                         <div
                           ref={(el) => (menuRefs.current[repair.id] = el)}
-                          className={`absolute left-0 w-28 bg-white border rounded shadow-lg z-50 
-      ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}`}
-                          style={{ maxHeight: "250px", overflowY: "auto" }} // 👈 important
+                          className={`absolute left-0 sm:left-auto sm:right-0 bg-white border rounded-md shadow-lg z-50 
+          ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
+        `}
+                          style={{
+                            minWidth: "8rem", // ensure usable on mobile
+                            maxWidth: "90vw", // prevents cutoff on tiny screens
+                            maxHeight: "250px", // scrollable menu
+                            overflowY: "auto",
+                          }}
                         >
                           <DropdownButton
                             id={repair.id}

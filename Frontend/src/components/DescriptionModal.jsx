@@ -27,16 +27,21 @@ const DescriptionPage = () => {
         const response = await api.get(`/repairsdetail/${id}`);
         const job = response.data;
 
-        setJobId(job.id);
+        setJobId(job.jobId || job.id || id);
+        // make sure backend returns jobId
         setTasks(job.tasks || [{ name: "", cost: "" }]);
         setLabourStatus(job.labourStatus || "not started");
         setSpares(job.spares || [{ name: "", cost: "" }]);
-        setOtherCost(job.other_cost || "");
+        setOtherCost(job.other_cost || 0);
         setStatus(job.status || "not started");
-        setProgress(job.progress || "");
+        setProgress(job.progress || 0);
       } catch (error) {
-        console.error(error);
-        // Swal.fire("Error", "Failed to fetch job data", "error");
+        if (error.response?.status === 404) {
+          console.warn("No repair detail found yet, will create on save.");
+        } else {
+          console.error("Error fetching job:", error);
+          Swal.fire("Error", "Failed to fetch job data", "error");
+        }
       }
     };
 
@@ -81,7 +86,7 @@ const DescriptionPage = () => {
   const handleSave = async () => {
     try {
       const payload = {
-        jobId,
+        jobId, // 👈 required for POST
         tasks: tasks.map((t) => ({
           name: t.name || "",
           cost: parseFloat(t.cost) || 0,
@@ -99,22 +104,29 @@ const DescriptionPage = () => {
 
       console.log("Data to be sent:", payload);
 
-      // Check if repair detail exists
-      const exists = await api
-        .get(`/repairsdetail/${jobId}`)
-        .then(() => true)
-        .catch(() => false);
+      // check existence by trying GET
+      let exists = true;
+      try {
+        await api.get(`/repairsdetail/${jobId}`);
+      } catch (err) {
+        if (err.response?.status === 404) exists = false;
+        else throw err;
+      }
 
       if (exists) {
         await api.put(`/repairsdetail/${jobId}`, payload);
       } else {
-        await api.post(`/repairsdetail/`, payload);
+        await api.post(`/repairsdetail`, payload);
       }
 
       Swal.fire("Success", "Job saved successfully", "success");
     } catch (error) {
-      console.error("Error while saving:", error);
-      Swal.fire("Error", "Failed to save job data", "error");
+      console.error("Error while saving:", error.response?.data || error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Failed to save job data",
+        "error"
+      );
     }
   };
 

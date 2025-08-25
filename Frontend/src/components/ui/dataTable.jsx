@@ -19,23 +19,30 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
   const [sorting, setSorting] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = useState({});
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   const table = useReactTable({
     data,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-    },
+    state: { sorting, pagination },
     onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    enableRowSelection: true,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  // const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+
+  // const table = useReactTable({
+  //   data,
+  //   columns,
+  //   state: { sorting, pagination },
+  //   onPaginationChange: setPagination,
+  //   getCoreRowModel: getCoreRowModel(),
+  //   getSortedRowModel: getSortedRowModel(),
+  //   getPaginationRowModel: getPaginationRowModel(),
+  // });
 
   return (
     <div className="space-y-4">

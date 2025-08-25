@@ -1,4 +1,4 @@
-import { GiMoneyStack, GiMechanicGarage } from "react-icons/gi";
+import { GiMechanicGarage } from "react-icons/gi";
 import { FaCarAlt, FaClock } from "react-icons/fa";
 import { FaPeopleGroup } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
@@ -33,11 +33,10 @@ function DashboardStatics() {
   const cardData = [
     {
       label: "Repairs",
-      value: repairStatusCounts,
+      value: totalRepairsCount,
       icon: <FaCarAlt size={40} className="text-green-600" />,
       bg: "from-green-100 to-green-200",
       click: () => navigate("/job-manager/repair"),
-      isStatusCard: true,
     },
     {
       label: "Store Items",
@@ -62,12 +61,6 @@ function DashboardStatics() {
     },
   ];
 
-  const statusColors = {
-    "not started": "bg-red-500",
-    "in progress": "bg-yellow-500",
-    completed: "bg-green-500",
-  };
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pt-6">
       {cardData.map((card, idx) => (
@@ -81,32 +74,15 @@ function DashboardStatics() {
               {card.icon}
             </div>
 
-            {/* Card title with total count */}
             <div className="flex flex-col items-end">
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-                {card.isStatusCard ? totalRepairsCount : card.value}
+                {card.value}
               </p>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 {card.label}
               </p>
             </div>
           </div>
-
-          {/* Status badges for Repairs */}
-          {/* {card.isStatusCard && (
-            <div className="flex space-x-2 mt-1 justify-end flex-wrap">
-              {Object.entries(card.value).map(([status, count], idx) => (
-                <div
-                  key={idx}
-                  className={`px-3 py-1 rounded-full text-sm font-medium text-white ${
-                    statusColors[status] || "bg-gray-400"
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}: {count}
-                </div>
-              ))}
-            </div>
-          )} */}
         </div>
       ))}
     </div>
