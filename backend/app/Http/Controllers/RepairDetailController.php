@@ -36,9 +36,9 @@ class RepairDetailController extends Controller
             'jobId'         => 'required|exists:repair_registrations,job_id',
             'tasks'         => 'required|array',
             'spares'        => 'nullable|array',
-            'otherCost'     => 'nullable|numeric',
+            'other_cost'     => 'nullable|numeric',
             'totalCost'     => 'nullable|numeric',
-            'labourStatus'  => 'required|string',
+            // 'labourStatus'  => 'required|string',
             'status'        => 'required|string',
             'progress'      => 'required|numeric|min:0|max:100',
         ]);
@@ -56,9 +56,9 @@ class RepairDetailController extends Controller
             'job_id'        => $jobId,
             'tasks'         => $request->tasks,
             'spares'        => $request->spares,
-            'other_cost'    => $request->otherCost ?? 0,
+            'other_cost'    => $request->other_cost ?? 0,
             'total_cost'    => $request->totalCost ?? 0,
-            'labour_status' => $request->labourStatus,
+            // 'labour_status' => $request->labourStatus,
             'status'        => $request->status,
             'progress'      => $request->progress,
         ]);
@@ -87,9 +87,9 @@ class RepairDetailController extends Controller
         $validator = Validator::make($request->all(), [
             'tasks'         => 'required|array',
             'spares'        => 'nullable|array',
-            'otherCost'     => 'nullable|numeric',
+            'other_cost'     => 'nullable|numeric',
             'totalCost'     => 'nullable|numeric',
-            'labourStatus'  => 'required|string',
+            // 'labourStatus'  => 'required|string',
             'status'        => 'required|string',
             'progress'      => 'required|numeric|min:0|max:100',
         ]);
@@ -104,9 +104,9 @@ class RepairDetailController extends Controller
         $repairDetail->update([
             'tasks'         => $request->tasks,
             'spares'        => $request->spares,
-            'other_cost'    => $request->otherCost ?? $repairDetail->other_cost,
+            'other_cost'    => $request->other_cost ?? $repairDetail->other_cost,
             'total_cost'    => $request->totalCost ?? $repairDetail->total_cost,
-            'labour_status' => $request->labourStatus,
+            // 'labour_status' => $request->labourStatus,
             'status'        => $request->status,
             'progress'      => $request->progress,
         ]);
