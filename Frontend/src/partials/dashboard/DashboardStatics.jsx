@@ -9,6 +9,9 @@ import { useStores } from "../../contexts/storeContext";
 function DashboardStatics() {
   const navigate = useNavigate();
   const [totalItems, setTotalItems] = useState(0);
+  const [totalRepairs, setTotalRepairs] = useState(0);
+  console.log(totalRepairs);
+
   const [repairStatusCounts, setRepairStatusCounts] = useState({});
   const { lowStock } = useStores();
   const [totalItemsOut, setTotalItemsOut] = useState(0);
@@ -17,23 +20,22 @@ function DashboardStatics() {
     api
       .get("/store-items/total")
       .then((res) => setTotalItems(res.data.total_items));
-    api
-      .get("/total-repairs")
-      .then((res) => setRepairStatusCounts(res.data.data || {}));
+    api.get("/total-repairs").then((res) => setTotalRepairs(res.data || 0));
+
     api
       .get("/total-items-out")
       .then((res) => setTotalItemsOut(res.data.total_items_out));
   }, []);
 
-  const totalRepairsCount = Object.values(repairStatusCounts).reduce(
-    (acc, val) => acc + val,
-    0
-  );
+  // const totalRepairsCount = Object.values(repairStatusCounts).reduce(
+  //   (acc, val) => acc + val,
+  //   0
+  // );
 
   const cardData = [
     {
       label: "Repairs",
-      value: totalRepairsCount,
+      value: totalRepairs,
       icon: <FaCarAlt size={40} className="text-green-600" />,
       bg: "from-green-100 to-green-200",
       click: () => navigate("/job-manager/repair"),

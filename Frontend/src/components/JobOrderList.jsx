@@ -29,7 +29,7 @@ const JobOrderList = () => {
   const btnRefs = React.useRef({}); // id -> button element
   const menuRefs = React.useRef({}); // id -> menu element
 
-  console.log(selectedRows);
+  // console.log(selectedRows);
 
   const {
     setIsModalOpen,
