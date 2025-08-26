@@ -28,7 +28,7 @@ const JobOrderList = () => {
   const [dropdownDirection, setDropdownDirection] = React.useState("down"); // "up" | "down"
   const btnRefs = React.useRef({}); // id -> button element
   const menuRefs = React.useRef({}); // id -> menu element
-
+  const [popupImage, setPopupImage] = useState(null);
   // console.log(selectedRows);
 
   const {
@@ -401,6 +401,12 @@ const JobOrderList = () => {
                   className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-900"
                 />
               </th>
+
+              {/* New Image Column */}
+              <th className="border border-table-border px-2 py-3 w-[60px] text-center">
+                Image
+              </th>
+
               <th className="border border-table-border px-2 py-3 w-[70px]">
                 Job ID
               </th>
@@ -436,10 +442,11 @@ const JobOrderList = () => {
               </th>
             </tr>
           </thead>
+
           <tbody>
             {displayedRepairs.length === 0 ? (
               <tr>
-                <td colSpan="12" className="text-center py-4 text-white">
+                <td colSpan="13" className="text-center py-4 text-white">
                   No data available
                 </td>
               </tr>
@@ -458,10 +465,40 @@ const JobOrderList = () => {
                     />
                   </td>
 
+                  {/* Image Cell */}
+                  <td className="border border-table-border px-2 py-3 text-center">
+                    <img
+                      src={
+                        repair.image
+                          ? `${import.meta.env.VITE_API_URL}/storage/${
+                              repair.image
+                            }`
+                          : `${
+                              import.meta.env.VITE_API_URL
+                            }/storage/repair_images/default.jpg`
+                      }
+                      alt="repair"
+                      className="w-10 h-10 object-cover rounded-md cursor-pointer mx-auto"
+                      onClick={() =>
+                        setPopupImage(
+                          repair.image
+                            ? `${import.meta.env.VITE_API_URL}/storage/${
+                                repair.image
+                              }`
+                            : `${
+                                import.meta.env.VITE_API_URL
+                              }/storage/repair_images/default.jpg`
+                        )
+                      }
+                    />
+                  </td>
+
+                  {/* Job ID */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.job_id?.toString().padStart(4, "0")}
                   </td>
 
+                  {/* Customer */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.customer_name}
@@ -469,6 +506,7 @@ const JobOrderList = () => {
                     {repair.customer_name}
                   </td>
 
+                  {/* Mobile */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[120px]"
                     title={repair.mobile}
@@ -476,6 +514,7 @@ const JobOrderList = () => {
                     {repair.mobile}
                   </td>
 
+                  {/* Job Type */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.types_of_jobs}
@@ -483,6 +522,7 @@ const JobOrderList = () => {
                     {repair.types_of_jobs || "-"}
                   </td>
 
+                  {/* Product */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.product_name}
@@ -490,6 +530,7 @@ const JobOrderList = () => {
                     {repair.product_name || "-"}
                   </td>
 
+                  {/* Serial Code */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.serial_code}
@@ -497,6 +538,7 @@ const JobOrderList = () => {
                     {repair.serial_code || "-"}
                   </td>
 
+                  {/* Duration */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.estimated_date
                       ? repair.estimated_date > 30
@@ -505,14 +547,17 @@ const JobOrderList = () => {
                       : "-"}
                   </td>
 
+                  {/* Start Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.received_date}
                   </td>
 
+                  {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.promise_date || "-"}
                   </td>
 
+                  {/* Status */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap ${
@@ -523,9 +568,9 @@ const JobOrderList = () => {
                     </span>
                   </td>
 
+                  {/* Actions */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center relative">
                     <div className="relative inline-block w-full">
-                      {/* Action Button */}
                       <button
                         ref={(el) => (btnRefs.current[repair.id] = el)}
                         onClick={(e) => toggleDropdown(repair.id, e)}
@@ -535,14 +580,16 @@ const JobOrderList = () => {
                         <FiChevronDown className="ml-1" />
                       </button>
 
-                      {/* Dropdown Menu */}
                       {dropdownOpen === repair.id && (
                         <div
                           ref={(el) => (menuRefs.current[repair.id] = el)}
                           className={`absolute bg-white border rounded-md shadow-lg z-50
-    ${dropdownDirection === "down" ? "top-full mt-1" : "bottom-full mb-1"}
-    right-0 sm:left-auto
-  `}
+                          ${
+                            dropdownDirection === "down"
+                              ? "top-full mt-1"
+                              : "bottom-full mb-1"
+                          }
+                          right-0 sm:left-auto`}
                           style={{
                             minWidth: "8rem",
                             maxWidth: "90vw",
@@ -570,6 +617,28 @@ const JobOrderList = () => {
             )}
           </tbody>
         </table>
+
+        {/* Image Popup Modal */}
+        {popupImage && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+            onClick={() => setPopupImage(null)}
+          >
+            <div className="relative">
+              <img
+                src={popupImage}
+                alt="popup"
+                className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-lg"
+              />
+              <button
+                onClick={() => setPopupImage(null)}
+                className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-md"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between items-center mt-4">

@@ -50,16 +50,14 @@ public function store(Request $request)
 
     $validated = validator($payload, [
         'customer_name' => 'required|string|max:255',
-        // 'customer_type' => 'required|string|max:255',
         'mobile' => 'required|string|max:20',
         'types_of_jobs' => 'nullable|string',
         'received_date' => 'required|date',
         'estimated_date' => 'nullable|string',
         'promise_date' => 'nullable|date',
         'priority' => 'required|string',
-        'product_name' => 'nullable|string|max:255', // ✅ added
-        'serial_code' => 'nullable|string|max:255',  // ✅ added
-        // 'customer_observation' => 'nullable|array',
+        'product_name' => 'nullable|string|max:255',
+        'serial_code' => 'nullable|string|max:255',
         'spare_change' => 'nullable|array',
         'job_description' => 'nullable|array',
         'received_by' => 'nullable|string',
@@ -74,39 +72,36 @@ public function store(Request $request)
             $nextJobId = str_pad(((int)$nextJobId) + 1, 4, '0', STR_PAD_LEFT);
         }
 
-        // Handle image upload (single image)
-       $imagePath = null;
-if ($request->hasFile('image')) {
-    $file = $request->file('image');
-    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-    
-    // Store file in storage/app/public/repair_images
-    $file->storeAs('public/repair_images', $filename);
-    
-    // Save only relative path for access from /storage
-    $imagePath = 'repair_images/' . $filename;
-}
+        // Handle image upload (single image) or fallback to default
+        $imagePath = 'repair_images/default.jpg'; // 👈 put a default.png inside storage/app/public/repair_images
 
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Store file in storage/app/public/repair_images
+            $file->storeAs('public/repair_images', $filename);
+
+            // Save only relative path for access from /storage
+            $imagePath = 'repair_images/' . $filename;
+        }
 
         // Create repair registration
         $repair = new RepairRegistration();
         $repair->job_id = $nextJobId;
         $repair->customer_name = $payload['customer_name'];
-        // $repair->customer_type = $payload['customer_type'];
         $repair->mobile = $payload['mobile'];
         $repair->types_of_jobs = $payload['types_of_jobs'] ?? null;
         $repair->received_date = $payload['received_date'];
         $repair->estimated_date = $payload['estimated_date'] ?? null;
         $repair->promise_date = $payload['promise_date'] ?? null;
         $repair->priority = $payload['priority'];
-        $repair->product_name = $payload['product_name'] ?? null; // ✅ added
-        $repair->serial_code = $payload['serial_code'] ?? null;   // ✅ added
-        // $repair->customer_observation = $payload['customer_observation'] ?? null;
+        $repair->product_name = $payload['product_name'] ?? null;
+        $repair->serial_code = $payload['serial_code'] ?? null;
         $repair->spare_change = $payload['spare_change'] ?? null;
         $repair->job_description = $payload['job_description'] ?? null;
         $repair->received_by = $payload['received_by'] ?? null;
         $repair->image = $imagePath;
-        
 
         $repair->save();
 
@@ -114,6 +109,7 @@ if ($request->hasFile('image')) {
             'message' => 'Repair created successfully',
             'job_id' => $repair->job_id
         ], 201);
+
     } catch (\Exception $e) {
         return response()->json([
             'message' => 'Error storing repair',
@@ -121,6 +117,7 @@ if ($request->hasFile('image')) {
         ], 500);
     }
 }
+
 
     
 public function update(Request $request, $id)
