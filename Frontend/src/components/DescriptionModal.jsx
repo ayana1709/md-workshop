@@ -307,6 +307,8 @@ const DescriptionPage = ({}) => {
                       <th className="p-3 w-[45%]">Task Name</th>
                       <th className="p-3 w-[20%]">Cost</th>
                       <th className="p-3 w-[20%]">Status</th>
+                      <th className="p-3 w-[20%]">Assign To</th>
+
                       <th className="p-3 w-[15%] text-center">Actions</th>
                     </tr>
                   </thead>
@@ -384,6 +386,21 @@ const DescriptionPage = ({}) => {
                             </span>
                           )}
                         </td>
+                        <td className="p-3">
+                          {editingTaskIndex === i ? (
+                            <input
+                              type="text"
+                              value={task.assign_to}
+                              onChange={(e) =>
+                                handleTaskUpdate(i, "assign_to", e.target.value)
+                              }
+                              className="p-2 border rounded-md w-full text-sm"
+                              placeholder="enter a name"
+                            />
+                          ) : (
+                            <span>{task.assign_to}</span>
+                          )}
+                        </td>
 
                         <td className="p-3 flex justify-center gap-2">
                           {editingTaskIndex === i ? (
@@ -432,7 +449,7 @@ const DescriptionPage = ({}) => {
                             onChange={(e) =>
                               setNewTask({ ...newTask, cost: e.target.value })
                             }
-                            className="p-2 border rounded-md w-full text-sm"
+                            className="p-2 border rounded-md w-full text-sm no-spinner"
                             placeholder="0.00"
                           />
                         </td>
@@ -450,6 +467,20 @@ const DescriptionPage = ({}) => {
                             <option>in progress</option>
                             <option>completed</option>
                           </select>
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            value={newTask.assign_to}
+                            onChange={(e) =>
+                              setNewTask({
+                                ...newTask,
+                                assign_to: e.target.value,
+                              })
+                            }
+                            className="p-2 border rounded-md w-full text-sm"
+                            placeholder=" "
+                          />
                         </td>
                         <td className="p-3 flex justify-center gap-2">
                           <button
@@ -495,6 +526,7 @@ const DescriptionPage = ({}) => {
                     <tr>
                       <th className="p-3 w-[60%]">Spare Name</th>
                       <th className="p-3 w-[25%]">Cost</th>
+
                       <th className="p-3 w-[15%] text-center">Actions</th>
                     </tr>
                   </thead>
@@ -580,7 +612,7 @@ const DescriptionPage = ({}) => {
                             onChange={(e) =>
                               setNewSpare({ ...newSpare, cost: e.target.value })
                             }
-                            className="p-2 border rounded-md w-full text-sm"
+                            className="p-2 border rounded-md w-full text-sm no-spinner"
                             placeholder="0.00"
                           />
                         </td>
@@ -617,7 +649,7 @@ const DescriptionPage = ({}) => {
                 type="number"
                 value={otherCost}
                 onChange={(e) => handleOtherCostChange(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded no-spinner"
               />
             </div>
 
@@ -638,7 +670,7 @@ const DescriptionPage = ({}) => {
 
             <div className="mb-6">
               <label className="font-medium">Total Cost:</label>
-              <p className="p-2 bg-gray-100 rounded">${totalCost}</p>
+              <p className="p-2 bg-gray-100 rounded">{totalCost}</p>
             </div>
             <div style={{ display: "none" }}>
               <PrintableJobPage
