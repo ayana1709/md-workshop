@@ -16,7 +16,7 @@ class PaymentController extends Controller
             'repair_registration_id' => 'required|exists:repair_registrations,id',
             'job_id' => 'required|string|exists:repair_registrations,job_id',
             'customer_name' => 'required|string',
-            'plate_number' => 'required|string',
+            // 'plate_number' => 'required|string',
             'payment_method' => 'required|in:Cash,Transfer,Credit,Cheque',
             'payment_status' => 'required|in:Full Payment,Advance,Credit,Remaining',
             'paid_amount' => 'required|numeric|min:0',

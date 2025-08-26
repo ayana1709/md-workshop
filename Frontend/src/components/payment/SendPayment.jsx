@@ -14,13 +14,15 @@ function SendPayment() {
   const [popup, setPopup] = useState({ message: "", type: "" }); // type: 'success' | 'error'
 
   const total = getGrandTotal(jobId);
+  const today = new Date().toISOString().split("T")[0]; // e.g. "2025-08-27"
+
   const [formData, setFormData] = useState({
     payment_method: "Cash",
     payment_status: "Full Payment",
     paid_by: "",
     approved_by: "",
     ref_no: Math.random().toString(36).substring(2, 10).toUpperCase(), // Random editable ref_no
-    payment_date: "",
+    payment_date: today, // auto set today's date
     reason: "",
     remark: "",
     paid_amount: total,
@@ -44,7 +46,7 @@ function SendPayment() {
           setFormData((prev) => ({
             ...prev,
             customer_name: data.customer_name,
-            plate_number: data.vehicles?.[0]?.plate_no || "",
+            product_name: data.product_name,
             repair_registration_id: data.id,
             job_id: data.job_id,
           }));
@@ -99,7 +101,6 @@ function SendPayment() {
         from_bank: "",
         to_bank: "",
         customer_name: prev.customer_name,
-        plate_number: prev.plate_number,
         job_id: prev.job_id,
         repair_registration_id: prev.repair_registration_id,
       }));
@@ -147,11 +148,11 @@ function SendPayment() {
               </div>
               <div>
                 <label className="block font-medium text-gray-800 dark:text-white">
-                  Plate Number
+                  Product Name
                 </label>
                 <input
                   type="text"
-                  value={formData.plate_number}
+                  value={formData.product_name}
                   readOnly
                   className="w-full p-2 rounded-md border bg-gray-200 dark:bg-gray-800"
                 />
