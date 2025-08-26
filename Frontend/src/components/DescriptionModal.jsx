@@ -11,6 +11,7 @@ import { useReactToPrint } from "react-to-print";
 
 const DescriptionPage = ({}) => {
   const { id } = useParams();
+  console.log(id);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -41,7 +42,7 @@ const DescriptionPage = ({}) => {
   useEffect(() => {
     const fetchJobInfo = async () => {
       try {
-        const response = await api.get(`/repairs/${id}`);
+        const response = await api.get(`/repairs/job/${id}`);
         const job = response.data;
         setJobInfo({
           jobId: job.jobId || id,

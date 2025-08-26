@@ -329,24 +329,34 @@ public function updatestat(Request $request, $id)
 
     return response()->json(['message' => 'Status updated successfully.']);
 }
-public function getByJobId($jobId)
+public function getByJobId($jobId) 
 {
-    $repair = RepairRegistration::with('vehicles')
-        ->where('job_id', $jobId)
-        ->first();
+    // Fetch using job_id instead of primary key id
+    $repair = RepairRegistration::where('job_id', $jobId)->first();
 
     if (!$repair) {
         return response()->json(['message' => 'Repair not found.'], 404);
     }
 
     return response()->json([
-        'job_id' => $repair->job_id,
-        'plate_no' => optional($repair->vehicles->first())->plate_no,
+        'job_id'        => $repair->job_id,
+        'customer_name' => $repair->customer_name,
+        'mobile'        => $repair->mobile,
+        'product_name'  => $repair->product_name,
+        'serial_code'   => $repair->serial_code,
+        'types_of_jobs' => $repair->types_of_jobs,
+        'priority'      => $repair->priority,
         'received_date' => $repair->received_date,
-        'promise_date' => $repair->promise_date,
-        'status' => $repair->status,
+        'promise_date'  => $repair->promise_date,
+        'status'        => $repair->status ?? 'Pending',
+        
+        // ✅ Add image with default fallback
+        'image'         => $repair->image 
+            ? asset('storage/' . $repair->image) 
+            : asset('storage/repair_images/default.png'),
     ]);
 }
+
 
 
 
