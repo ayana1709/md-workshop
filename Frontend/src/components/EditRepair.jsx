@@ -328,7 +328,7 @@ export default function EditRepair() {
                       )}
                     </div>
 
-                    <div>
+                    {/* <div>
                       <label className="dark:text-gray-200">
                         Customer Type/ የደንበኛ አይነት
                         <span className="text-red-500">*</span>
@@ -345,7 +345,7 @@ export default function EditRepair() {
                         <option value="Regular">Regular</option>
                         <option value="Contract">Contract</option>
                       </select>
-                    </div>
+                    </div> */}
 
                     <div>
                       <label className="dark:text-gray-200">
@@ -478,7 +478,7 @@ export default function EditRepair() {
 
                   {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
                   <div className="flex flex-col gap-4 mt-6">
-                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
+                    {/* <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Customer Observation /የደንበኛ ምልከታ
                         <span className="text-gray-400 text-sm dark:text-gray-200">
@@ -493,7 +493,7 @@ export default function EditRepair() {
                         className="w-full border border-gray-300 dark:text-white p-2 rounded mb-2 dark:bg-gray-800 placeholder:dark:text-gray-100 min-h-[100px]"
                         rows={5}
                       />
-                    </div>
+                    </div> */}
                     {/* job to be done */}
                     {/* Jobs To Be Done */}
                     <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-x-auto">
