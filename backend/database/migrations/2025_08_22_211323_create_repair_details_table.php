@@ -11,11 +11,12 @@ return new class extends Migration
         Schema::create('repair_details', function (Blueprint $table) {
             $table->id();
             $table->string('job_id'); // FK to repair_registrations.job_id
-            $table->json('tasks')->nullable();  // store as JSON array
-            $table->json('spares')->nullable(); // store as JSON array
+            $table->json('tasks')->nullable();   // store as JSON array
+            $table->json('spares')->nullable();  // store as JSON array
             $table->decimal('other_cost', 10, 2)->default(0);
             $table->decimal('total_cost', 10, 2)->default(0);
-            $table->string('labour_status')->nullable();
+            $table->boolean('vat_applied')->default(false); // NEW → track if VAT applied
+            $table->decimal('vat_amount', 10, 2)->default(0); // NEW → VAT amount
             $table->string('status')->nullable();
             $table->integer('progress')->default(0);
             $table->timestamps();

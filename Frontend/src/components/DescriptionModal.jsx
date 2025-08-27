@@ -84,6 +84,8 @@ const DescriptionPage = ({}) => {
   }, [id]);
 
   const printRef = useRef();
+  const [applyVAT, setApplyVAT] = useState(false);
+  const VAT_RATE = 0.15; // 15% for example
 
   const handlePrint = useReactToPrint({
     contentRef: printRef, // ✅ new API
@@ -97,19 +99,38 @@ const DescriptionPage = ({}) => {
     (sum, s) => sum + parseFloat(s.cost || 0),
     0
   );
-  const totalCost = totalTaskCost + totalSpareCost + parseFloat(otherCost || 0);
+  const subTotal = totalTaskCost + totalSpareCost + parseFloat(otherCost || 0);
+  const totalVAT = applyVAT ? subTotal * VAT_RATE : 0;
+  const totalCost = subTotal + totalVAT;
+  // const totalCost = totalTaskCost + totalSpareCost + parseFloat(otherCost || 0);
 
   // General update function to sync with backend
   const saveToBackend = async (updatedData = {}) => {
     try {
+      const subTotal =
+        (updatedData.tasks ?? tasks).reduce(
+          (sum, t) => sum + parseFloat(t.cost || 0),
+          0
+        ) +
+        (updatedData.spares ?? spares).reduce(
+          (sum, s) => sum + parseFloat(s.cost || 0),
+          0
+        ) +
+        parseFloat(updatedData.other_cost || 0);
+
+      const vatApplied = updatedData.vat_applied ?? applyVAT;
+      const vatAmount = vatApplied ? subTotal * VAT_RATE : 0;
+      const grandTotal = subTotal + vatAmount;
+
       const payload = {
         job_id: jobInfo.jobId,
         tasks: updatedData.tasks ?? tasks,
         spares: updatedData.spares ?? spares,
-        other_cost: updatedData.other_cost ?? otherCost,
-        total_cost: totalTaskCost + totalSpareCost + parseFloat(otherCost || 0),
-        status: updatedData.status ?? status,
-        labour_status: updatedData.labour_status ?? labourStatus,
+        other_cost: parseFloat(updatedData.other_cost || 0),
+        vat_applied: vatApplied,
+        vat_amount: vatAmount,
+        total_cost: grandTotal,
+
         progress: updatedData.progress ?? progress,
       };
 
@@ -199,26 +220,15 @@ const DescriptionPage = ({}) => {
         tasks,
         spares,
         other_cost: parseFloat(otherCost || 0),
-        total_cost: totalTaskCost + totalSpareCost + parseFloat(otherCost || 0),
+        vat_applied: applyVAT, // use applyVAT state
+        vat_amount: totalVAT, // computed VAT
+        total_cost: totalCost, // computed Grand Total
         status,
-        labour_status: labourStatus,
+        // labour_status: labourStatus, // uncomment if you want to save it
         progress,
       };
 
-      // Check if exists
-      let exists = true;
-      try {
-        await api.get(`/repairsdetail/${jobInfo.jobId}`);
-      } catch (err) {
-        if (err.response?.status === 404) exists = false;
-        else throw err;
-      }
-
-      if (exists) {
-        await api.put(`/repairsdetail/${jobInfo.jobId}`, payload);
-      } else {
-        await api.post(`/repairsdetail`, payload);
-      }
+      await api.put(`/repairsdetail/${jobInfo.jobId}`, payload);
 
       Swal.fire("Success", "Job saved successfully", "success");
     } catch (error) {
@@ -653,25 +663,43 @@ const DescriptionPage = ({}) => {
               />
             </div>
 
-            <div className="mb-6">
-              <label className="font-medium">Overall Status:</label>
-              <select
-                value={status}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full p-2 border rounded"
+            {/* VAT Section */}
+            <div className="mb-6 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="vat"
+                checked={applyVAT}
+                onChange={(e) => setApplyVAT(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label
+                htmlFor="vat"
+                className="text-sm font-medium text-gray-700"
               >
-                <option>not started</option>
-                <option>started</option>
-                <option>pending</option>
-                <option>in progress</option>
-                <option>completed</option>
-              </select>
+                Apply VAT ({VAT_RATE * 100}%)
+              </label>
             </div>
 
+            {/* Totals */}
             <div className="mb-6">
-              <label className="font-medium">Total Cost:</label>
-              <p className="p-2 bg-gray-100 rounded">{totalCost}</p>
+              <label className="font-medium">
+                Subtotal (Tasks + Spares + Other):
+              </label>
+              <p className="p-2 bg-gray-100 rounded">{subTotal.toFixed(2)}</p>
             </div>
+
+            {applyVAT && (
+              <div className="mb-6">
+                <label className="font-medium">Total VAT:</label>
+                <p className="p-2 bg-gray-100 rounded">{totalVAT.toFixed(2)}</p>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <label className="font-medium">Grand Total:</label>
+              <p className="p-2 bg-gray-100 rounded">{totalCost.toFixed(2)}</p>
+            </div>
+
             <div style={{ display: "none" }}>
               <PrintableJobPage
                 ref={printRef}

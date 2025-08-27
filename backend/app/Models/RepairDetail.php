@@ -15,14 +15,17 @@ class RepairDetail extends Model
         'spares',
         'other_cost',
         'total_cost',
+        'vat_applied',   // NEW
+        'vat_amount',    // NEW
         'labour_status',
         'status',
         'progress',
     ];
 
     protected $casts = [
-        'tasks'  => 'array',
-        'spares' => 'array',
+        'tasks'        => 'array',
+        'spares'       => 'array',
+        'vat_applied'  => 'boolean', // Cast VAT applied to boolean
     ];
 
     public function repair()

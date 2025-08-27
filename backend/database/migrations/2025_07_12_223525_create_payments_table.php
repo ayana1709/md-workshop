@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->string('job_id')->unique(); // Add this constraint
 
             $table->string('customer_name');
-            $table->string('plate_number');
+            // $table->string('plate_number');
 
             $table->enum('payment_method', ['Cash', 'Transfer', 'Credit', 'Cheque']);
             $table->enum('payment_status', ['Full Payment', 'Advance', 'Credit', 'Remaining']);

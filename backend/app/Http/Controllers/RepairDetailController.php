@@ -30,79 +30,80 @@ class RepairDetailController extends Controller
     /**
      * Store new repair detail
      */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'jobId'         => 'required|exists:repair_registrations,job_id',
-            'tasks'         => 'required|array',
-            'spares'        => 'nullable|array',
-            'other_cost'     => 'nullable|numeric',
-            'totalCost'     => 'nullable|numeric',
-            // 'labourStatus'  => 'required|string',
-            'status'        => 'required|string',
-            'progress'      => 'required|numeric|min:0|max:100',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $jobId = str_pad($request->jobId, 4, '0', STR_PAD_LEFT);
-
-        $repairDetail = RepairDetail::create([
-            'job_id'        => $jobId,
-            'tasks'         => $request->tasks,
-            'spares'        => $request->spares,
-            'other_cost'    => $request->other_cost ?? 0,
-            'total_cost'    => $request->totalCost ?? 0,
-            // 'labour_status' => $request->labourStatus,
-            'status'        => $request->status,
-            'progress'      => $request->progress,
-        ]);
-
-        return response()->json([
-            'message' => 'Repair detail created successfully',
-            'data' => $repairDetail
-        ], 201);
-    }
-
-    /**
-     * Update existing repair detail
-     */
-    public function update(Request $request, $jobId)
+   public function store(Request $request)
 {
-    $jobId = str_pad($jobId, 4, '0', STR_PAD_LEFT);
-
     $validator = Validator::make($request->all(), [
-        'tasks'         => 'required|array',
-        'spares'        => 'nullable|array',
-        'other_cost'    => 'nullable|numeric',
-        'totalCost'     => 'nullable|numeric',
-        // 'labourStatus'  => 'required|string',
-        'status'        => 'required|string',
-        'progress'      => 'required|numeric|min:0|max:100',
+        'job_id'       => 'required|exists:repair_registrations,job_id',
+        'tasks'        => 'required|array',
+        'spares'       => 'nullable|array',
+        'other_cost'   => 'nullable|numeric',
+        'vat_applied'  => 'boolean',
+        'vat_amount'   => 'nullable|numeric',
+        'total_cost'   => 'nullable|numeric',
+        'progress'     => 'required|numeric|min:0|max:100',
     ]);
 
     if ($validator->fails()) {
         return response()->json([
             'message' => 'Validation failed',
-            'errors' => $validator->errors()
+            'errors'  => $validator->errors()
+        ], 422);
+    }
+
+    $jobId = str_pad($request->job_id, 4, '0', STR_PAD_LEFT);
+
+    $repairDetail = RepairDetail::create([
+        'job_id'      => $jobId,
+        'tasks'       => $request->tasks,
+        'spares'      => $request->spares,
+        'other_cost'  => $request->other_cost ?? 0,
+        'vat_applied' => $request->vat_applied ?? false,
+        'vat_amount'  => $request->vat_amount ?? 0,
+        'total_cost'  => $request->total_cost ?? 0,
+        'progress'    => $request->progress,
+    ]);
+
+    return response()->json([
+        'message' => 'Repair detail created successfully',
+        'data'    => $repairDetail
+    ], 201);
+}
+
+public function update(Request $request, $jobId)
+{
+    $jobId = str_pad($jobId, 4, '0', STR_PAD_LEFT);
+
+    $validator = Validator::make($request->all(), [
+        'tasks'        => 'nullable|array',   // allow empty tasks
+        'spares'       => 'nullable|array',
+        'other_cost'   => 'nullable|numeric',
+        'vat_applied'  => 'nullable|boolean',
+        'vat_amount'   => 'nullable|numeric',
+        'total_cost'   => 'nullable|numeric',
+        'status'       => 'nullable|string',
+        'labour_status'=> 'nullable|string',
+        'progress'     => 'nullable|numeric|min:0|max:100',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors()
         ], 422);
     }
 
     $repairDetail = RepairDetail::updateOrCreate(
-        ['job_id' => $jobId], // condition (find by job_id)
-        [   // values to insert/update
-            'tasks'         => $request->tasks,
-            'spares'        => $request->spares,
-            'other_cost'    => $request->other_cost ?? 0,
-            'total_cost'    => $request->totalCost ?? 0,
-            // 'labour_status' => $request->labourStatus,
-            'status'        => $request->status,
-            'progress'      => $request->progress,
+        ['job_id' => $jobId],
+        [
+            'tasks'        => $request->tasks ?? [],
+            'spares'       => $request->spares ?? [],
+            'other_cost'   => $request->other_cost ?? 0,
+            'vat_applied'  => $request->vat_applied ?? false,
+            'vat_amount'   => $request->vat_amount ?? 0,
+            'total_cost'   => $request->total_cost ?? 0,
+            'status'       => $request->status ?? null,
+            // 'labour_status'=> $request->labour_status ?? null,
+            'progress'     => $request->progress ?? 0,
         ]
     );
 
@@ -110,9 +111,16 @@ class RepairDetailController extends Controller
         'message' => $repairDetail->wasRecentlyCreated
             ? 'Repair detail created successfully'
             : 'Repair detail updated successfully',
-        'data' => $repairDetail
+        'data'    => $repairDetail
     ]);
 }
+
+
+
+    /**
+     * Update existing repair detail
+     */
+
 
 
     /**
