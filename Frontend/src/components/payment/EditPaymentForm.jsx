@@ -15,7 +15,7 @@ function EditPaymentForm() {
   const [formData, setFormData] = useState({
     job_id: "",
     customer_name: "",
-    plate_number: "",
+    // plate_number: "",
     payment_method: "Cash",
     payment_status: "Full Payment",
     paid_amount: "",
@@ -125,12 +125,12 @@ function EditPaymentForm() {
                 value={formData.customer_name}
                 readOnly
               />
-              <Input
+              {/* <Input
                 label="Plate Number"
                 name="plate_number"
                 value={formData.plate_number}
                 readOnly
-              />
+              /> */}
               <Input
                 label="Reference No"
                 name="ref_no"

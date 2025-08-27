@@ -68,7 +68,7 @@ public function quickStore(Request $request)
 {
     $rules = [
         'customer_name' => 'required|string',
-        'plate_number' => 'required|string',
+        'product_name' => 'nullable|string',
         'payment_method' => 'required|in:Cash,Transfer,Credit,Cheque',
         'payment_status' => 'required|in:Full Payment,Advance,Credit,Remaining',
         'paid_amount' => 'required|numeric|min:0',

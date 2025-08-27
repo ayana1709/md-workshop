@@ -18,6 +18,7 @@ import BackButton from "../BackButton";
 import { useNavigate } from "react-router-dom";
 import ActionDropdown from "./ActionDropdown";
 import Swal from "sweetalert2";
+import Header from "@/partials/Header";
 
 function AllPaymentsTable() {
   const [data, setData] = useState([]);
@@ -139,7 +140,7 @@ function AllPaymentsTable() {
         [
           "Job ID",
           "Customer Name",
-          "Plate Number",
+          // "Plate Number",
           "Method",
           "Status",
           "Paid",
@@ -170,7 +171,7 @@ function AllPaymentsTable() {
       },
       { accessorKey: "job_id", header: "Job ID" },
       { accessorKey: "customer_name", header: "Customer Name" },
-      { accessorKey: "plate_number", header: "Plate Number" },
+      // { accessorKey: "plate_number", header: "Plate Number" },
       { accessorKey: "payment_method", header: "Method" },
       { accessorKey: "payment_status", header: "Status" },
       { accessorKey: "paid_amount", header: "Paid (ETB)" },
@@ -218,12 +219,11 @@ function AllPaymentsTable() {
   });
 
   return (
-    <div className="flex h-screen">
-      <div className="w-60 flex-shrink-0 bg-white dark:bg-gray-900 border-r">
-        <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      </div>
+    <div className="flex min-h-screen overflow-hidden">
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white overflow-y-auto">
+        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="p-4 sm:p-6 max-w-9xl mx-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">

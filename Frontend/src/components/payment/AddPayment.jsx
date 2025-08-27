@@ -17,7 +17,7 @@ function AddPayment() {
     job_id: generateJobId(),
     ref_no: generateRefNo(),
     customer_name: "",
-    plate_number: "",
+    product_name: "",
     payment_method: "Cash",
     payment_status: "Full Payment",
     paid_amount: "",
@@ -123,9 +123,9 @@ function AddPayment() {
               className={inputStyle}
             />
             <InputField
-              name="plate_number"
-              label="Plate Number"
-              value={formData.plate_number}
+              name="product_name"
+              label="Product Name"
+              value={formData.product_name}
               handleChange={handleChange}
               className={inputStyle}
             />
