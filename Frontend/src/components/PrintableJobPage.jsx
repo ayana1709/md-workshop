@@ -2,7 +2,7 @@ import { useStores } from "@/contexts/storeContext";
 import React from "react";
 
 const PrintableJobPage = React.forwardRef(
-  ({ jobInfo, tasks, spares, otherCost, status, totalCost }, ref) => {
+  ({ jobInfo, tasks, spares, otherCost, status, totalCost, totalvat }, ref) => {
     const { companyData } = useStores();
 
     return (
@@ -64,9 +64,6 @@ const PrintableJobPage = React.forwardRef(
           <p>
             <strong>Product:</strong> {jobInfo.product_name}
           </p>
-          <p>
-            <strong>Status:</strong> {status}
-          </p>
         </div>
 
         {/* Tasks */}
@@ -80,6 +77,7 @@ const PrintableJobPage = React.forwardRef(
                   <th className="p-2 border">Task Name</th>
                   <th className="p-2 border">Status</th>
                   <th className="p-2 border">Cost</th>
+                  <th className="p-2 border">Assign To</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,6 +87,7 @@ const PrintableJobPage = React.forwardRef(
                     <td className="p-2 border">{task.name}</td>
                     <td className="p-2 border capitalize">{task.status}</td>
                     <td className="p-2 border">{task.cost}</td>
+                    <td className="p-2 border">{task.assign_to}</td>
                   </tr>
                 ))}
               </tbody>
@@ -128,6 +127,9 @@ const PrintableJobPage = React.forwardRef(
           </h2>
           <p>
             <strong>Other Cost:</strong> {otherCost || 0}
+          </p>
+          <p>
+            <strong>Total Vat:</strong> {totalvat || 0}
           </p>
           <p className="text-lg font-bold">
             <strong>Total Cost:</strong> {totalCost || 0}

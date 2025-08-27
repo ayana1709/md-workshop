@@ -709,6 +709,7 @@ const DescriptionPage = ({}) => {
                 otherCost={otherCost}
                 status={status}
                 totalCost={totalCost}
+                totalvat={totalVAT}
               />
             </div>
 
