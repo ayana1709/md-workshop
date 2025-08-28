@@ -2,6 +2,8 @@
 
 // app/Http/Controllers/ItemController.php
 namespace App\Http\Controllers;
+
+use App\Models\Item;
 use App\Models\ItemOut;
 use Illuminate\Http\Request;
 use App\Models\StoreItem;
@@ -181,13 +183,13 @@ public function getHistory($code)
 
 public function getTotalItems()
 {
-    $totalItems = StoreItem::sum('quantity');
+    $totalItems = Item::sum('quantity');
     return response()->json(['total_items' => $totalItems], 200);
 }
 
 public function getTotalItemsOut()
 {
-    $totalItemsOut = ItemOut::sum('requestquantity');
+    $totalItemsOut = ItemOut::sum('quantity');
     return response()->json(['total_items_out' => $totalItemsOut], 200);
 }
 
