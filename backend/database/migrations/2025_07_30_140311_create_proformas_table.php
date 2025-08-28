@@ -14,8 +14,7 @@ return new class extends Migration
             $table->date('date');
             $table->string('customer_name');
             $table->string('customer_tin')->nullable();
-            $table->string('product_name');
-            $table->string('types_of_jobs');
+            $table->string('status')->nullable();
             $table->string('prepared_by')->nullable();
             $table->date('delivery_date')->nullable();
             $table->string('ref_num')->nullable();
@@ -29,7 +28,7 @@ return new class extends Migration
             $table->decimal('total', 15, 2);
             $table->decimal('total_vat', 15, 2);
             $table->decimal('gross_total', 15, 2);
-            $table->decimal('withholding', 15, 2);
+            // $table->decimal('withholding', 15, 2);
             $table->decimal('net_pay', 15, 2);
             $table->string('net_pay_in_words');
             $table->timestamps();

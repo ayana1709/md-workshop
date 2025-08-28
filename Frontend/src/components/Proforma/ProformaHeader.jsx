@@ -4,13 +4,14 @@ import api from "@/api";
 function ProformaHeader({ formData, setFormData }) {
   const [errors, setErrors] = useState({});
 
-  // Auto-set today's date on mount
+  // Auto-set today's date + default status on mount
   useEffect(() => {
     setFormData((prev) => ({
       ...prev,
       date: prev.date || new Date().toISOString().split("T")[0],
       refNum:
         prev.refNum || `REF-${Math.floor(100000 + Math.random() * 900000)}`,
+      status: prev.status || "pending",
     }));
   }, []);
 
@@ -32,17 +33,14 @@ function ProformaHeader({ formData, setFormData }) {
 
     try {
       const res = await api.get(`repairs/basic/${formData.jobId}`);
-      const { customer_name, product_name, types_of_jobs } = res.data;
+      const { customer_name } = res.data;
 
       setFormData((prev) => ({
         ...prev,
         customerName: customer_name,
-        product_name: product_name,
-        types_of_jobs: types_of_jobs,
       }));
     } catch (error) {
       console.error("Failed to fetch job info:", error);
-      alert("Job ID not found. Please try again.");
     }
   };
 
@@ -81,6 +79,39 @@ function ProformaHeader({ formData, setFormData }) {
     </div>
   );
 
+  const renderStatus = () => (
+    <div className="flex flex-col gap-1 w-full">
+      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Status / <span className="text-blue-600">ሁኔታ</span>
+      </label>
+      <select
+        name="status"
+        value={formData.status || "pending"}
+        onChange={handleChange}
+        className="bg-white dark:bg-gray-800 border rounded-lg px-4 py-2 shadow-sm focus:ring-2 focus:outline-none transition-all duration-200 border-gray-300 dark:border-gray-700 focus:ring-blue-500"
+      >
+        <option value="sold">Sold</option>
+        <option value="pending">Pending</option>
+        <option value="canceled">Canceled</option>
+        <option value="returned">Returned</option>
+        <option value="refund">Refund</option>
+        <option value="others">Others</option>
+      </select>
+
+      {/* Show additional input when "others" is selected */}
+      {formData.status === "others" && (
+        <input
+          type="text"
+          name="otherStatus"
+          value={formData.otherStatus || ""}
+          onChange={handleChange}
+          placeholder="Specify other status"
+          className="mt-2 bg-white dark:bg-gray-800 border rounded-lg px-4 py-2 shadow-sm focus:ring-2 focus:outline-none transition-all duration-200 border-gray-300 dark:border-gray-700 focus:ring-blue-500"
+        />
+      )}
+    </div>
+  );
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl p-6 shadow-lg space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -91,18 +122,6 @@ function ProformaHeader({ formData, setFormData }) {
           "የደንበኛ ስም",
           "customerName",
           "Enter Customer Name"
-        )}
-        {renderInput(
-          "Product Name",
-          "የምርቱ ስም",
-          "product_name",
-          "Enter Product Name"
-        )}
-        {renderInput(
-          "Type of Job",
-          "የስራው አይነት",
-          "types_of_jobs",
-          "Enter Job Type"
         )}
         {renderInput(
           "Customer TIN",
@@ -116,22 +135,9 @@ function ProformaHeader({ formData, setFormData }) {
           "refNum",
           "Enter Reference Number"
         )}
-        {renderInput(
-          "Validity Date",
-          "የሚሰራበት ቀን",
-          "validityDate",
-          "e.g. 30 days"
-        )}
-        {renderInput("Delivery Date", "የመስጠት ቀን", "deliveryDate", "", "date")}
-        {renderInput(
-          "Prepared By",
-          "የአዘጋጀው",
-          "preparedBy",
-          "Enter Preparer Name"
-        )}
-        {renderInput("Payment Before", "ክፍያ በፊት", "paymentBefore", "")}
-        {renderInput("Notes", "ማስታወሻ", "notes", "Any notes")}
-        {/* {renderInput("Signature", "ፊርማ", "signature", "Enter Signature")} */}
+
+        {/* Status Dropdown */}
+        {renderStatus()}
       </div>
     </div>
   );

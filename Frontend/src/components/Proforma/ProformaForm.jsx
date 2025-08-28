@@ -9,6 +9,8 @@ import ProformaHeader from "./ProformaHeader";
 import ProformaTable from "./ProformaTable";
 import ProformaPrint from "./ProformaPrint"; // ✅ import your print layout
 import { useStores } from "@/contexts/storeContext";
+import ProformaFooter from "./ProformaFooter";
+import { useNavigate } from "react-router-dom";
 
 function ProformaForm() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -20,8 +22,8 @@ function ProformaForm() {
     date: format(new Date(), "yyyy-MM-dd"),
     refNum: "",
     customerName: "",
-    product_name: "",
-    types_of_jobs: "",
+    status: "",
+    // types_of_jobs: "",
     customerTin: "",
     validityDate: "",
     deliveryDate: "",
@@ -31,23 +33,23 @@ function ProformaForm() {
   });
 
   const [labourRows, setLabourRows] = useState([
-    { description: "", unit: "", estTime: "", cost: 0, total: 0 },
+    { description: "", unit: "", estTime: "", cost: "", total: 0 },
   ]);
 
   const [spareRows, setSpareRows] = useState([
-    { description: "", unit: "", brand: "", qty: 0, unitPrice: 0, total: 0 },
+    { description: "", unit: "", brand: "", qty: "", unitPrice: "", total: 0 },
   ]);
 
   const [labourVat, setLabourVat] = useState(false);
   const [spareVat, setSpareVat] = useState(false);
-  const [otherCost, setOtherCost] = useState(0);
-  const [discount, setDiscount] = useState(0);
+  const [otherCost, setOtherCost] = useState("");
+  const [discount, setDiscount] = useState("");
   const [summary, setSummary] = useState({
-    total: 0,
-    totalVat: 0,
-    grossTotal: 0,
-    withholding: 0,
-    netPay: 0,
+    total: "",
+    totalVat: "",
+    grossTotal: "",
+    // withholding: 0,
+    netPay: "",
     netPayInWords: "",
   });
   // const [triggerPrint, setTriggerPrint] = useState(false);
@@ -64,8 +66,8 @@ function ProformaForm() {
     const requiredFields = [
       "jobId",
       "customerName",
-      "product_name",
-      "types_of_jobs",
+      // "product_name",
+      // "types_of_jobs",
     ];
     const missing = requiredFields.filter((field) => !formData[field]);
     if (missing.length > 0) {
@@ -78,6 +80,9 @@ function ProformaForm() {
     }
     return true;
   };
+
+  // inside your component
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     if (!validateForm()) return;
@@ -101,16 +106,12 @@ function ProformaForm() {
 
       Swal.fire({
         title: "Success!",
-        text: "Proforma created successfully. Print now?",
+        text: "Proforma registered successfully.",
         icon: "success",
-        showCancelButton: true,
-        confirmButtonText: "Yes, Print",
-        cancelButtonText: "No, Thanks",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          setTimeout(() => handlePrint(), 100);
-        }
+        confirmButtonText: "OK",
+      }).then(() => {
         resetForm();
+        navigate("/manage-proforma"); // redirect after success
       });
     } catch (error) {
       console.error("Proforma save failed:", error);
@@ -126,8 +127,8 @@ function ProformaForm() {
       date: format(new Date(), "yyyy-MM-dd"),
       refNum: "",
       customerName: "",
-      product_name: "",
-      types_of_jobs: "",
+      status: "",
+      // types_of_jobs: "",
       customerTin: "",
       validityDate: "",
       deliveryDate: "",
@@ -136,15 +137,22 @@ function ProformaForm() {
       notes: "",
     });
     setLabourRows([
-      { description: "", unit: "", estTime: "", cost: 0, total: 0 },
+      { description: "", unit: "", estTime: "", cost: "", total: 0 },
     ]);
     setSpareRows([
-      { description: "", unit: "", brand: "", qty: 0, unitPrice: 0, total: 0 },
+      {
+        description: "",
+        unit: "",
+        brand: "",
+        qty: "",
+        unitPrice: "",
+        total: 0,
+      },
     ]);
     setLabourVat(false);
     setSpareVat(false);
-    setOtherCost(0);
-    setDiscount(0);
+    setOtherCost("");
+    setDiscount("");
   };
 
   return (
@@ -176,6 +184,7 @@ function ProformaForm() {
                 setDiscount={setDiscount}
                 setSummary={setSummary}
               />
+              <ProformaFooter formData={formData} setFormData={setFormData} />
             </div>
 
             <div className="flex justify-end gap-4 mt-6">

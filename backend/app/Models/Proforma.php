@@ -11,10 +11,10 @@ class Proforma extends Model
 
     protected $fillable = [
         'job_id', 'date', 'customer_name', 'customer_tin',
-        'product_name', 'types_of_jobs', 'prepared_by', 'delivery_date',
+        'status',  'prepared_by', 'delivery_date',
         'ref_num', 'validity_date', 'notes', 'payment_before',
         'discount', 'other_cost', 'labour_vat', 'spare_vat',
-        'total', 'total_vat', 'gross_total', 'withholding',
+        'total', 'total_vat', 'gross_total',
         'net_pay', 'net_pay_in_words'
     ];
 

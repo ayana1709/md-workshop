@@ -17,8 +17,8 @@ public function store(Request $request)
             'customerTin' => 'nullable|string',
             'deliveryDate' => 'nullable|date',
             'preparedBy' => 'nullable|string',
-            'product_name' => 'required|string',
-            'types_of_jobs' => 'required|string',
+            'status' => 'required|string',
+            // 'types_of_jobs' => 'nullabe|string',
             'refNum' => 'nullable|string',
             'validityDate' => 'nullable|string', // ✅ allow letters
             'notes' => 'nullable|string',
@@ -44,13 +44,13 @@ public function store(Request $request)
             'labourVat' => 'required|boolean',
             'spareVat' => 'required|boolean',
 
-            'summary' => 'required|array',
-            'summary.total' => 'required|numeric',
-            'summary.totalVat' => 'required|numeric',
-            'summary.grossTotal' => 'required|numeric',
-            'summary.withholding' => 'required|numeric',
-            'summary.netPay' => 'required|numeric',
-            'summary.netPayInWords' => 'required|string',
+            'summary' => 'nullable|array',
+            'summary.total' => 'nullable|numeric',
+            'summary.totalVat' => 'nullable|numeric',
+            'summary.grossTotal' => 'nullable|numeric',
+            // 'summary.withholding' => 'nullable|numeric',
+            'summary.netPay' => 'nullable|numeric',
+            'summary.netPayInWords' => 'nullable|string',
         ]);
 
         $proforma = Proforma::create([
@@ -58,8 +58,8 @@ public function store(Request $request)
             'date' => $validated['date'],
             'customer_name' => $validated['customerName'],
             'customer_tin' => $validated['customerTin'] ?? null,
-            'product_name' => $validated['product_name'],
-            'types_of_jobs' => $validated['types_of_jobs'],
+            'status' => $validated['status'],
+            // 'types_of_jobs' => $validated['types_of_jobs'],
             'prepared_by' => $validated['preparedBy'] ?? null,
             'delivery_date' => $validated['deliveryDate'] ?? null,
             'ref_num' => $validated['refNum'] ?? null,
@@ -73,7 +73,7 @@ public function store(Request $request)
             'total' => $validated['summary']['total'],
             'total_vat' => $validated['summary']['totalVat'],
             'gross_total' => $validated['summary']['grossTotal'],
-            'withholding' => $validated['summary']['withholding'],
+            // 'withholding' => $validated['summary']['withholding'],
             'net_pay' => $validated['summary']['netPay'],
             'net_pay_in_words' => $validated['summary']['netPayInWords'],
         ]);
@@ -81,7 +81,7 @@ public function store(Request $request)
         if (!empty($validated['labourRows'])) {
             foreach ($validated['labourRows'] as $labour) {
                 $proforma->labourItems()->create([
-                    'description' => $labour['description'] ?? null,
+                    'description' => $labour['description'] ?? "",
                     'unit' => $labour['unit'] ?? null,
                     'est_time' => $labour['estTime'] ?? null,
                     'cost' => $labour['cost'] ?? null,
@@ -93,7 +93,7 @@ public function store(Request $request)
         if (!empty($validated['spareRows'])) {
             foreach ($validated['spareRows'] as $spare) {
                 $proforma->spareItems()->create([
-                    'description' => $spare['description'] ?? null,
+                    'description' => $spare['description'] ?? "",
                     'unit' => $spare['unit'] ?? null,
                     'brand' => $spare['brand'] ?? null,
                     'qty' => $spare['qty'] ?? null,
@@ -155,8 +155,8 @@ public function store(Request $request)
             'customerTin' => 'nullable|string',
             'deliveryDate' => 'nullable|date',
             'preparedBy' => 'nullable|string',
-            'product_name' => 'sometimes|string',
-            'types_of_jobs' => 'sometimes|string',
+            'status' => 'sometimes|string',
+            // 'types_of_jobs' => 'sometimes|string',
             'refNum' => 'nullable|string',
             'validityDate' => 'nullable|string',
             'notes' => 'nullable|string',
@@ -186,7 +186,7 @@ public function store(Request $request)
             'summary.total' => 'nullable|numeric',
             'summary.totalVat' => 'nullable|numeric',
             'summary.grossTotal' => 'nullable|numeric',
-            'summary.withholding' => 'nullable|numeric',
+            // 'summary.withholding' => 'nullable|numeric',
             'summary.netPay' => 'nullable|numeric',
             'summary.netPayInWords' => 'nullable|string',
         ]);
@@ -196,8 +196,8 @@ public function store(Request $request)
             'date' => $validated['date'] ?? $proforma->date,
             'customer_name' => $validated['customerName'] ?? $proforma->customer_name,
             'customer_tin' => $validated['customerTin'] ?? $proforma->customer_tin,
-            'product_name' => $validated['product_name'] ?? $proforma->product_name,
-            'types_of_jobs' => $validated['types_of_jobs'] ?? $proforma->types_of_jobs,
+            'status' => $validated['status'] ?? $proforma->status,
+            // 'types_of_jobs' => $validated['types_of_jobs'] ?? $proforma->types_of_jobs,
             'prepared_by' => $validated['preparedBy'] ?? $proforma->prepared_by,
             'delivery_date' => $validated['deliveryDate'] ?? $proforma->delivery_date,
             'ref_num' => $validated['refNum'] ?? $proforma->ref_num,
@@ -211,7 +211,7 @@ public function store(Request $request)
             'total' => $validated['summary']['total'] ?? $proforma->total,
             'total_vat' => $validated['summary']['totalVat'] ?? $proforma->total_vat,
             'gross_total' => $validated['summary']['grossTotal'] ?? $proforma->gross_total,
-            'withholding' => $validated['summary']['withholding'] ?? $proforma->withholding,
+            // 'withholding' => $validated['summary']['withholding'] ?? $proforma->withholding,
             'net_pay' => $validated['summary']['netPay'] ?? $proforma->net_pay,
             'net_pay_in_words' => $validated['summary']['netPayInWords'] ?? $proforma->net_pay_in_words,
         ]);
