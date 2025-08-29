@@ -121,7 +121,7 @@ import FinalPrintAttchemnt from "./components/payment/FinalPrintAttchemnt";
 import WeeklyChecklist from "./components/WeeklyChecklist";
 import AddPayment from "./components/payment/AddPayment";
 import ProformaForm from "./components/Proforma/ProformaForm";
-import ManageProforma from "./components/Proforma/ManageProforma";
+import ManageProforma from "./components/Proforma/ManageProforma/ManageProforma";
 import CompanySettings from "./components/CompanySettings";
 import NewAddSalesPage from "./components/NewAddSalesPage";
 import CreatePurchaseOrder from "./components/CreatePurchaseOrder";

@@ -120,7 +120,7 @@ public function store(Request $request)
     public function index()
     {
         $proformas = Proforma::with(['labourItems', 'spareItems'])
-            ->orderBy('created_at', 'desc')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         return response()->json($proformas);
