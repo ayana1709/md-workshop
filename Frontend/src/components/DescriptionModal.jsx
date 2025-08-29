@@ -26,7 +26,7 @@ const DescriptionPage = ({}) => {
   // Data states
   const [tasks, setTasks] = useState([]);
   const [spares, setSpares] = useState([]);
-  const [otherCost, setOtherCost] = useState(0);
+  const [otherCost, setOtherCost] = useState("");
   const [status, setStatus] = useState("not started");
   const [progress, setProgress] = useState(0);
   const [labourStatus, setLabourStatus] = useState("not started");
@@ -68,7 +68,7 @@ const DescriptionPage = ({}) => {
 
         setTasks(job.tasks || []);
         setSpares(job.spares || []);
-        setOtherCost(job.other_cost || 0);
+        setOtherCost(job.other_cost || "");
         setStatus(job.status || "not started");
         setProgress(job.progress || 0);
         setLabourStatus(job.labour_status || "not started");
@@ -219,7 +219,7 @@ const DescriptionPage = ({}) => {
         job_id: jobInfo.jobId,
         tasks,
         spares,
-        other_cost: parseFloat(otherCost || 0),
+        other_cost: parseFloat(otherCost || ""),
         vat_applied: applyVAT, // use applyVAT state
         vat_amount: totalVAT, // computed VAT
         total_cost: totalCost, // computed Grand Total
@@ -355,7 +355,7 @@ const DescriptionPage = ({}) => {
                                 handleTaskUpdate(i, "cost", e.target.value)
                               }
                               className="p-2 border rounded-md w-full text-sm"
-                              placeholder="0.00"
+                              // placeholder="0.00"
                             />
                           ) : (
                             <span>{task.cost}</span>
@@ -523,7 +523,7 @@ const DescriptionPage = ({}) => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold text-lg text-gray-800">Spares</h2>
                 <button
-                  onClick={() => setNewSpare({ name: "", cost: 0 })}
+                  onClick={() => setNewSpare({ name: "", cost: "" })}
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
                 >
                   + Add Spare
@@ -623,7 +623,7 @@ const DescriptionPage = ({}) => {
                               setNewSpare({ ...newSpare, cost: e.target.value })
                             }
                             className="p-2 border rounded-md w-full text-sm no-spinner"
-                            placeholder="0.00"
+                            // placeholder="0.00"
                           />
                         </td>
                         <td className="p-3 flex justify-center gap-2">

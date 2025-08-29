@@ -56,10 +56,10 @@ class RepairDetailController extends Controller
         'job_id'      => $jobId,
         'tasks'       => $request->tasks,
         'spares'      => $request->spares,
-        'other_cost'  => $request->other_cost ?? 0,
+        'other_cost'  => $request->other_cost ?? "",
         'vat_applied' => $request->vat_applied ?? false,
-        'vat_amount'  => $request->vat_amount ?? 0,
-        'total_cost'  => $request->total_cost ?? 0,
+        'vat_amount'  => $request->vat_amount ?? "",
+        'total_cost'  => $request->total_cost ?? "",
         'progress'    => $request->progress,
     ]);
 
@@ -97,10 +97,10 @@ public function update(Request $request, $jobId)
         [
             'tasks'        => $request->tasks ?? [],
             'spares'       => $request->spares ?? [],
-            'other_cost'   => $request->other_cost ?? 0,
+            'other_cost'   => $request->other_cost ?? "",
             'vat_applied'  => $request->vat_applied ?? false,
-            'vat_amount'   => $request->vat_amount ?? 0,
-            'total_cost'   => $request->total_cost ?? 0,
+            'vat_amount'   => $request->vat_amount ?? "",
+            'total_cost'   => $request->total_cost ?? "",
             'status'       => $request->status ?? null,
             // 'labour_status'=> $request->labour_status ?? null,
             'progress'     => $request->progress ?? 0,

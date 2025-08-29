@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CiSquareMore } from "react-icons/ci";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 
 const PurchaseOrder = () => {
   const location = useLocation();
@@ -41,16 +42,16 @@ const PurchaseOrder = () => {
     other: "",
   });
 
-  console.log(customer);
+  // console.log(customer);
 
   const [items, setItems] = useState([]);
   const navigate = useNavigate();
 
   // console.log(items);
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setCustomer((prev) => ({ ...prev, salesDate: today }));
-  }, []);
+  // useEffect(() => {
+  //   const today = new Date().toISOString().split("T")[0];
+  //   setCustomer((prev) => ({ ...prev, salesDate: today }));
+  // }, []);
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
       api
@@ -153,14 +154,18 @@ const PurchaseOrder = () => {
   };
 
   return (
-    <div className="p-4 bg-white max-w-[95%] mx-auto rounded-lg shadow-md">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 md:p-8 bg-white max-w-6xl mx-auto rounded-2xl shadow-lg border border-gray-100"
+    >
       {/* Title */}
-      <h2 className="text-xl font-bold mb-6 text-gray-800 uppercase tracking-wide">
+      <h2 className="text-2xl font-bold mb-8 text-gray-800 uppercase tracking-wide">
         Add to Purchase
       </h2>
 
       {/* Sales Info Form */}
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {[
           { label: "Purchase Date", type: "date", key: "salesDate" },
           {
@@ -175,12 +180,12 @@ const PurchaseOrder = () => {
           { label: "Remark", type: "text", key: "remark" },
         ].map((field, i) => (
           <div key={i} className="relative">
-            <label className="block text-sm font-medium text-gray-600 mb-1">
+            <label className="block text-sm font-semibold text-gray-600 mb-2">
               {field.label}
             </label>
             <input
               type={field.type}
-              className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
+              className="border border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm hover:border-gray-400"
               placeholder={field.label}
               value={customer[field.key]}
               onChange={(e) =>
@@ -191,44 +196,48 @@ const PurchaseOrder = () => {
               <button
                 type="button"
                 onClick={() => setShowCustomerInfo((prev) => !prev)}
-                className="absolute right-2 top-2 text-gray-600 hover:text-gray-800"
+                className="absolute right-3 top-10 text-gray-500 hover:text-blue-600 transition"
               >
                 <CiSquareMore size={24} />
               </button>
             )}
           </div>
         ))}
-
-        {/* Extra Customer Info */}
-        {showCustomerInfo && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border bg-gray-50 rounded-lg">
-            {[
-              { placeholder: "Mobile Number", key: "mobile" },
-              { placeholder: "Office Phone", key: "office" },
-              { placeholder: "Phone", key: "phone" },
-              { placeholder: "Website", key: "website" },
-              { placeholder: "Email", key: "email", type: "email" },
-              { placeholder: "Address", key: "address" },
-              { placeholder: "Bank Account", key: "bank" },
-              { placeholder: "Other Info", key: "other" },
-            ].map((field, i) => (
-              <input
-                key={i}
-                type={field.type || "text"}
-                className="border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-400 outline-none"
-                placeholder={field.placeholder}
-                value={customer[field.key]}
-                onChange={(e) =>
-                  setCustomer({ ...customer, [field.key]: e.target.value })
-                }
-              />
-            ))}
-          </div>
-        )}
       </div>
 
+      {/* Extra Customer Info */}
+      {showCustomerInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 border bg-gray-50 rounded-xl mb-8"
+        >
+          {[
+            { placeholder: "Mobile Number", key: "mobile" },
+            { placeholder: "Office Phone", key: "office" },
+            { placeholder: "Phone", key: "phone" },
+            { placeholder: "Website", key: "website" },
+            { placeholder: "Email", key: "email", type: "email" },
+            { placeholder: "Address", key: "address" },
+            { placeholder: "Bank Account", key: "bank" },
+            { placeholder: "Other Info", key: "other" },
+          ].map((field, i) => (
+            <input
+              key={i}
+              type={field.type || "text"}
+              className="border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm hover:border-gray-400"
+              placeholder={field.placeholder}
+              value={customer[field.key]}
+              onChange={(e) =>
+                setCustomer({ ...customer, [field.key]: e.target.value })
+              }
+            />
+          ))}
+        </motion.div>
+      )}
+
       {/* Items Table */}
-      <div className="w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+      <div className="w-full overflow-x-auto rounded-xl border border-gray-200 shadow-md">
         <table className="min-w-[900px] border-collapse text-sm">
           <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10">
             <tr>
@@ -253,8 +262,8 @@ const PurchaseOrder = () => {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {items.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-2 whitespace-nowrap">{index + 1}</td>
+              <tr key={index} className="hover:bg-blue-50 transition-colors">
+                <td className="px-4 py-2">{index + 1}</td>
                 {[
                   "item_name",
                   "part_number",
@@ -263,17 +272,12 @@ const PurchaseOrder = () => {
                   "price",
                   "saleQty",
                 ].map((key, i) => (
-                  <td
-                    key={i}
-                    className={`px-4 py-2 min-w-[${
-                      key === "unit" ? "100px" : "140px"
-                    }]`}
-                  >
+                  <td key={i} className="px-4 py-2">
                     <input
                       type={
                         key === "price" || key === "saleQty" ? "number" : "text"
                       }
-                      className="border rounded-md px-2 py-1 w-full focus:ring-2 focus:ring-blue-400 outline-none"
+                      className="border border-gray-300 rounded-md px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 outline-none transition shadow-sm hover:border-gray-400"
                       value={item[key] || ""}
                       onChange={(e) =>
                         handleItemChange(
@@ -287,10 +291,10 @@ const PurchaseOrder = () => {
                     />
                   </td>
                 ))}
-                <td className="px-4 py-2 text-center whitespace-nowrap">
+                <td className="px-4 py-2 text-center">
                   <button
                     onClick={() => handleDeleteRow(index)}
-                    className="text-red-500 hover:text-red-700 font-bold text-lg"
+                    className="text-red-500 hover:text-red-700 font-bold text-lg transition"
                   >
                     ×
                   </button>
@@ -302,26 +306,28 @@ const PurchaseOrder = () => {
       </div>
 
       {/* Add Row */}
-      <button
-        onClick={handleAddRow}
-        className="mt-4 px-4 py-2 border bg-gray-100 hover:bg-gray-200 rounded-md"
-      >
-        Add Row
-      </button>
-
-      {/* Action Buttons */}
-      <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-end">
+      <div className="mt-4">
         <button
-          onClick={handleSubmit}
-          className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+          onClick={handleAddRow}
+          className="px-5 py-2.5 border border-gray-300 bg-white hover:bg-gray-100 rounded-lg text-sm font-medium transition shadow-sm"
         >
-          Save Changes
-        </button>
-        <button className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400">
-          Reset
+          + Add Row
         </button>
       </div>
-    </div>
+
+      {/* Action Buttons */}
+      <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-end">
+        <button
+          onClick={handleSubmit}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow hover:bg-blue-700 transition font-semibold"
+        >
+          💾 Save Changes
+        </button>
+        <button className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition font-semibold">
+          🔄 Reset
+        </button>
+      </div>
+    </motion.div>
   );
 };
 

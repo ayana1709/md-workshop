@@ -51,12 +51,6 @@ const AddSalesPage = () => {
 
   const navigate = useNavigate();
 
-  console.log(items);
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setCustomer((prev) => ({ ...prev, salesDate: today }));
-  }, []);
-
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
       api
@@ -201,7 +195,7 @@ const AddSalesPage = () => {
 
       // ✅ Reset form fields
       setCustomer({
-        salesDate: new Date().toISOString().split("T")[0],
+        salesDate: "",
         customerName: "",
         companyName: "",
         tinNumber: "",
@@ -248,11 +242,13 @@ const AddSalesPage = () => {
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">
               Sales Date
+              <span className="text-red-700">*</span>
             </label>
             <input
               type="date"
               className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
               value={customer.salesDate}
+              required
               onChange={(e) =>
                 setCustomer({ ...customer, salesDate: e.target.value })
               }

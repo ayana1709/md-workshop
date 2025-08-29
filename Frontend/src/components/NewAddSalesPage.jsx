@@ -41,18 +41,12 @@ const NewAddSalesPage = () => {
     other: "",
   });
 
-  console.log(customer);
+  // console.log(customer);
 
   const [items, setItems] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigate = useNavigate();
-
-  console.log(items);
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setCustomer((prev) => ({ ...prev, salesDate: today }));
-  }, []);
 
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
@@ -79,7 +73,7 @@ const NewAddSalesPage = () => {
         partNumber: "",
         brand: "",
         unit: "",
-        price: 0,
+        price: "",
         quantity: "",
 
         saleQty: 1,
