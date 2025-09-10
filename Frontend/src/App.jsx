@@ -125,9 +125,10 @@ import ManageProforma from "./components/Proforma/ManageProforma/ManageProforma"
 import CompanySettings from "./components/CompanySettings";
 import NewAddSalesPage from "./components/NewAddSalesPage";
 import CreatePurchaseOrder from "./components/CreatePurchaseOrder";
-import ProformaPrint from "./components/Proforma/ProformaPrint";
+// import ProformaPrint from "./components/Proforma/ProformaPrint";
 import DescriptionModal from "./components/DescriptionModal";
 import DescriptionPage from "./components/DescriptionModal";
+import ProformaPrint from "./components/Proforma/ManageProforma/modals/ProformaPrint";
 // import Outsource from "./components/Outsource";
 // import PrintInspection from "./components/PrintInspection";
 // import PrintWheel from "./components/PrintWheel";

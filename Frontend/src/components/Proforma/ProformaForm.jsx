@@ -7,7 +7,7 @@ import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
 import ProformaHeader from "./ProformaHeader";
 import ProformaTable from "./ProformaTable";
-import ProformaPrint from "./ProformaPrint"; // ✅ import your print layout
+import ProformaPrint from "./ManageProforma/modals/ProformaPrint"; // ✅ import your print layout
 import { useStores } from "@/contexts/storeContext";
 import ProformaFooter from "./ProformaFooter";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +23,6 @@ function ProformaForm() {
     refNum: "",
     customerName: "",
     status: "",
-    // types_of_jobs: "",
     customerTin: "",
     validityDate: "",
     deliveryDate: "",
@@ -37,7 +36,7 @@ function ProformaForm() {
   ]);
 
   const [spareRows, setSpareRows] = useState([
-    { description: "", unit: "", brand: "", qty: "", unitPrice: "", total: 0 },
+    { description: "", unit: "", brand: "", qty: "", unit_Price: "", total: 0 },
   ]);
 
   const [labourVat, setLabourVat] = useState(false);
@@ -48,13 +47,9 @@ function ProformaForm() {
     total: "",
     totalVat: "",
     grossTotal: "",
-    // withholding: 0,
     netPay: "",
     netPayInWords: "",
   });
-  // const [triggerPrint, setTriggerPrint] = useState(false);
-
-  // ✅ ref ONLY for printing component
   const printRef = useRef();
 
   const handlePrint = useReactToPrint({
@@ -63,12 +58,7 @@ function ProformaForm() {
   });
 
   const validateForm = () => {
-    const requiredFields = [
-      "jobId",
-      "customerName",
-      // "product_name",
-      // "types_of_jobs",
-    ];
+    const requiredFields = ["jobId", "customerName"];
     const missing = requiredFields.filter((field) => !formData[field]);
     if (missing.length > 0) {
       Swal.fire(
@@ -128,7 +118,6 @@ function ProformaForm() {
       refNum: "",
       customerName: "",
       status: "",
-      // types_of_jobs: "",
       customerTin: "",
       validityDate: "",
       deliveryDate: "",
@@ -145,7 +134,7 @@ function ProformaForm() {
         unit: "",
         brand: "",
         qty: "",
-        unitPrice: "",
+        unit_Price: "",
         total: 0,
       },
     ]);
@@ -198,20 +187,6 @@ function ProformaForm() {
             </div>
           </div>
         </main>
-      </div>
-
-      {/* ✅ Hidden printable component */}
-
-      <div style={{ display: "none" }}>
-        <ProformaPrint
-          ref={printRef}
-          data={{
-            ...formData,
-            labour_items: labourRows,
-            spare_items: spareRows,
-            summary,
-          }}
-        />
       </div>
     </div>
   );

@@ -45,12 +45,23 @@ const AddSalesPage = () => {
     other: "",
   });
 
-  console.log(customer);
+  // console.log(customer);
 
   const [items, setItems] = useState([]);
 
   const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
 
+  const validate = () => {
+    let tempErrors = {};
+
+    if (!customer.salesDate) {
+      tempErrors.salesDate = "Sales date is required.";
+    }
+
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0; // ✅ true if no errors
+  };
   useEffect(() => {
     if (selectedIds && selectedIds.length > 0) {
       api
@@ -138,8 +149,41 @@ const AddSalesPage = () => {
   const grandTotal = subTotal + vatAmount - discount;
 
   const PaidAmount = grandTotal;
-  const handleSubmit = async () => {
-    // Resolve banks for Transfer case
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // 🔎 Collect validation errors
+    let errorMessages = [];
+
+    if (!customer.salesDate) {
+      errorMessages.push("Sales date is required.");
+    }
+    // if (!customer.customerName) {
+    //   errorMessages.push("Customer name is required.");
+    // }
+    // if (items.length === 0) {
+    //   errorMessages.push("At least one item must be added.");
+    // }
+    // if (!paymentType) {
+    //   errorMessages.push("Payment type is required.");
+    // }
+    // if (paymentType === "Transfer") {
+    //   if (!fromBank && !customFromBank) {
+    //     errorMessages.push("From Bank is required for transfer.");
+    //   }
+    //   if (!toBank && !customToBank) {
+    //     errorMessages.push("To Bank is required for transfer.");
+    //   }
+    // }
+
+    // ❌ Stop if errors exist
+    if (errorMessages.length > 0) {
+      errorMessages.forEach((msg) => toast.error(msg));
+      return;
+    }
+
+    // ✅ Resolve banks for Transfer case
     let resolvedFromBank = fromBank === "Other" ? customFromBank : fromBank;
     let resolvedToBank = toBank === "Other" ? customToBank : toBank;
 
@@ -241,18 +285,25 @@ const AddSalesPage = () => {
           {/* Sales Date */}
           <div className="flex flex-col">
             <label className="text-sm font-medium text-gray-700 mb-1">
-              Sales Date
-              <span className="text-red-700">*</span>
+              Sales Date <span className="text-red-700">*</span>
             </label>
             <input
               type="date"
-              className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
+              className={`border rounded-lg px-3 py-2 text-sm w-full transition ${
+                errors.salesDate
+                  ? "border-red-500 focus:border-red-500 focus:ring focus:ring-red-200"
+                  : "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+              }`}
               value={customer.salesDate}
-              required
               onChange={(e) =>
                 setCustomer({ ...customer, salesDate: e.target.value })
               }
             />
+            {errors.salesDate && (
+              <span className="text-red-500 text-xs mt-1">
+                {errors.salesDate}
+              </span>
+            )}
           </div>
 
           {/* Customer Name */}
@@ -421,8 +472,8 @@ const AddSalesPage = () => {
                     value={item.brand || ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      handleItemChange(index, "part_number", val);
-                      handlePartNumberChange(index, val);
+                      handleItemChange(index, "brand", val);
+                      // handlePartNumberChange(index, val);
                     }}
                   />
                 </td>

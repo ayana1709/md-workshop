@@ -6,8 +6,9 @@ import Swal from "sweetalert2";
 import ProformaTable from "./ProformaTable";
 import ProformaSearch from "./ProformaSearch";
 import ViewProformaModal from "./modals/ViewProformaModal";
-import PrintProformaModal from "./modals/PrintProformaModal";
+// import PrintProformaModal from "./modals/ProformaPrint";
 import EditProformaModal from "./modals/EditProformaModal";
+import ProformaPrint from "./modals/ProformaPrint";
 
 function ManageProforma() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -110,7 +111,7 @@ function ManageProforma() {
         open={viewOpen}
         onClose={() => setViewOpen(false)}
       />
-      <PrintProformaModal
+      <ProformaPrint
         proforma={selectedProforma}
         open={printOpen}
         onClose={() => setPrintOpen(false)}

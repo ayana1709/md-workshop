@@ -10,10 +10,11 @@ return new class extends Migration {
         Schema::create('labour_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('proforma_id')->constrained('proformas')->onDelete('cascade');
-            $table->string('description');
-            $table->integer('quantity')->default(1);
-            $table->decimal('unit_price', 10, 2)->default(0);
-            $table->decimal('total', 10, 2);
+            $table->string('description'); // Work description
+            $table->string('unit')->nullable(); // Unit of measurement (e.g., hr, job)
+            $table->decimal('cost', 10, 2)->nullable()->default(0); // Cost per unit
+            $table->decimal('est_time', 10, 2)->nullable()->default(0); // Estimated time
+            $table->decimal('total', 10, 2); // Total for this row (cost * est_time)
             $table->timestamps();
         });
     }

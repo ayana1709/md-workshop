@@ -15,6 +15,7 @@ import DropdownButton from "./DropdownButton";
 import ButtonRepairOperation from "./ButtonRepairOperation";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import DescriptionModal from "./DescriptionModal";
+import StatusCell from "./StatusCell";
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -559,13 +560,7 @@ const JobOrderList = () => {
 
                   {/* Status */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap ${
-                        statusStyles[repair.status] || "bg-gray-200 text-black"
-                      }`}
-                    >
-                      {repair.status}
-                    </span>
+                    <StatusCell repair={repair} />
                   </td>
 
                   {/* Actions */}

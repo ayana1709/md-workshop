@@ -10,6 +10,7 @@ class ProformaController extends Controller
 public function store(Request $request)
 {
     try {
+        // Validate request data
         $validated = $request->validate([
             'jobId' => 'nullable|string',
             'date' => 'required|date',
@@ -18,9 +19,8 @@ public function store(Request $request)
             'deliveryDate' => 'nullable|date',
             'preparedBy' => 'nullable|string',
             'status' => 'required|string',
-            // 'types_of_jobs' => 'nullabe|string',
             'refNum' => 'nullable|string',
-            'validityDate' => 'nullable|string', // ✅ allow letters
+            'validityDate' => 'nullable|string',
             'notes' => 'nullable|string',
             'paymentBefore' => 'nullable|numeric',
             'discount' => 'nullable|numeric',
@@ -38,7 +38,7 @@ public function store(Request $request)
             'spareRows.*.unit' => 'nullable|string',
             'spareRows.*.brand' => 'nullable|string',
             'spareRows.*.qty' => 'nullable|numeric',
-            'spareRows.*.unitPrice' => 'nullable|numeric',
+            'spareRows.*.unit_price' => 'nullable|numeric',
             'spareRows.*.total' => 'nullable|numeric',
 
             'labourVat' => 'required|boolean',
@@ -48,18 +48,17 @@ public function store(Request $request)
             'summary.total' => 'nullable|numeric',
             'summary.totalVat' => 'nullable|numeric',
             'summary.grossTotal' => 'nullable|numeric',
-            // 'summary.withholding' => 'nullable|numeric',
             'summary.netPay' => 'nullable|numeric',
             'summary.netPayInWords' => 'nullable|string',
         ]);
 
+        // Create Proforma record
         $proforma = Proforma::create([
             'job_id' => $validated['jobId'] ?? null,
             'date' => $validated['date'],
             'customer_name' => $validated['customerName'],
             'customer_tin' => $validated['customerTin'] ?? null,
             'status' => $validated['status'],
-            // 'types_of_jobs' => $validated['types_of_jobs'],
             'prepared_by' => $validated['preparedBy'] ?? null,
             'delivery_date' => $validated['deliveryDate'] ?? null,
             'ref_num' => $validated['refNum'] ?? null,
@@ -70,35 +69,36 @@ public function store(Request $request)
             'other_cost' => $validated['otherCost'] ?? 0,
             'labour_vat' => $validated['labourVat'],
             'spare_vat' => $validated['spareVat'],
-            'total' => $validated['summary']['total'],
-            'total_vat' => $validated['summary']['totalVat'],
-            'gross_total' => $validated['summary']['grossTotal'],
-            // 'withholding' => $validated['summary']['withholding'],
-            'net_pay' => $validated['summary']['netPay'],
-            'net_pay_in_words' => $validated['summary']['netPayInWords'],
+            'total' => $validated['summary']['total'] ?? 0,
+            'total_vat' => $validated['summary']['totalVat'] ?? 0,
+            'gross_total' => $validated['summary']['grossTotal'] ?? 0,
+            'net_pay' => $validated['summary']['netPay'] ?? 0,
+            'net_pay_in_words' => $validated['summary']['netPayInWords'] ?? "",
         ]);
 
+        // Store Labour Items
         if (!empty($validated['labourRows'])) {
             foreach ($validated['labourRows'] as $labour) {
                 $proforma->labourItems()->create([
                     'description' => $labour['description'] ?? "",
                     'unit' => $labour['unit'] ?? null,
-                    'est_time' => $labour['estTime'] ?? null,
-                    'cost' => $labour['cost'] ?? null,
-                    'total' => $labour['total'] ?? null,
+                    'est_time' => $labour['estTime'] ?? 0,
+                    'cost' => $labour['cost'] ?? 0,
+                    'total' => $labour['total'] ?? ($labour['cost'] * $labour['estTime'] ?? 0),
                 ]);
             }
         }
 
+        // Store Spare Items
         if (!empty($validated['spareRows'])) {
             foreach ($validated['spareRows'] as $spare) {
                 $proforma->spareItems()->create([
                     'description' => $spare['description'] ?? "",
                     'unit' => $spare['unit'] ?? null,
                     'brand' => $spare['brand'] ?? null,
-                    'qty' => $spare['qty'] ?? null,
-                    'unit_price' => $spare['unitPrice'] ?? null,
-                    'total' => $spare['total'] ?? null,
+                    'qty' => $spare['qty'] ?? 0,
+                    'unit_price' => $spare['unit_price'] ?? 0,
+                    'total' => $spare['total'] ?? ($spare['qty'] * $spare['unit_price'] ?? 0),
                 ]);
             }
         }
@@ -114,6 +114,8 @@ public function store(Request $request)
         ], 500);
     }
 }
+
+
 
 
     // ✅ List all proformas grouped by job_id
@@ -176,7 +178,7 @@ public function store(Request $request)
             'spareRows.*.unit' => 'nullable|string',
             'spareRows.*.brand' => 'nullable|string',
             'spareRows.*.qty' => 'nullable|numeric',
-            'spareRows.*.unitPrice' => 'nullable|numeric',
+            'spareRows.*.unit_price' => 'nullable|numeric',
             'spareRows.*.total' => 'nullable|numeric',
 
             'labourVat' => 'nullable|boolean',
@@ -239,7 +241,7 @@ public function store(Request $request)
                     'unit' => $spare['unit'] ?? null,
                     'brand' => $spare['brand'] ?? null,
                     'qty' => $spare['qty'] ?? null,
-                    'unit_price' => $spare['unitPrice'] ?? null,
+                    'unit_price' => $spare['unit_price'] ?? 0,
                     'total' => $spare['total'] ?? null,
                 ]);
             }

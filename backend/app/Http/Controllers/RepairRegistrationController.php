@@ -139,7 +139,7 @@ public function update(Request $request, $id)
     $validated = validator($payload, [
         'job_id' => 'required|string|unique:repair_registrations,job_id,' . $repair->id,
         'customer_name' => 'required|string|max:255',
-        'customer_type' => 'required|string|max:255',
+        // 'customer_type' => 'required|string|max:255',
         'mobile' => 'required|string|max:20',
         'types_of_jobs' => 'nullable|string',
         'received_date' => 'required|date',
@@ -205,7 +205,7 @@ public function show($id)
         'id' => $repair->id,
         'job_id' => $repair->job_id,
         'customer_name' => $repair->customer_name,
-        'customer_type' => $repair->customer_type,
+        // 'customer_type' => $repair->customer_type,
         'mobile' => $repair->mobile,
         'types_of_jobs' => $repair->types_of_jobs,
         'product_name' => $repair->product_name,

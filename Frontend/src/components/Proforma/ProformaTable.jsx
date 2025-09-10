@@ -1,6 +1,4 @@
-// import React, { useState, useEffect } from "react";
 import React, { useState, useEffect } from "react";
-
 import { toWords } from "number-to-words";
 
 const numberToWords = (num) => {
@@ -28,16 +26,20 @@ function ProformaTable({
   setDiscount,
   setSummary, // ✅ new
 }) {
+  const vatRate = 0.15;
+
   // Handlers for Labour
   const handleLabourChange = (index, field, value) => {
     const updated = [...labourRows];
     updated[index][field] = value;
 
+    // Calculate total for labour row (cost * estTime)
     if (field === "cost" || field === "estTime") {
       const cost = parseFloat(updated[index].cost) || 0;
       const time = parseFloat(updated[index].estTime) || 0;
       updated[index].total = cost * time;
     }
+
     setLabourRows(updated);
   };
 
@@ -46,24 +48,15 @@ function ProformaTable({
     const updated = [...spareRows];
     updated[index][field] = value;
 
-    if (field === "qty" || field === "unitPrice") {
+    // Ensure unit_price and qty are numbers, fallback to 0 if not valid
+    if (field === "qty" || field === "unit_price") {
       const qty = parseFloat(updated[index].qty) || 0;
-      const price = parseFloat(updated[index].unitPrice) || 0;
+      const price = parseFloat(updated[index].unit_price) || 0;
       updated[index].total = qty * price;
     }
+
     setSpareRows(updated);
   };
-
-  useEffect(() => {
-    setSummary({
-      total,
-      totalVat,
-      grossTotal,
-
-      netPay,
-      netPayInWords: numberToWords(netPay),
-    });
-  }, [labourRows, spareRows, labourVat, spareVat, otherCost, discount]);
 
   // Row controls
   const addLabourRow = () =>
@@ -79,7 +72,7 @@ function ProformaTable({
         unit: "",
         brand: "",
         qty: "",
-        unitPrice: "",
+        unit_price: "",
         total: 0,
       },
     ]);
@@ -88,23 +81,34 @@ function ProformaTable({
   const removeSpareRow = (i) =>
     setSpareRows(spareRows.filter((_, idx) => idx !== i));
 
-  const vatRate = 0.15;
-  // const withholdingRate = 0.02;
-  // Subtotals
+  // Subtotals for labour and spare
   const labourSubtotal = labourRows.reduce((sum, r) => sum + (r.total || 0), 0);
   const spareSubtotal = spareRows.reduce((sum, r) => sum + (r.total || 0), 0);
-  // Apply VAT if selected
+
+  // Calculate VAT amounts
   const labourVatAmount = labourVat ? labourSubtotal * vatRate : 0;
   const spareVatAmount = spareVat ? spareSubtotal * vatRate : 0;
+
+  // Total calculations
   const labourTotal = labourSubtotal + labourVatAmount;
   const spareTotal = spareSubtotal + spareVatAmount;
-  // Proforma Summary Calculations
+
   const total = labourTotal + spareTotal;
   const totalVat = labourVatAmount + spareVatAmount;
   const grossTotal =
     total + (parseFloat(otherCost) || 0) - (parseFloat(discount) || 0);
-  // const  = grossTotal * Rate;
   const netPay = grossTotal;
+
+  // Updating the summary whenever values change
+  useEffect(() => {
+    setSummary({
+      total,
+      totalVat,
+      grossTotal,
+      netPay,
+      netPayInWords: numberToWords(netPay),
+    });
+  }, [labourRows, spareRows, labourVat, spareVat, otherCost, discount]);
 
   // Styles
   const tableHeaderStyle =
@@ -181,7 +185,7 @@ function ProformaTable({
                       onChange={(e) =>
                         handleLabourChange(i, "estTime", e.target.value)
                       }
-                      className={`${input} w-full text-right no-arrows min-w-[120px]`}
+                      className={`${input} w-full text-right no-arrows min-w-[120px] no-spinner`}
                     />
                   </td>
                   <td className={cell}>
@@ -191,7 +195,7 @@ function ProformaTable({
                       onChange={(e) =>
                         handleLabourChange(i, "cost", e.target.value)
                       }
-                      className={`${input} w-full text-right no-arrows min-w-[120px]`}
+                      className={`${input} w-full text-right no-arrows min-w-[120px] no-spinner`}
                     />
                   </td>
                   <td
@@ -234,8 +238,7 @@ function ProformaTable({
       </div>
 
       {/* === SPARE CHANGE TABLE === */}
-      {/* Same treatment as Labour Table → use w-full for inputs on phones */}
-      {/* === SPARE CHANGE TABLE === */}
+      {/* Same treatment as Labour Table */}
       <div className="overflow-hidden border rounded-xl shadow-lg bg-white max-w-full">
         {/* Header */}
         <div className="flex items-center justify-between px-3 sm:px-4 py-3 bg-gradient-to-r flex-wrap gap-2">
@@ -315,18 +318,18 @@ function ProformaTable({
                       onChange={(e) =>
                         handleSpareChange(i, "qty", e.target.value)
                       }
-                      className={`${input} w-full text-right no-arrows min-w-[100px]`}
+                      className={`${input} w-full text-right no-arrows min-w-[100px] no-spinner`}
                     />
                   </td>
 
                   <td className={cell}>
                     <input
                       type="number"
-                      value={row.unitPrice}
+                      value={row.unit_price}
                       onChange={(e) =>
-                        handleSpareChange(i, "unitPrice", e.target.value)
+                        handleSpareChange(i, "unit_price", e.target.value)
                       }
-                      className={`${input} w-full text-right no-arrows min-w-[120px]`}
+                      className={`${input} w-full text-right no-arrows min-w-[120px] no-spinner`}
                     />
                   </td>
 

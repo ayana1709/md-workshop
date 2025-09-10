@@ -59,8 +59,8 @@ function DropdownButton({
     "Proceed to workorder",
     "send to payment",
     "Print job Card",
-    "Print Summary",
-    "change status",
+    "Job Summary",
+    // "change status",
   ];
 
   return (
@@ -91,7 +91,7 @@ function DropdownButton({
               setIsStatusModalOpen(true);
               setSelectedRepairId(id);
               onClose();
-            } else if (option === "Print Summary") {
+            } else if (option === "job Summary") {
               handlePrintsummary(id);
               onClose();
             } else if (option === "Print job Card") {
