@@ -9,12 +9,10 @@ import {
 } from "@tanstack/react-table";
 import api from "@/api";
 import { FaSearch, FaFileExcel, FaPrint, FaChevronDown } from "react-icons/fa";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import Sidebar from "@/partials/Sidebar";
-import BackButton from "../BackButton";
 import { useNavigate } from "react-router-dom";
 import ActionDropdown from "./ActionDropdown";
 import Swal from "sweetalert2";
@@ -81,8 +79,8 @@ function AllPaymentsTable() {
 
     if (result.isConfirmed) {
       try {
-        await api.delete(`/payments/by-job/${jobId}`);
-        setData((prev) => prev.filter((d) => d.job_id !== jobId)); // <-- key update
+        await api.delete(`/payments/job/${jobId}`);
+        setData((prev) => prev.filter((d) => d.jobId !== jobId));
 
         Swal.fire({
           icon: "success",
@@ -140,7 +138,7 @@ function AllPaymentsTable() {
         [
           "Job ID",
           "Customer Name",
-          // "Plate Number",
+          "Plate Number",
           "Method",
           "Status",
           "Paid",
@@ -169,18 +167,24 @@ function AllPaymentsTable() {
           />
         ),
       },
-      { accessorKey: "job_id", header: "Job ID" },
-      { accessorKey: "customer_name", header: "Customer Name" },
-      // { accessorKey: "plate_number", header: "Plate Number" },
-      { accessorKey: "payment_method", header: "Method" },
-      { accessorKey: "payment_status", header: "Status" },
-      { accessorKey: "paid_amount", header: "Paid (ETB)" },
-      { accessorKey: "remaining_amount", header: "Remaining (ETB)" },
-      { accessorKey: "ref_no", header: "Ref No" },
-      { accessorKey: "payment_date", header: "Date" },
-      { accessorKey: "paid_by", header: "Paid By" },
-      { accessorKey: "approved_by", header: "Approved By" },
-
+      { accessorKey: "jobId", header: "Job ID" },
+      { accessorKey: "name", header: "Customer Name" },
+      { accessorKey: "mobile", header: "Mobile" },
+      // { accessorKey: "plate", header: "Plate Number" },
+      { accessorKey: "model", header: "Model" },
+      { accessorKey: "priority", header: "Priority" },
+      { accessorKey: "receivedDate", header: "Received Date" },
+      { accessorKey: "dateOut", header: "Date Out" },
+      { accessorKey: "method", header: "Method" },
+      { accessorKey: "status", header: "Status" },
+      { accessorKey: "paidAmount", header: "Paid (ETB)" },
+      { accessorKey: "remainingAmount", header: "Remaining (ETB)" },
+      // { accessorKey: "reference", header: "Ref No" },
+      // { accessorKey: "date", header: "Date" },
+      // { accessorKey: "paidBy", header: "Paid By" },
+      // { accessorKey: "approvedBy", header: "Approved By" },
+      // { accessorKey: "reason", header: "Reason" },
+      // { accessorKey: "remarks", header: "Remarks" },
       {
         id: "actions",
         header: "Actions",
@@ -205,7 +209,6 @@ function AllPaymentsTable() {
 
   const table = useReactTable({
     data: filteredData,
-
     columns,
     state: {
       globalFilter,
@@ -219,73 +222,85 @@ function AllPaymentsTable() {
   });
 
   return (
-    <div className="flex min-h-screen overflow-hidden">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+      {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white overflow-y-auto">
+      {/* Main Content Wrapper */}
+      <div className="flex flex-col flex-1 overflow-hidden">
+        {/* Header */}
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="p-4 sm:p-6 max-w-9xl mx-auto">
+
+        {/* Scrollable Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {/* Title */}
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
               All Payments
             </h2>
           </div>
-          <div className="flex flex-wrap justify-between items-center gap-4 mb-4">
-            {/* Left: Search + Toggle */}
 
-            <div className="flex items-center gap-3 flex-wrap">
-              {/* 🔍 Global search */}
-              <div className="relative flex items-center">
+          {/* Filters & Actions */}
+          <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-4">
+            {/* 🔍 Search + Filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <div className="relative flex items-center w-full sm:w-64">
                 <FaSearch className="absolute left-3 text-gray-400" />
                 <input
                   type="text"
                   value={globalFilter ?? ""}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   placeholder="Search payments..."
-                  className="pl-10 pr-3 py-2 border rounded-md text-sm"
+                  className="w-full pl-10 pr-3 py-2 border rounded-md text-sm"
                 />
               </div>
 
-              {/* 📅 Date Range */}
-              <div className="flex items-center gap-2 text-sm">
-                <label>From:</label>
-                <input
-                  type="date"
-                  value={dateRange.from}
-                  onChange={(e) =>
-                    setDateRange((prev) => ({ ...prev, from: e.target.value }))
-                  }
-                  className="border rounded px-2 py-1"
-                />
-                <label>To:</label>
-                <input
-                  type="date"
-                  value={dateRange.to}
-                  onChange={(e) =>
-                    setDateRange((prev) => ({ ...prev, to: e.target.value }))
-                  }
-                  className="border rounded px-2 py-1"
-                />
+              {/* Date Filters */}
+              <div className="flex flex-wrap gap-2 text-sm">
+                <div className="flex items-center gap-1">
+                  <label>From:</label>
+                  <input
+                    type="date"
+                    value={dateRange.from}
+                    onChange={(e) =>
+                      setDateRange((prev) => ({
+                        ...prev,
+                        from: e.target.value,
+                      }))
+                    }
+                    className="border rounded px-2 py-1"
+                  />
+                </div>
+                <div className="flex items-center gap-1">
+                  <label>To:</label>
+                  <input
+                    type="date"
+                    value={dateRange.to}
+                    onChange={(e) =>
+                      setDateRange((prev) => ({ ...prev, to: e.target.value }))
+                    }
+                    className="border rounded px-2 py-1"
+                  />
+                </div>
               </div>
 
-              {/* ✅ Status Filter */}
-              <div className="text-sm">
+              {/* Status Filter */}
+              <div className="text-sm w-full sm:w-auto">
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="border rounded px-3 py-2"
+                  className="border rounded px-3 py-2 w-full sm:w-auto"
                 >
                   <option value="">All Statuses</option>
-                  <option value="Full Payment">Full Payment </option>
+                  <option value="Full Payment">Full Payment</option>
                   <option value="Advance">Advance</option>
                   <option value="Credit">Credit</option>
                   <option value="Remaining">Remaining</option>
-
-                  {/* Add more statuses as needed */}
                 </select>
               </div>
 
-              {/* 📋 Column toggle */}
+              {/* Columns Dropdown */}
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
@@ -293,7 +308,6 @@ function AllPaymentsTable() {
                 >
                   Columns <FaChevronDown className="ml-2" />
                 </button>
-
                 {showColumnsDropdown && (
                   <div className="absolute z-10 mt-2 w-48 bg-white dark:bg-gray-800 border rounded shadow-lg p-2">
                     {table.getAllLeafColumns().map((col) => (
@@ -314,36 +328,40 @@ function AllPaymentsTable() {
               </div>
             </div>
 
-            {/* Right: Excel, PDF, Delete */}
-            <div className="flex gap-2">
+            {/* Export & Actions */}
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleExportExcel}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm"
+                className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
               >
                 <FaFileExcel /> Excel
               </button>
               <button
                 onClick={handlePrintPDF}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 text-sm"
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
               >
                 <FaPrint /> PDF
               </button>
               <button
                 onClick={handleBulkDelete}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
               >
                 Delete Selected
               </button>
             </div>
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto rounded-lg shadow border">
-            <table className="min-w-full table-auto">
+            <table className="min-w-full text-sm">
               <thead className="bg-gradient-to-r from-gray-700 to-gray-700 text-white">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <th key={header.id} className="px-4 py-2 text-left">
+                      <th
+                        key={header.id}
+                        className="px-2 sm:px-4 py-2 text-left whitespace-nowrap"
+                      >
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
@@ -360,7 +378,10 @@ function AllPaymentsTable() {
                     className="even:bg-gray-50 dark:even:bg-gray-700"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-2">
+                      <td
+                        key={cell.id}
+                        className="px-2 sm:px-4 py-2 whitespace-nowrap"
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -373,23 +394,24 @@ function AllPaymentsTable() {
             </table>
           </div>
 
-          <div className="mt-6 flex justify-between items-center">
+          {/* Pagination */}
+          <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
             <div className="text-sm text-gray-700 dark:text-gray-300">
               Page {table.getState().pagination.pageIndex + 1} of{" "}
               {table.getPageCount()}
             </div>
-            <div className="space-x-2">
+            <div className="flex gap-2 w-full sm:w-auto justify-center">
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="px-3 py-1 bg-gray-300 dark:bg-gray-600 rounded disabled:opacity-50"
+                className="px-3 py-1 bg-gray-300 dark:bg-gray-600 rounded disabled:opacity-50 w-full sm:w-auto"
               >
                 Prev
               </button>
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="px-3 py-1 bg-gray-300 dark:bg-gray-600 rounded disabled:opacity-50"
+                className="px-3 py-1 bg-gray-300 dark:bg-gray-600 rounded disabled:opacity-50 w-full sm:w-auto"
               >
                 Next
               </button>

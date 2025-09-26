@@ -58,6 +58,7 @@ export default function ManageSales() {
 
   const companyInfo = {
     name: companyData?.name_en || "Company Name",
+    nameAm: companyData?.name_am || "የኩባኒያ ስም",
     phone: companyData?.phone || "Phone",
     address: companyData?.address || "Address",
     tin: companyData?.tin ? `TIN: ${companyData.tin}` : "TIN: -",
@@ -143,137 +144,210 @@ export default function ManageSales() {
           }
         };
 
-        const handlePrint = () => {
-          const printWindow = window.open("", "_blank");
+        const handlePrintById = async (saleId) => {
+          try {
+            const { data: sale } = await api.get(`/sales/${saleId}`);
+            const { name, nameAm, phone, address, tin, logo } = companyInfo;
 
-          const { name, phone, address, tin, logo } = companyInfo;
+            const {
+              customer_name,
+              sales_date,
+              total_amount,
+              sub_total,
+              discount,
+              vat_rate,
+              paid_amount,
+              due_amount,
+              payment_status,
+              payment_type,
+              remark,
+              id,
+              items,
+            } = sale;
 
-          const {
-            customer_name,
-            sales_date,
-            total_amount,
-            paid_amount,
-            due_amount,
-            payment_status,
-            payment_type,
-            remark,
-            id,
-          } = sale;
+            // Convert total to words (simple version)
+            const amountInWords = `${parseFloat(total_amount).toFixed(
+              2
+            )} Birr Only`;
 
-          const qrData = `Receipt No: ${id} - Customer: ${customer_name}`;
-          const qrCodeURL = `https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(
-            qrData
-          )}`;
+            const style = `
+      <style>
+        body { font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
+        .invoice-box { width: 100%; position: relative; z-index: 1; }
+        .header { text-align: center; margin-bottom: 10px; font-weight: bold; color: #003366; }
+        .header h2 { margin: 0; font-size: 18px; }
+        .info { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .info td { padding: 3px 6px; font-size: 12px; }
+        .items { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .items th, .items td { border: 1px solid #000; padding: 5px; font-size: 12px; text-align: left; }
+        .items th { background: #f2f2f2; text-align: center; }
+        .summary { width: 40%; float: right; margin-top: 15px; border-collapse: collapse; }
+        .summary th, .summary td { border: 1px solid #000; padding: 5px; font-size: 12px; }
+        .footer { margin-top: 40px; font-size: 11px; text-align: center; color: #444; }
+        .signatures { width: 100%; margin-top: 30px; }
+        .signatures td { padding: 20px; font-size: 12px; }
 
-          const barcodeURL = `https://barcode.tec-it.com/barcode.ashx?data=${id}&code=Code128&dpi=96`;
+        /* Watermark */
+        .watermark {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          z-index: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          pointer-events: none;
+        }
+        .watermark span {
+          transform: rotate(-45deg);
+          font-size: 50px;
+          color: rgba(150, 150, 150, 0.15);
+          font-weight: bold;
+          white-space: nowrap;
+        }
+      </style>
+    `;
 
-          const style = `
-    <style>
-      body {
-        font-family: 'Arial', sans-serif;
-        padding: 20px;
-        font-size: 13px;
-        color: #333;
-      }
-      .header, .footer {
-        text-align: center;
-      }
-      .company-logo {
-        max-height: 60px;
-        margin-bottom: 10px;
-      }
-      .info-table {
-        width: 100%;
-        margin-top: 20px;
-        border-collapse: collapse;
-      }
-      .info-table th,
-      .info-table td {
-        text-align: left;
-        padding: 6px 8px;
-        border-bottom: 1px solid #ccc;
-      }
-      .footer {
-        margin-top: 40px;
-        font-size: 12px;
-      }
-      .footer hr {
-        margin: 10px 0;
-      }
-      .barcode, .qrcode {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-      }
-      .amharic-label {
-        font-family: 'Noto Sans Ethiopic', sans-serif;
-        font-size: 13px;
-        color: #444;
-      }
-    </style>
-  `;
+            const itemsTable = items
+              .map(
+                (it, idx) => `
+        <tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${it.pivot.item_name}</td>
+          <td>${it.pivot.unit || "-"}</td>
+          <td style="text-align:center">${it.pivot.sale_quantity}</td>
+          <td style="text-align:right">${parseFloat(
+            it.pivot.selling_price
+          ).toFixed(2)}</td>
+          <td style="text-align:right">${(
+            parseFloat(it.pivot.sale_quantity) *
+            parseFloat(it.pivot.selling_price)
+          ).toFixed(2)}</td>
+        </tr>
+      `
+              )
+              .join("");
 
-          const content = `
-    <html>
-      <head>
-        <title>Sales Receipt</title>
-        <meta charset="UTF-8" />
-        ${style}
-      </head>
-      <body>
-        <div class="header">
-          ${logo ? `<img src="${logo}" class="company-logo" />` : ""}
-          <h2>${name}</h2>
-          <div class="amharic-label">የንግድ ድርጅት ሪሲት</div>
-          <p>
-            ${address}<br/>
-            ስልክ / Phone: ${phone} <br/>
-            ${tin}
-          </p>
-          <hr />
-          <h3>Sales Receipt / የሽያጭ ደረሰኝ</h3>
-        </div>
+            const content = `
+      <html>
+        <head>
+          <title>Attachment Cash Sales Invoice</title>
+          <meta charset="UTF-8" />
+          ${style}
+        </head>
+        <body>
+          <div class="invoice-box">
+            <div class="header">
+              ${
+                logo
+                  ? `<img src="${logo}" alt="Logo" style="height:60px; margin-bottom:5px"/>`
+                  : ""
+              }
+              <h2>${name} / ${nameAm}</h2>
+              <div>${address || ""} | Tel: ${phone || ""}</div>
+              <div><strong>TIN:</strong> ${tin || ""}</div>
+              <hr/>
+              <div style="margin-top:5px; font-size:14px; color:#222;">Attachment Cash Sales Invoice / የሽያጭ አባሪ ደረሰኝ</div>
+            </div>
 
-        <table class="info-table">
-          <tr><th>Receipt No / የደረሰኝ ቁጥር:</th><td>#${id}</td></tr>
-          <tr><th>Date / ቀን:</th><td>${sales_date}</td></tr>
-          <tr><th>Customer / ደንበኛ:</th><td>${customer_name}</td></tr>
-          <tr><th>Total / ድምር:</th><td>${total_amount} ብር</td></tr>
-          <tr><th>Paid / የተከፈለ:</th><td>${paid_amount} ብር</td></tr>
-          <tr><th>Remaining / ቀሪ:</th><td>${due_amount} ብር</td></tr>
-          <tr><th>Payment Type / የክፍያ መንገድ:</th><td>${
-            payment_type || "-"
-          }</td></tr>
-          <tr><th>Payment Status / የክፍያ ሁኔታ:</th><td>${payment_status}</td></tr>
-          ${remark ? `<tr><th>Remark / ማስታወሻ:</th><td>${remark}</td></tr>` : ""}
-        </table>
+            <table class="info">
+              <tr>
+                <td>
+                  <strong>From (ከ):</strong> ${name} <br/>
+                  Address: ${address || "-"} <br/>
+                  Supplier’s VAT Reg No: ${tin || "-"} <br/>
+                  Date: ${sales_date}
+                </td>
+                <td>
+                  <strong>To (ወደ):</strong> ${customer_name || "N/A"} <br/>
+                  Customer’s TIN No: __________ <br/>
+                  Customer’s VAT Reg No: __________ <br/>
+                  Address: ___________________
+                </td>
+              </tr>
+            </table>
 
-        <div class="barcode">
-          <img src="${barcodeURL}" alt="Barcode" />
-        </div>
+            <table class="items">
+              <thead>
+                <tr>
+                  <th>S.No</th>
+                  <th>Item Name</th>
+                  <th>Unit</th>
+                  <th>Quantity</th>
+                  <th>Unit Price</th>
+                  <th>Total Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsTable}
+              </tbody>
+            </table>
 
-        
+            <table class="summary">
+              <tr><th>Sub Total</th><td style="text-align:right">${sub_total}</td></tr>
+              <tr><th>Discount</th><td style="text-align:right">${discount}</td></tr>
+              <tr><th>VAT (${vat_rate}%)</th><td style="text-align:right">${(
+              (parseFloat(sub_total) - parseFloat(discount)) *
+              (parseFloat(vat_rate) / 100)
+            ).toFixed(2)}</td></tr>
+              <tr><th>Total</th><td style="text-align:right">${total_amount}</td></tr>
+              <tr><th>Paid</th><td style="text-align:right">${paid_amount}</td></tr>
+              <tr><th>Remaining</th><td style="text-align:right">${due_amount}</td></tr>
+              <tr><th>Payment Type</th><td style="text-align:right">${
+                payment_type || "Cash"
+              }</td></tr>
+              <tr><th>Status</th><td style="text-align:right">${payment_status}</td></tr>
+            </table>
 
-        <div class="footer">
-          <hr />
-          <p>እናመሰግናለን / Thank you for your business!</p>
-          <p>Generated on ${new Date().toLocaleString()}</p>
-        </div>
+            <div style="clear:both"></div>
+            <div><strong>Amount in Words:</strong> ${amountInWords}</div>
 
-        <script>
-          window.onload = function () {
-            window.print();
-            window.onafterprint = function () {
-              window.close();
+            <div class="signatures">
+              <table width="100%">
+                <tr>
+                  <td>Buyer’s Signature: ____________________</td>
+                  <td>Seller’s Signature: ____________________</td>
+                </tr>
+              </table>
+            </div>
+
+            <div class="footer">
+              <hr/>
+              <p><strong>Thank you for your business!</strong></p>
+              <p>For inquiries contact us at: ${phone || "-"} | ${
+              address || "-"
+            }</p>
+              <p><em>NB: This invoice is invalid without a fiscal or refund receipt attached.</em></p>
+              <p style="margin-top:10px; font-size:10px; color:#666;">Generated on ${new Date().toLocaleString()}</p>
+            </div>
+          </div>
+
+          <!-- Watermark -->
+          <div class="watermark">
+            <span>ATTACHMENT</span>
+          </div>
+
+          <script>
+            window.onload = function () {
+              window.print();
+              window.onafterprint = function () {
+                window.close();
+              };
             };
-          };
-        </script>
-      </body>
-    </html>
-  `;
+          </script>
+        </body>
+      </html>
+    `;
 
-          printWindow.document.write(content);
-          printWindow.document.close();
+            const printWindow = window.open("", "_blank");
+            printWindow.document.write(content);
+            printWindow.document.close();
+          } catch (error) {
+            console.error("Failed to print:", error);
+            toast.error("Failed to fetch sale for printing");
+          }
         };
 
         return (
@@ -311,10 +385,11 @@ export default function ManageSales() {
               <Button
                 variant="ghost"
                 className="w-full justify-start"
-                onClick={handlePrint}
+                onClick={() => handlePrintById(sale.id)}
               >
-                Print
+                Print Attachemnt
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 hover:text-red-700"

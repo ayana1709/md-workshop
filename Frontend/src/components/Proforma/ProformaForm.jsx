@@ -32,11 +32,19 @@ function ProformaForm() {
   });
 
   const [labourRows, setLabourRows] = useState([
-    { description: "", unit: "", estTime: "", cost: "", total: 0 },
+    { description: "", unit: "", estTime: "", cost: "", total: 0, remark: "" },
   ]);
 
   const [spareRows, setSpareRows] = useState([
-    { description: "", unit: "", brand: "", qty: "", unit_Price: "", total: 0 },
+    {
+      description: "",
+      unit: "",
+      brand: "",
+      qty: "",
+      unit_Price: "",
+      total: 0,
+      remark: "",
+    },
   ]);
 
   const [labourVat, setLabourVat] = useState(false);
@@ -126,7 +134,14 @@ function ProformaForm() {
       notes: "",
     });
     setLabourRows([
-      { description: "", unit: "", estTime: "", cost: "", total: 0 },
+      {
+        description: "",
+        unit: "",
+        estTime: "",
+        cost: "",
+        total: 0,
+        remark: "",
+      },
     ]);
     setSpareRows([
       {
@@ -136,6 +151,7 @@ function ProformaForm() {
         qty: "",
         unit_Price: "",
         total: 0,
+        remark: "",
       },
     ]);
     setLabourVat(false);

@@ -95,7 +95,10 @@ const AddSalesPage = () => {
   };
 
   //  import axios from "axios";
-
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setCustomer((prev) => ({ ...prev, salesDate: today }));
+  }, []);
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
@@ -495,13 +498,15 @@ const AddSalesPage = () => {
                     type="number"
                     className="border rounded-md px-2 py-1 w-full text-xs sm:text-sm no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
                     value={item.selling_price || ""}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const val = raw === "" ? "" : Number(raw); // keep empty if user clears input
                       handleItemChange(
                         index,
-                        "unit_price",
-                        parseFloat(e.target.value)
-                      )
-                    }
+                        "selling_price",
+                        isNaN(val) ? 0 : val
+                      );
+                    }}
                   />
                 </td>
 
@@ -509,17 +514,26 @@ const AddSalesPage = () => {
                 <td className="px-2 sm:px-3 py-2 min-w-[100px] sm:min-w-[120px]">
                   <input
                     type="number"
-                    min="1"
+                    min={1}
                     max={item.quantity ?? ""}
                     className="border rounded-md px-2 py-1 w-full text-xs sm:text-sm no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    value={item.saleQty}
+                    value={item.saleQty ?? ""}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || "";
-                      handleItemChange(
-                        index,
-                        "saleQty",
-                        Math.min(val, item.quantity ?? 0)
-                      );
+                      const rawVal = e.target.value;
+                      // Allow empty for typing, but enforce number only
+                      if (rawVal === "") {
+                        handleItemChange(index, "saleQty", "");
+                        return;
+                      }
+
+                      let val = Number(rawVal);
+                      if (isNaN(val)) val = 1; // fallback if invalid
+                      if (val < 1) val = 1; // enforce min
+                      if (item.quantity && val > item.quantity) {
+                        val = item.quantity; // enforce max
+                      }
+
+                      handleItemChange(index, "saleQty", val);
                     }}
                   />
                 </td>
@@ -530,8 +544,8 @@ const AddSalesPage = () => {
                 {/* Total */}
                 <td className="px-2 sm:px-3 py-2 font-medium">
                   {(
-                    Math.min(item.saleQty ?? 1, item.quantity ?? 0) *
-                    (item.selling_price ?? 0)
+                    (Number(item.saleQty) || 0) *
+                    (Number(item.selling_price) || 0)
                   ).toFixed(2)}
                 </td>
 

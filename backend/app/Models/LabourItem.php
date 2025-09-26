@@ -20,6 +20,7 @@ class LabourItem extends Model
         'cost',         // Cost per unit
         'est_time',     // Estimated time (e.g., hours, days)
         'total',        // Total for this row (cost * est_time)
+        'remark',
     ];
 
     // Define the relationship to Proforma

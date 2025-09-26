@@ -34,6 +34,7 @@ function TableSection({ title, items, type }) {
                 </>
               )}
               <th className="border-b py-2 px-4 font-semibold">Total Price</th>
+              <th className="border-b py-2 px-4 font-semibold">Remark</th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -68,6 +69,7 @@ function TableSection({ title, items, type }) {
                 <td className="py-2 px-4 text-left">
                   {item.total || item.total_price || "0.00"}
                 </td>
+                <td className="py-2 px-4 text-left">{item.remark || ""}</td>
               </tr>
             ))}
           </tbody>

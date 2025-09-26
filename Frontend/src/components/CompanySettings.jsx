@@ -131,8 +131,8 @@ const CompanySettings = () => {
 
       Swal.fire({
         icon: "success",
-        title: "ተሳክቷል!",
-        text: "የኩባንያ መረጃዎች ተቀመጡ።",
+        title: "Success!",
+        text: "Company information has been saved.",
       });
     } catch (error) {
       if (error.response?.status === 422) {
@@ -199,7 +199,7 @@ const CompanySettings = () => {
                     className="h-24 w-auto mt-2 rounded-md border border-gray-300 shadow-md"
                     onError={(e) => {
                       e.target.onerror = null; // prevents looping
-                      e.target.src = "/fallback-image.png"; // fallback image path
+                      e.target.src = "../images/aa.png"; // fallback image path
                     }}
                   />
                 )}

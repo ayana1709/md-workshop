@@ -104,6 +104,7 @@ function ViewProformaModal({ proforma, open, onClose }) {
                   <th className="p-2">Cost</th>
                   <th className="p-2">Est. Time</th>
                   <th className="p-2 text-right">Total</th>
+                  <th className="p-2"> Remark </th>
                 </tr>
               </thead>
               <tbody>
@@ -115,6 +116,7 @@ function ViewProformaModal({ proforma, open, onClose }) {
                       <td className="p-2 text-center">{item.cost}</td>
                       <td className="p-2 text-center">{item.est_time}</td>
                       <td className="p-2 text-right">{item.total}</td>
+                      <td className="p-2 text-center">{item.remark}</td>
                     </tr>
                   ))
                 ) : (
@@ -144,6 +146,7 @@ function ViewProformaModal({ proforma, open, onClose }) {
                   <th className="p-2">Qty</th>
                   <th className="p-2">Unit Price</th>
                   <th className="p-2 text-right">Total</th>
+                  <th className="p-2"> Reamrk</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,6 +161,7 @@ function ViewProformaModal({ proforma, open, onClose }) {
                         {item.unit_price || "-"}
                       </td>
                       <td className="p-2 text-right">{item.total}</td>
+                      <td className="p-2 text-center">{item.remark}</td>
                     </tr>
                   ))
                 ) : (

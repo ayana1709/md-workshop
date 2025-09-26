@@ -3,67 +3,57 @@ import { useStores } from "@/contexts/storeContext";
 
 function ProformaHeader({ proforma }) {
   const { companyData } = useStores();
-  console.log("company Data:", companyData);
-  console.log("proforma:", proforma);
 
   return (
     <div className="px-8 print:px-12">
-      {/* Logo + Company Name */}
+      {/* Header: Logo + Company Names + Company Details */}
       <div className="flex justify-between items-center bg-gray-200 p-4 rounded-md shadow-lg">
-        <div className="flex items-center">
-          {companyData?.logo && (
+        {/* Logo */}
+        {companyData?.logo && (
+          <div className="flex-shrink-0">
             <img
               src={`${import.meta.env.VITE_API_URL}/storage/${
                 companyData.logo
               }`}
               alt="Company Logo"
-              className="h-16 object-contain mr-4"
+              className="h-16 w-16 object-contain"
             />
-          )}
-          <div>
-            <h2 className="font-bold text-red-600 text-xl">
-              {companyData?.name_am || "የኩባንያ ስም"}
-            </h2>
-            <h2 className="font-bold text-gray-800 text-xl uppercase">
-              {companyData?.name_en || "Company Name"}
-            </h2>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Company & Customer Info */}
-      <div className="grid grid-cols-2 gap-4 mb-4 py-4 print:grid-cols-2">
-        {/* Left */}
-        <div className="space-y-2 text-left">
-          <p className="font-semibold">
-            Address / አድራሻ : {companyData?.address || "----"}
-          </p>
-          <p className="font-semibold">
-            TIN Number / የታክስ ከፋይ መ.ቁ : {companyData?.tin || "----"}
-          </p>
-          <p className="font-semibold">
-            VAT Registration Num / የግብር ክፋይ ት.እ.ታ ቁጥር :
-            {companyData?.vat || "----"}
-          </p>
+        {/* Company Names */}
+        <div className="flex-1 ml-4">
+          <h2 className="font-bold text-red-600 text-xl">
+            {companyData?.name_am || "የኩባንያ ስም"}
+          </h2>
+          <h2 className="font-bold text-gray-800 text-xl uppercase">
+            {companyData?.name_en || "Company Name"}
+          </h2>
         </div>
 
-        {/* Right */}
-        <div className="space-y-2 text-right">
-          <p className="font-semibold">Date | ቀን : {proforma.date}</p>
-          <p className="font-semibold">
-            Ref No | መለኪያ ቁጥር : {proforma.ref_num}
-          </p>
-          <p className="font-semibold">
-            Customer TIN | ተጠቃሚ TIN : {proforma.customer_tin || "----"}
+        {/* Company Details (Right Aligned) */}
+        <div className="text-sm text-right font-medium text-gray-700 space-y-1">
+          <p>Address / አድራሻ : {companyData?.address || "----"}</p>
+          <p>TIN Number / የታክስ ከፋይ መ.ቁ : {companyData?.tin || "----"}</p>
+          <p>
+            VAT Reg. Num / የግብር ክፋይ ት.እ.ታ ቁጥር : {companyData?.vat || "----"}
           </p>
         </div>
       </div>
 
-      {/* Title */}
-      <div className="my-6 text-center">
-        <h3 className="font-bold text-xl text-red-600 py-2 rounded-md bg-gray-100 inline-block px-6">
+      {/* Title + Right Side Info */}
+      <div className="flex justify-between items-center my-6">
+        {/* Title */}
+        <h3 className="font-bold text-xl text-red-600 py-2 px-6 rounded-md bg-gray-100">
           የዋጋ ማቅረቢያ / PROFORMA INVOICE
         </h3>
+
+        {/* Right Side Small Info */}
+        <div className="text-sm text-right text-gray-800 space-y-1">
+          <p>Date | ቀን : {proforma.date}</p>
+          <p>Ref No | መለኪያ ቁጥር : {proforma.ref_num}</p>
+          <p>Customer TIN | ተጠቃሚ TIN : {proforma.customer_tin || "----"}</p>
+        </div>
       </div>
 
       {/* Customer Name */}

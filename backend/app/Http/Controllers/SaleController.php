@@ -191,6 +191,18 @@ public function update(Request $request, $id)
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+public function show($id)
+{
+    try {
+        // Fetch sale by ID with related items
+        $sale = Sale::with('items')->findOrFail($id);
+
+        return response()->json($sale, 200);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Sale not found'], 404);
+    }
+}
+
 
 
 }

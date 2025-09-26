@@ -59,7 +59,7 @@ function DropdownButton({
     "Proceed to workorder",
     "send to payment",
     "Print job Card",
-    "Job Summary",
+    "job Summary",
     // "change status",
   ];
 

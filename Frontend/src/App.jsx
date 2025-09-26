@@ -129,6 +129,19 @@ import CreatePurchaseOrder from "./components/CreatePurchaseOrder";
 import DescriptionModal from "./components/DescriptionModal";
 import DescriptionPage from "./components/DescriptionModal";
 import ProformaPrint from "./components/Proforma/ManageProforma/modals/ProformaPrint";
+import ExpenseEntry from "./components/Expense/ExpenseEntry";
+import IncomePage from "./components/IncomePage";
+import ExpenseList from "./components/Expense/ExpenseList";
+import ViewExpense from "./components/Expense/ViewExpense";
+import EditExpense from "./components/Expense/EditExpense";
+import Roles from "./components/Role/Roles";
+import CreateRole from "./components/Role/CreateRole";
+import Users from "./components/Role/Users";
+import CreateUser from "./components/Role/CreateUser";
+import CreatePermission from "./components/Role/CreatePermission";
+import EditPermission from "./components/Role/EditPermission";
+import Permissions from "./components/Role/Permissions";
+import EditUser from "./components/Role/EditUser";
 // import Outsource from "./components/Outsource";
 // import PrintInspection from "./components/PrintInspection";
 // import PrintWheel from "./components/PrintWheel";
@@ -336,6 +349,23 @@ function App() {
         {/* <Route path="/description/:id" element={<DescriptionModal />} /> */}
 
         <Route path="/description/:id" element={<DescriptionPage />} />
+
+        <Route path="/income" element={<IncomePage />} />
+
+        <Route path="/new-expense" element={<ExpenseEntry />} />
+        <Route path="/expense" element={<ExpenseList />} />
+        <Route path="/expenses/:id" element={<ViewExpense />} />
+        <Route path="/expenses/:id/edit" element={<EditExpense />} />
+
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/create-role" element={<CreateRole />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/create-users" element={<CreateUser />} />
+        <Route path="/create-permission" element={<CreatePermission />} />
+        <Route path="/edit-permission/:roleId" element={<EditPermission />} />
+
+        <Route path="/permission" element={<Permissions />} />
+        <Route path="/edit-user/:id" element={<EditUser />} />
       </Routes>
     </StoreProvider>
   );

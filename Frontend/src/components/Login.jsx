@@ -4,7 +4,6 @@ import { useStores } from "../contexts/storeContext";
 import { BsEyeSlash, BsEyeSlashFill } from "react-icons/bs";
 import { FaCog } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import customLogo from "../images/motor-775.png"; // Custom logo
 
 const backgrounds = [
   {
@@ -27,9 +26,10 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { showPassword, setShowPassword } = useStores();
+  const { showPassword, setShowPassword, setPermissions, fetchPermissions } =
+    useStores();
   const [bgClass, setBgClass] = useState(
-    localStorage.getItem("loginBg") || backgrounds[3].class // Default = custom image
+    localStorage.getItem("loginBg") || backgrounds[3].class
   );
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
@@ -47,8 +47,28 @@ const Login = ({ onLogin }) => {
       const response = await api.post("/admin/login", { username, password });
 
       if (response.data.token) {
-        localStorage.setItem("adminToken", response.data.token);
-        onLogin(response.data.admin);
+        const { token, admin } = response.data;
+
+        // Save token
+        localStorage.setItem("adminToken", token);
+
+        // Save user info
+        onLogin(admin);
+
+        // ✅ Extract role_id from roles
+        let roleId = null;
+        if (admin?.roles && admin.roles.length > 0) {
+          roleId = admin.roles[0]?.pivot?.role_id; // usually here
+        }
+
+        if (roleId) {
+          const perms = await fetchPermissions(roleId);
+          localStorage.setItem("permissions", JSON.stringify(perms));
+        } else {
+          console.warn("No role found for this user");
+          setPermissions([]);
+        }
+
         navigate("/dashboard");
       } else {
         setError("Login failed. No token received.");
@@ -98,17 +118,11 @@ const Login = ({ onLogin }) => {
 
       {/* Login Card */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-fadeIn">
-        {/* Logo */}
-        {/* <div className="flex justify-center mb-4">
-          <img src={customLogo} alt="Logo" className="w-16 h-16" />
-        </div> */}
-
-        {/* Titles */}
         <h2 className="text-center text-3xl font-extrabold text-gray-800 mb-1">
-          ናይል ወርክሾፕ
+          መክቢብ ዲናሞ
         </h2>
         <h2 className="text-center text-2xl font-bold text-gray-700 mb-4">
-          NILE WORKSHOP
+          MEKBIB DINAMO
         </h2>
         <p className="text-center text-gray-600 mb-6 font-semibold">
           Login to your account
@@ -202,7 +216,6 @@ const Login = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Footer */}
         <p className="text-center text-gray-600 text-sm mt-6 font-semibold">
           Developed by{" "}
           <span className="text-blue-500 font-bold">Nile Source Ethiopia</span>

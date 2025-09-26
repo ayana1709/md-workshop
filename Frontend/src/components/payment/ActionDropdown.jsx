@@ -10,7 +10,8 @@ const ActionDropdown = ({ row, onDelete }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  const jobId = row.original.job_id;
+  // ✅ use jobId instead of job_id
+  const jobId = row.original.jobId;
 
   const handleOutsideClick = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -67,7 +68,7 @@ const ActionDropdown = ({ row, onDelete }) => {
 
           <button
             onClick={async () => {
-              await onDelete(jobId); // Calls deleteRow from parent
+              await onDelete(jobId); // ✅ Calls deleteRow with correct jobId
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"

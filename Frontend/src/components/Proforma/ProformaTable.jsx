@@ -62,7 +62,14 @@ function ProformaTable({
   const addLabourRow = () =>
     setLabourRows([
       ...labourRows,
-      { description: "", unit: "", estTime: "", cost: "", total: 0 },
+      {
+        description: "",
+        unit: "",
+        estTime: "",
+        cost: "",
+        total: 0,
+        remark: "",
+      },
     ]);
   const addSpareRow = () =>
     setSpareRows([
@@ -74,6 +81,7 @@ function ProformaTable({
         qty: "",
         unit_price: "",
         total: 0,
+        remark: "",
       },
     ]);
   const removeLabourRow = (i) =>
@@ -146,6 +154,8 @@ function ProformaTable({
                 </th>
                 <th className={`${tableHeaderStyle} min-w-[120px]`}>Cost</th>
                 <th className={`${tableHeaderStyle} min-w-[100px]`}>Total</th>
+                <th className={`${tableHeaderStyle} min-w-[100px]`}>Remark</th>
+
                 <th className={`${tableHeaderStyle} min-w-[80px]`}>Action</th>
               </tr>
             </thead>
@@ -202,6 +212,17 @@ function ProformaTable({
                     className={`${cell} text-right font-semibold min-w-[90px]`}
                   >
                     {row.total.toFixed(2)}
+                  </td>
+
+                  <td className={cell}>
+                    <input
+                      type="text"
+                      value={row.remark}
+                      onChange={(e) =>
+                        handleLabourChange(i, "remark", e.target.value)
+                      }
+                      className={`${input} w-full text-right no-arrows min-w-[120px] no-spinner`}
+                    />
                   </td>
                   <td className={`${cell} min-w-[80px]`}>
                     <button
@@ -264,6 +285,8 @@ function ProformaTable({
                   Unit Price
                 </th>
                 <th className={`${tableHeaderStyle} min-w-[110px]`}>Total</th>
+                <th className={`${tableHeaderStyle} min-w-[110px]`}>Remark</th>
+
                 <th className={`${tableHeaderStyle} min-w-[90px]`}>Action</th>
               </tr>
             </thead>
@@ -337,6 +360,17 @@ function ProformaTable({
                     className={`${cell} text-right font-semibold min-w-[110px]`}
                   >
                     {row.total.toFixed(2)}
+                  </td>
+
+                  <td className={cell}>
+                    <input
+                      type="text"
+                      value={row.remark}
+                      onChange={(e) =>
+                        handleSpareChange(i, "remark", e.target.value)
+                      }
+                      className={`${input} w-full text-right no-arrows min-w-[120px] no-spinner`}
+                    />
                   </td>
 
                   <td className={`${cell} min-w-[90px]`}>

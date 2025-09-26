@@ -36,17 +36,24 @@ const JobOrderFooter = () => {
         </div>
 
         {/* Right Side - Signature Section */}
-        <div className="w-1/2 bg-white border p-4 rounded-md shadow-sm text-black">
-          <h2 className="text-center text-[13px] font-bold mb-3">የስምምነት ክፍል</h2>
-          <div className="space-y-5 text-[12px] font-medium">
-            {["ሙሉ ስም / Full Name", "የደንበኛ ፊርማ", "የተቀባይ ፊርማ"].map(
-              (label, index) => (
-                <div key={index}>
-                  <p className="mb-1">{label}</p>
-                  <div className="border-b border-gray-600 w-full h-5" />
-                </div>
-              )
-            )}
+        <div className="w-1/2 bg-white p-3 rounded-lg shadow-md h-full flex flex-col justify-center">
+          <h2 className="text-base font-bold text-black mb-3 text-center">
+            ስምምነት / Agreement
+          </h2>
+          <div className="text-xs space-y-3 text-black font-medium">
+            {[
+              " Customer Full Name| ተረካቢ ሙሉ ስም",
+              "ፊርማ / Signature",
+              " Receptionist Full Name | አስረካቢ ሙሉ ስም",
+              "ፊርማ / Signature",
+            ].map((label, index) => (
+              <p
+                key={index}
+                className="border-b border-gray-500 pb-1 whitespace-nowrap"
+              >
+                {label}
+              </p>
+            ))}
           </div>
         </div>
       </div>

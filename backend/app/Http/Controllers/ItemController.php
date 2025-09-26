@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use App\Models\Item;
 use App\Models\ItemOut;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
 class ItemController extends Controller {
     // Fetch all items
     public function index() {
@@ -197,7 +199,7 @@ public function fetchSelectedItems(Request $request)
 {
     $request->validate([
         'field' => 'required|string|in:quantity,unit_price,part_number,purchase_price,selling_price', // added prices
-        'value' => 'required|numeric|min:0',
+        'value' => 'required|string|min:0',
     ]);
 
     $item = Item::findOrFail($id);
@@ -390,41 +392,50 @@ public function import(Request $request)
     $updatedItems = [];
     $newItems = [];
 
-    foreach ($items as $item) {
-        $partNumber = $item['part_number'] ?? null;
-        $quantity = $item['quantity'] ?? 0;
-        $purchasePrice = $item['purchase_price'] ?? 0;
+   foreach ($items as $item) {
+    $partNumber = $item['part_number'] ?? null;
+    $quantity = $item['quantity'] ?? 0;
+    $purchasePrice = $item['purchase_price'] ?? 0;
 
-        // Auto-calculate total price if not given
-        if (!isset($item['total_price'])) {
-            $item['total_price'] = $quantity * $purchasePrice;
-        }
-
-        // Always assign default image if missing
-        if (empty($item['image'])) {
-            $item['image'] = 'items/default.jpg'; // 👈 put your default image path here
-        }
-
-        if ($partNumber && $existingItems->has($partNumber)) {
-            // Update existing
-            $existing = $existingItems[$partNumber];
-            $existing->fill(array_filter($item, fn ($v) => !is_null($v))); 
-            $existing->quantity += $quantity;
-            $existing->total_price = $existing->quantity * ($existing->purchase_price ?? 0);
-
-            // Ensure existing item also has image
-            if (empty($existing->image)) {
-                $existing->image = 'defaults/item.png';
-            }
-
-            $existing->save();
-            $updatedItems[] = $existing;
-        } else {
-            // New item
-            $created = Item::create($item);
-            $newItems[] = $created;
-        }
+    // Auto-calculate total price if not given
+    if (!isset($item['total_price'])) {
+        $item['total_price'] = $quantity * $purchasePrice;
     }
+
+    // Always assign default image if missing
+    if (empty($item['image'])) {
+        $item['image'] = 'items/default.jpg';
+    }
+
+    // 🔥 Generate part number if missing
+    if (empty($partNumber)) {
+        do {
+            $partNumber = 'PN-' . strtoupper(Str::random(8)); 
+        } while (Item::where('part_number', $partNumber)->exists());
+
+        $item['part_number'] = $partNumber;
+    }
+
+    if ($existingItems->has($partNumber)) {
+        // Update existing
+        $existing = $existingItems[$partNumber];
+        $existing->fill(array_filter($item, fn($v) => !is_null($v)));
+        $existing->quantity += $quantity;
+        $existing->total_price = $existing->quantity * ($existing->purchase_price ?? 0);
+
+        if (empty($existing->image)) {
+            $existing->image = 'defaults/item.png';
+        }
+
+        $existing->save();
+        $updatedItems[] = $existing;
+    } else {
+        // New item
+        $created = Item::create($item);
+        $newItems[] = $created;
+    }
+}
+
 
     return response()->json([
         'message' => 'Items imported successfully',

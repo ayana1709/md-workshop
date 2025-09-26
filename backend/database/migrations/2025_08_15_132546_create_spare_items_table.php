@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->decimal('unit_price', 15, 2)->nullable()->default(0); // Unit price
             $table->decimal('qty', 10, 2)->nullable()->default(1); // Quantity
             $table->decimal('total', 10, 2); // Total for this row (qty * unit_price)
+            $table->string('remark')->nullable();
+
             $table->timestamps();
         });
     }

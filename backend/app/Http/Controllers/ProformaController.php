@@ -32,7 +32,9 @@ public function store(Request $request)
             'labourRows.*.estTime' => 'nullable|numeric',
             'labourRows.*.cost' => 'nullable|numeric',
             'labourRows.*.total' => 'nullable|numeric',
-
+            'labourRows.*.remark' => 'nullable|string',
+            
+            
             'spareRows' => 'nullable|array',
             'spareRows.*.description' => 'nullable|string',
             'spareRows.*.unit' => 'nullable|string',
@@ -40,6 +42,8 @@ public function store(Request $request)
             'spareRows.*.qty' => 'nullable|numeric',
             'spareRows.*.unit_price' => 'nullable|numeric',
             'spareRows.*.total' => 'nullable|numeric',
+            'spareRows.*.remark' => 'nullable|string',
+            
 
             'labourVat' => 'required|boolean',
             'spareVat' => 'required|boolean',
@@ -85,6 +89,8 @@ public function store(Request $request)
                     'est_time' => $labour['estTime'] ?? 0,
                     'cost' => $labour['cost'] ?? 0,
                     'total' => $labour['total'] ?? ($labour['cost'] * $labour['estTime'] ?? 0),
+                    'remark' => $labour['remark'] ?? "",
+
                 ]);
             }
         }
@@ -99,6 +105,8 @@ public function store(Request $request)
                     'qty' => $spare['qty'] ?? 0,
                     'unit_price' => $spare['unit_price'] ?? 0,
                     'total' => $spare['total'] ?? ($spare['qty'] * $spare['unit_price'] ?? 0),
+                    'remark' => $spare['remark'] ?? "",
+
                 ]);
             }
         }
@@ -172,7 +180,8 @@ public function store(Request $request)
             'labourRows.*.estTime' => 'nullable|numeric',
             'labourRows.*.cost' => 'nullable|numeric',
             'labourRows.*.total' => 'nullable|numeric',
-
+            'labourRows.*.remark' => 'nullable|string',
+            
             'spareRows' => 'nullable|array',
             'spareRows.*.description' => 'nullable|string',
             'spareRows.*.unit' => 'nullable|string',
@@ -180,6 +189,7 @@ public function store(Request $request)
             'spareRows.*.qty' => 'nullable|numeric',
             'spareRows.*.unit_price' => 'nullable|numeric',
             'spareRows.*.total' => 'nullable|numeric',
+            'spareRows.*.remark' => 'nullable|string',
 
             'labourVat' => 'nullable|boolean',
             'spareVat' => 'nullable|boolean',
@@ -228,6 +238,8 @@ public function store(Request $request)
                     'est_time' => $labour['estTime'] ?? null,
                     'cost' => $labour['cost'] ?? null,
                     'total' => $labour['total'] ?? null,
+                    'remark' => $labour['remark'] ?? "",
+
                 ]);
             }
         }
@@ -243,6 +255,8 @@ public function store(Request $request)
                     'qty' => $spare['qty'] ?? null,
                     'unit_price' => $spare['unit_price'] ?? 0,
                     'total' => $spare['total'] ?? null,
+                    'remark' => $spare['remark'] ?? "",
+
                 ]);
             }
         }

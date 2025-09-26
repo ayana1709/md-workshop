@@ -43,7 +43,14 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\CompanySettingController;
-use App\Http\Controllers\RepairDetailController;
+use App\Http\Controllers\RepairDetailController; 
+
+
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PermissionController;
+
 
 
 /*
@@ -326,6 +333,8 @@ Route::get('/service-reminders/plate/{plateNumber}', [ServiceReminderController:
 Route::post('/sales', [SaleController::class, 'store']);
 Route::get('/sales', [SaleController::class, 'index']); // Fetch all sales
 Route::put('/sales/{id}', [SaleController::class, 'update']);
+Route::get('/sales/{id}', [SaleController::class, 'show']); // Fetch single sale by ID
+
 
 
 
@@ -407,3 +416,63 @@ Route::prefix('repairsdetail')->group(function () {
     Route::put('{jobId}', [RepairDetailController::class, 'update']);
     Route::delete('{jobId}', [RepairDetailController::class, 'destroy']);
 });
+
+
+
+
+Route::prefix('expenses')->group(function () {
+    Route::get('/', [ExpenseController::class, 'index']);
+    Route::post('/', [ExpenseController::class, 'store']);
+    Route::get('/{id}', [ExpenseController::class, 'show']);          // view one
+    Route::put('/{id}', [ExpenseController::class, 'update']);        // update one
+    Route::delete('/{id}', [ExpenseController::class, 'destroy']);    // delete one
+
+    // job_id based
+    Route::put('/job/{job_id}', [ExpenseController::class, 'updateByJobId']);
+    Route::delete('/job/{job_id}', [ExpenseController::class, 'deleteByJobId']);
+
+    // bulk delete
+    Route::post('/bulk-delete', [ExpenseController::class, 'bulkDelete']);
+});
+
+
+
+
+   
+
+
+
+Route::get('/roles', [RoleController::class, 'index']);
+Route::get('/roles/{id}', [RoleController::class, 'show']);
+Route::post('/roles', [RoleController::class, 'store']);
+Route::put('/roles/{id}', [RoleController::class, 'update']);
+Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+
+
+
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']); // List all users
+    Route::post('/', [UserController::class, 'store']); // Create user
+    Route::get('/{id}', [UserController::class, 'show']); // Single user
+    Route::put('/{id}', [UserController::class, 'update']); // Update user
+    Route::delete('/{id}', [UserController::class, 'destroy']); // Delete user
+});
+// routes/web.php OR routes/api.php
+Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+
+// routes/api.php
+
+Route::get('/permissions', [PermissionController::class, 'index']);
+
+// Create or update permissions for a role
+Route::post('/permissions', [PermissionController::class, 'store']);
+
+// Delete ALL permissions for a role (by role_id)
+Route::delete('/permissions/role/{roleId}', [PermissionController::class, 'destroy']);
+
+// Get permissions for a specific role (by role_id)
+Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
+// Update permissions for a role by role_id
+Route::put('/permissions/role/{roleId}', [PermissionController::class, 'updateByRole']);
+Route::get('/role-permissions/{roleId}', [PermissionController::class, 'getByRole']);
