@@ -1,70 +1,79 @@
 import { GiMechanicGarage } from "react-icons/gi";
 import { FaCarAlt, FaClock } from "react-icons/fa";
 import { FaPeopleGroup } from "react-icons/fa6";
+import { MdInventory2 } from "react-icons/md"; // New icon for total quantity
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api";
-import { useStores } from "../../contexts/storeContext";
 
 function DashboardStatics() {
   const navigate = useNavigate();
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalRepairs, setTotalRepairs] = useState(0);
-  console.log(totalRepairs);
-
-  const [repairStatusCounts, setRepairStatusCounts] = useState({});
-  const { lowStock } = useStores();
-  const [totalItemsOut, setTotalItemsOut] = useState(0);
+  const [stats, setStats] = useState({
+    total_items: 0,
+    total_quantity: 0,
+    low_stock: 0,
+    out_of_stock: 0,
+    totalRepairs: 0,
+  });
 
   useEffect(() => {
-    api
-      .get("/store-items/total")
-      .then((res) => setTotalItems(res.data.total_items));
-    api.get("/total-repairs").then((res) => setTotalRepairs(res.data || 0));
+    // Fetch your backend dashboard stats
+    api.get("/items/stats").then((res) => {
+      setStats((prev) => ({
+        ...prev,
+        total_items: res.data.total_items,
+        total_quantity: res.data.total_quantity,
+        low_stock: res.data.low_stock,
+        out_of_stock: res.data.out_of_stock,
+      }));
+    });
 
-    api
-      .get("/total-items-out")
-      .then((res) => setTotalItemsOut(res.data.total_items_out));
+    // Fetch total repairs separately
+    api.get("/total-repairs").then((res) => {
+      setStats((prev) => ({ ...prev, totalRepairs: res.data || 0 }));
+    });
   }, []);
-
-  // const totalRepairsCount = Object.values(repairStatusCounts).reduce(
-  //   (acc, val) => acc + val,
-  //   0
-  // );
 
   const cardData = [
     {
       label: "Repairs",
-      value: totalRepairs,
+      value: stats.totalRepairs,
       icon: <FaCarAlt size={40} className="text-green-600" />,
       bg: "from-green-100 to-green-200",
       click: () => navigate("/job-manager/repair"),
     },
     {
       label: "Store Items",
-      value: totalItems,
+      value: stats.total_items,
       icon: <GiMechanicGarage size={40} className="text-blue-600" />,
       bg: "from-blue-100 to-blue-200",
       click: () => navigate("/inventory/total-items"),
     },
     {
-      label: "Low Store",
-      value: lowStock,
-      icon: <FaClock size={40} className="text-yellow-600" />,
-      bg: "from-yellow-100 to-yellow-200",
-      click: () => navigate("/inventory/out-of-store"),
+      label: "Total Quantity",
+      value: stats.total_quantity,
+      icon: <MdInventory2 size={40} className="text-teal-600" />,
+      bg: "from-teal-100 to-teal-200",
+      click: () => navigate("/inventory/total-items"),
     },
     {
-      label: "Out Of Store",
-      value: totalItemsOut,
+      label: "Low Stock",
+      value: stats.low_stock,
+      icon: <FaClock size={40} className="text-yellow-600" />,
+      bg: "from-yellow-100 to-yellow-200",
+      click: () => navigate("/inventory/low-store"),
+    },
+    {
+      label: "Out Of Stock",
+      value: stats.out_of_stock,
       icon: <FaPeopleGroup size={40} className="text-purple-600" />,
       bg: "from-purple-100 to-purple-200",
-      click: () => navigate("/inventory/low-store"),
+      click: () => navigate("/inventory/out-of-store"),
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pt-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 pt-6">
       {cardData.map((card, idx) => (
         <div
           key={idx}
@@ -75,7 +84,6 @@ function DashboardStatics() {
             <div className="relative w-[70px] h-[70px] rounded-full flex items-center justify-center bg-white/60 dark:bg-gray-900/40 shadow-inner">
               {card.icon}
             </div>
-
             <div className="flex flex-col items-end">
               <p className="text-2xl font-bold text-gray-800 dark:text-gray-200">
                 {card.value}

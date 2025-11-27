@@ -409,6 +409,23 @@ export const columns = ({
     header: "Location",
   },
   {
+    accessorKey: "shelf_number",
+    header: "Shelf Number",
+  },
+  {
+    accessorKey: "condition",
+    header: "Condition",
+  },
+  {
+    accessorKey: "type",
+    header: "Type",
+  },
+  {
+    accessorKey: "manufacturer",
+    header: "Manufacturer",
+  },
+
+  {
     id: "status",
     header: "Status",
     cell: ({ row }) => {

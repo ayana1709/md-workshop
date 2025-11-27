@@ -345,24 +345,53 @@ function PrintSummary() {
         <main className="grow mt-0">
           <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
             <div className="print-container">
-              <div className="w-full flex items-center justify-center gap-8 p-4">
-                {/* Logo container */}
-                <div className="flex-shrink-0 w-24 h-24 flex items-center justify-center">
-                  <img
-                    src={logoUrl}
-                    alt="Company Logo"
-                    className="max-w-full max-h-full object-contain"
-                  />
+              <div className="w-full flex flex-col items-center justify-center p-4">
+                {/* Top Section: Logos and Names */}
+
+                <div className="w-full flex items-center justify-between">
+                  {/* Left Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Left"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Center Company Name */}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
+                      {companyData?.name_am || "የኩባንያ ስም (AM)"}
+                    </h2>
+                    <h2 className="text-lg sm:text-xl uppercase tracking-wider font-semibold text-gray-800 dark:text-white">
+                      {companyData?.name_en || "COMPANY NAME (EN)"}
+                    </h2>
+                  </div>
+
+                  {/* Right Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Right"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
                 </div>
 
-                {/* Company Info */}
-                <div className="flex flex-col gap-1 text-center sm:text-left">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
-                    {companyData?.name_am || "የኩባንያ ስም (AM)"}
-                  </h2>
-                  <h2 className="text-lg sm:text-xl uppercase tracking-wider font-bold text-gray-800 dark:text-white">
-                    {companyData?.name_en || "COMPANY NAME (EN)"}
-                  </h2>
+                {/* Bottom Info Row */}
+                <div className="w-full flex flex-wrap items-center justify-center gap-6 mt-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+                  <div>
+                    <span className="font-semibold">TIN:</span>{" "}
+                    {companyData?.tin || "Not Available"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Address:</span>{" "}
+                    {companyData?.address || "Not Provided"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Mobile:</span>{" "}
+                    {companyData?.phone || "N/A"}
+                  </div>
                 </div>
               </div>
 
@@ -404,14 +433,32 @@ function PrintSummary() {
                         <strong className="dark:text-gray-100">
                           Received Date:
                         </strong>{" "}
-                        {customerInfo.received_date}
+                        {customerInfo.received_date
+                          ? new Date(
+                              customerInfo.received_date
+                            ).toLocaleDateString("en-US", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                            })
+                          : ""}
                       </li>
+
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
                           Date Out:
                         </strong>{" "}
-                        {customerInfo.promise_date}
+                        {customerInfo.promise_date
+                          ? new Date(
+                              customerInfo.promise_date
+                            ).toLocaleDateString("en-US", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                            })
+                          : ""}
                       </li>
+
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
                           Priority:
@@ -756,33 +803,40 @@ function PrintSummary() {
             </div>
             {/* <ServiceReminder plateNumber={plateNumber} /> */}
 
-            <div className="w-full border-t mt-8 pt-6 text-sm">
-              <div className="flex justify-between w-full">
+            <div className="w-full border-t-2 border-gray-300 mt-10 pt-6 text-sm text-gray-800 dark:text-gray-200 print:flex print:flex-row print:justify-between">
+              {/* Signature Section */}
+              <div className="flex justify-between w-full gap-8">
                 {/* Left Column - Giver (አስረካቢ) */}
-                <div className="w-1/2 pr-4">
-                  <p className="mb-4 font-semibold">
-                    አስረካቢ ሙሉ ስም / Giver Full Name:
-                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-48"></span>
+                <div className="w-1/2 pr-6">
+                  <h3 className="font-bold text-base mb-4 text-gray-700 dark:text-gray-300 uppercase">
+                    Giver / አስረካቢ
+                  </h3>
+                  <p className="mb-3 font-medium">
+                    Full Name / ሙሉ ስም:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
                   </p>
-                  <p className="mb-4 font-semibold">
-                    ፊርማ / Signature:
-                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-48"></span>
+                  <p className="mb-3 font-medium">
+                    Signature / ፊርማ:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
                   </p>
-                  <p className="mb-4 font-semibold">
-                    ቀን / Date:
-                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-48"></span>
+                  <p className="font-medium">
+                    Date / ቀን:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
                   </p>
                 </div>
 
-                {/* Right Column - Receiver (ተረካቢ) */}
-                <div className="w-1/2 pl-4">
-                  <p className="mb-4 font-semibold">
-                    ተረካቢ ሙሉ ስም / Receiver Full Name:
-                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-48"></span>
+                {/* Right Column - Customer (ተጠቃሚ) */}
+                <div className="w-1/2 pl-6 border-l border-gray-200">
+                  <h3 className="font-bold text-base mb-4 text-gray-700 dark:text-gray-300 uppercase">
+                    Customer / ተጠቃሚ
+                  </h3>
+                  <p className="mb-3 font-medium">
+                    Full Name / ሙሉ ስም:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
                   </p>
-                  <p className="mb-4 font-semibold">
-                    ፊርማ / Signature:
-                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-48"></span>
+                  <p className="font-medium">
+                    Signature / ፊርማ:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
                   </p>
                 </div>
               </div>

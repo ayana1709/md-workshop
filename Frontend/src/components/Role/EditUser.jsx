@@ -5,6 +5,7 @@ import Header from "@/partials/Header";
 import Sidebar from "@/partials/Sidebar";
 import api from "@/api";
 import Swal from "sweetalert2";
+import DefaultAvatar from "@/images/userprofile.jpg";
 
 export default function EditUser() {
   const { id } = useParams();
@@ -21,8 +22,10 @@ export default function EditUser() {
   const [roles, setRoles] = useState([]);
   const [errors, setErrors] = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(DefaultAvatar);
 
-  // Fetch roles + user
+  // Fetch roles + user data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,21 +39,28 @@ export default function EditUser() {
         const user = userRes.data;
 
         setForm({
-          full_name: user.name || "",
+          full_name: user.full_name || user.name || "",
           username: user.username || "",
           email: user.email || "",
           password: "",
-          role: user.roles?.[0]?.name || "",
-          phone: user.phone || "",
-          status: user.status || "active",
-          level: user.level || "",
+          role: user.role || user.roles?.[0]?.name || "",
         });
+
+        // Show existing image if exists
+        if (user.profile_image) {
+          setPreview(
+            `${import.meta.env.VITE_API_URL}/storage/profile_images/${
+              user.profile_image
+            }`
+          );
+        } else {
+          setPreview(DefaultAvatar);
+        }
       } catch (err) {
         Swal.fire({
           icon: "error",
           title: "Failed!",
           text: "Could not load user data.",
-          confirmButtonColor: "#dc2626",
         });
       }
     };
@@ -58,18 +68,28 @@ export default function EditUser() {
     fetchData();
   }, [id]);
 
-  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
+
     try {
-      await api.put(`/users/${id}`, form);
+      const formData = new FormData();
+      Object.keys(form).forEach((key) => {
+        if (form[key] !== "") formData.append(key, form[key]);
+      });
+
+      if (image) {
+        formData.append("profile_image", image);
+      }
+
+      await api.post(`/users/${id}?_method=PUT`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       Swal.fire({
         icon: "success",
         title: "Updated!",
         text: "User updated successfully.",
-        confirmButtonColor: "#16a34a",
         timer: 2000,
         showConfirmButton: false,
       });
@@ -83,7 +103,6 @@ export default function EditUser() {
           icon: "error",
           title: "Failed!",
           text: "Something went wrong while updating the user.",
-          confirmButtonColor: "#dc2626",
         });
       }
     }
@@ -101,7 +120,36 @@ export default function EditUser() {
             onSubmit={handleSubmit}
             className="bg-white p-6 rounded-lg shadow w-full max-w-lg space-y-4"
           >
-            <h2 className="text-2xl font-bold text-gray-700 mb-4">Edit User</h2>
+            <h2 className="text-2xl font-bold text-gray-700 text-center">
+              Edit User
+            </h2>
+
+            {/* Profile Image */}
+            <div className="text-center">
+              <img
+                src={preview}
+                className="w-28 h-28 rounded-full border object-cover mx-auto"
+                alt="profile"
+              />
+
+              <label className="mt-3 block font-medium">Update Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  setImage(file);
+                  setPreview(URL.createObjectURL(file));
+                }}
+                className="mt-2 w-full text-sm"
+              />
+
+              {errors.profile_image && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.profile_image[0]}
+                </p>
+              )}
+            </div>
 
             {/* Full Name */}
             <div>
@@ -112,7 +160,7 @@ export default function EditUser() {
                 onChange={(e) =>
                   setForm({ ...form, full_name: e.target.value })
                 }
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border p-2 rounded"
                 required
               />
               {errors.full_name && (
@@ -129,7 +177,7 @@ export default function EditUser() {
                 type="text"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border p-2 rounded"
                 required
               />
               {errors.username && (
@@ -146,7 +194,7 @@ export default function EditUser() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border p-2 rounded"
                 required
               />
               {errors.email && (
@@ -163,13 +211,8 @@ export default function EditUser() {
                 type="password"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border p-2 rounded"
               />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.password[0]}
-                </p>
-              )}
             </div>
 
             {/* Role */}
@@ -178,7 +221,7 @@ export default function EditUser() {
               <select
                 value={form.role}
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border p-2 rounded"
                 required
               >
                 <option value="">Select role</option>
@@ -193,9 +236,10 @@ export default function EditUser() {
               )}
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded shadow"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-semibold"
             >
               Update User
             </button>

@@ -6,11 +6,12 @@ import { CiSquareMore } from "react-icons/ci";
 import { toast } from "react-toastify";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
+import DateInput from "./DateInput";
 
 const NewAddSalesPage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const { selectedIds } = location.state || {};
+
   const [vatRate, setVatRate] = useState(0); // in percent
   const [discount, setDiscount] = useState(0);
   const [dueAmount, setDueAmount] = useState(0);
@@ -31,9 +32,11 @@ const NewAddSalesPage = () => {
   const [toBank, setToBank] = useState("");
   const [customFromBank, setCustomFromBank] = useState("");
   const [customToBank, setCustomToBank] = useState("");
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customer, setCustomer] = useState({
     salesDate: "",
+    refNum: "",
+    approvedBy: "",
     customerName: "",
     companyName: "",
     tinNumber: "",
@@ -45,11 +48,16 @@ const NewAddSalesPage = () => {
     address: "",
     bank: "",
     other: "",
+    // NEW fields
+    location: "",
+    deliveredBy: "",
+    requestedDate: "",
   });
 
   // console.log(customer);
 
   const [items, setItems] = useState([]);
+  const [status, setStatus] = useState("Requested");
 
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
@@ -97,13 +105,27 @@ const NewAddSalesPage = () => {
   };
 
   //  import axios from "axios";
-
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    setCustomer((prev) => ({ ...prev, salesDate: today }));
+  }, []);
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
     setItems(updated);
   };
-
+  useEffect(() => {
+    const fetchRefNum = async () => {
+      try {
+        const res = await api.get("/sales/latest-ref");
+        setCustomer((prev) => ({ ...prev, refNum: res.data.refNum }));
+      } catch (err) {
+        console.error("Error fetching ref number:", err);
+        setCustomer((prev) => ({ ...prev, refNum: "REF0001" }));
+      }
+    };
+    fetchRefNum();
+  }, []);
   const handlePartNumberChange = async (index, value) => {
     // Always update part number immediately
     handleItemChange(index, "part_number", value);
@@ -132,10 +154,6 @@ const NewAddSalesPage = () => {
     }
   };
 
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    setCustomer((prev) => ({ ...prev, salesDate: today }));
-  }, []);
   const handleDeleteRow = (index) => {
     const newItems = items.filter((_, i) => i !== index);
     setItems(newItems);
@@ -193,8 +211,12 @@ const NewAddSalesPage = () => {
     let resolvedFromBank = fromBank === "Other" ? customFromBank : fromBank;
     let resolvedToBank = toBank === "Other" ? customToBank : toBank;
 
+    // Inside handleSubmit saleData payload:
+
     const saleData = {
       sales_date: customer.salesDate,
+      ref_num: customer.refNum,
+      approved_by: customer.approvedBy,
       customer_name: customer.customerName,
       company_name: customer.companyName,
       tin_number: customer.tinNumber,
@@ -205,7 +227,6 @@ const NewAddSalesPage = () => {
       sub_total: subTotal,
       due_amount: dueAmount,
 
-      // Customer extra info
       mobile: customer.mobile,
       office: customer.office,
       phone: customer.phone,
@@ -215,18 +236,18 @@ const NewAddSalesPage = () => {
       bank_account: customer.bank,
       other_info: customer.other,
 
-      // Payment info
-      payment_type: paymentType,
-      payment_status: paymentStatus,
-      remark: remark,
+      location: customer.location,
+      delivered_by: customer.deliveredBy,
+      requested_date: customer.requestedDate,
 
-      // Transfer-specific fields
-      ...(paymentType === "Transfer" && {
-        from_bank: resolvedFromBank,
-        to_bank: resolvedToBank,
-      }),
+      // payment_type,
+      payment_status: paymentStatus || null,
+      payment_type: paymentType || null,
 
-      // Items
+      remark,
+      status,
+
+      //  ADD THIS 👇👇👇
       items: items.map((item) => ({
         item_id: item.id,
         item_name: item.item_name,
@@ -244,8 +265,12 @@ const NewAddSalesPage = () => {
       navigate("/sales");
 
       // ✅ Reset form fields
+
+      // After success submit
       setCustomer({
         salesDate: "",
+        refNum: "",
+        approvedBy: "",
         customerName: "",
         companyName: "",
         tinNumber: "",
@@ -257,7 +282,12 @@ const NewAddSalesPage = () => {
         address: "",
         bank: "",
         other: "",
+        // reset new fields
+        location: "",
+        deliveredBy: "",
+        requestedDate: "",
       });
+
       setVatRate(0);
       setDiscount(0);
       setDueAmount(0);
@@ -274,6 +304,25 @@ const NewAddSalesPage = () => {
       toast.error("Failed to create sale. Please try again.");
     }
   };
+  useEffect(() => {
+    const fetchRefNum = async () => {
+      try {
+        const res = await api.get("/sales/latest-ref");
+        setCustomer((prev) => ({
+          ...prev,
+          refNum: res.data.latest_ref,
+        }));
+      } catch (err) {
+        console.error("Error fetching ref number:", err);
+        setCustomer((prev) => ({
+          ...prev,
+          refNum: "REF-0001",
+        }));
+      }
+    };
+
+    fetchRefNum();
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -288,44 +337,59 @@ const NewAddSalesPage = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="p-4 bg-white max-w-[90%] mx-auto rounded-md shadow">
               <h2 className="pl-4 text-xl font-semibold mb-4 text-gray-800 uppercase tracking-wider">
-                Add Sales
+                Store Out Form
               </h2>
 
               {/* Sales Info */}
               <div className="w-full max-w-3xl mx-auto px-4 py-6 bg-white rounded-2xl shadow-md">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">
-                  Customer Sales Information
+                  Customer Information
                 </h2>
 
                 <div className="flex flex-col gap-5">
                   {/* Sales Date */}
                   <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-1">
-                      Sales Date <span className="text-red-700">*</span>
+                      Date <span className="text-red-700">*</span>
                     </label>
-                    <input
-                      type="date"
+
+                    <DateInput
+                      value={customer.salesDate}
+                      onChange={(val) =>
+                        setCustomer({ ...customer, salesDate: val })
+                      }
+                      placeholder="DD/MM/YYYY"
                       className={`border rounded-lg px-3 py-2 text-sm w-full transition ${
                         errors.salesDate
                           ? "border-red-500 focus:border-red-500 focus:ring focus:ring-red-200"
                           : "border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
                       }`}
-                      value={customer.salesDate}
-                      onChange={(e) =>
-                        setCustomer({ ...customer, salesDate: e.target.value })
-                      }
                     />
+
                     {errors.salesDate && (
                       <span className="text-red-500 text-xs mt-1">
                         {errors.salesDate}
                       </span>
                     )}
                   </div>
-
+                  <div className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700 mb-1">
+                      Ref Number
+                    </label>
+                    <input
+                      type="text"
+                      placeholder=""
+                      className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
+                      value={customer.refNum}
+                      onChange={(e) =>
+                        setCustomer({ ...customer, refNum: e.target.value })
+                      }
+                    />
+                  </div>
                   {/* Customer Name */}
                   <div className="flex flex-col relative">
                     <label className="text-sm font-medium text-gray-700 mb-1">
-                      Customer Name
+                      TO
                     </label>
                     <input
                       type="text"
@@ -346,44 +410,7 @@ const NewAddSalesPage = () => {
                     >
                       <CiSquareMore size={24} className="text-gray-600" />
                     </button>
-                  </div>
-
-                  {/* Company Name */}
-                  <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-700 mb-1">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Company Name"
-                      className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
-                      value={customer.companyName}
-                      onChange={(e) =>
-                        setCustomer({
-                          ...customer,
-                          companyName: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  {/* TIN */}
-                  <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-700 mb-1">
-                      Tin Number
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Tin Number"
-                      className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
-                      value={customer.tinNumber}
-                      onChange={(e) =>
-                        setCustomer({ ...customer, tinNumber: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  {/* Extra Customer Info */}
+                  </div>{" "}
                   {showCustomerInfo && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 bg-gray-50 rounded-xl animate-fadeIn">
                       {[
@@ -412,7 +439,39 @@ const NewAddSalesPage = () => {
                       ))}
                     </div>
                   )}
-
+                  {/* Company Name */}
+                  <div className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700 mb-1">
+                      Reason
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="reason..."
+                      className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
+                      value={customer.companyName}
+                      onChange={(e) =>
+                        setCustomer({
+                          ...customer,
+                          companyName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  {/* TIN */}
+                  <div className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700 mb-1">
+                      Requested By
+                    </label>
+                    <input
+                      type="text"
+                      placeholder=""
+                      className="border border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 rounded-lg px-3 py-2 text-sm w-full transition"
+                      value={customer.tinNumber}
+                      onChange={(e) =>
+                        setCustomer({ ...customer, tinNumber: e.target.value })
+                      }
+                    />
+                  </div>
                   {/* VAT */}
                   <div className="flex flex-col">
                     <label className="text-sm font-medium text-gray-700 mb-1">
@@ -439,7 +498,7 @@ const NewAddSalesPage = () => {
                       {[
                         "#",
                         "Item name",
-                        "Part Number",
+                        "Part Number*",
                         "Brand",
                         "Unit",
                         "Price",
@@ -452,11 +511,19 @@ const NewAddSalesPage = () => {
                           key={i}
                           className="px-2 sm:px-3 py-2 text-left text-gray-700 font-semibold whitespace-nowrap"
                         >
-                          {header}
+                          {header === "Part Number*" ? (
+                            <span>
+                              Part Number{" "}
+                              <span className="text-red-600">*</span>
+                            </span>
+                          ) : (
+                            header
+                          )}
                         </th>
                       ))}
                     </tr>
                   </thead>
+
                   <tbody className="divide-y divide-gray-200">
                     {items.map((item, index) => (
                       <tr
@@ -602,239 +669,94 @@ const NewAddSalesPage = () => {
               {/* Totals and Payment Info */}
               {/* Totals and Payment Info */}
               <div className="w-full max-w-5xl mx-auto bg-white shadow-md rounded-xl p-6 mt-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4 border-b pb-2">
-                  Totals & Payment Information
-                </h2>
+                {/* Buttons */}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                  {/* Left Side - Totals */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Sub Total
-                      </label>
-                      <input
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={subTotal.toFixed(2)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        VAT
-                      </label>
-                      <input
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={vatAmount.toFixed(2)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Total Amount
-                      </label>
-                      <input
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={totalAmount.toFixed(2)}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Discount
-                      </label>
-                      <input
-                        type="number"
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                        value={discount}
-                        onChange={(e) => setDiscount(Number(e.target.value))}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Grand Total
-                      </label>
-                      <input
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={grandTotal.toFixed(2)}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Right Side - Payment Info */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Paid Amount
-                      </label>
-                      <input
-                        type="number"
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={PaidAmount}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Due Amount
-                      </label>
-                      <input
-                        className="border border-gray-300 px-3 py-2 rounded-md w-full bg-gray-100"
-                        readOnly
-                        disabled
-                        value={Number(dueAmount).toFixed(2)}
-                      />
-                    </div>
-
-                    {/* Payment Type */}
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Payment Type
-                      </label>
-                      <select
-                        className="border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                        value={paymentType}
-                        onChange={(e) => setPaymentType(e.target.value)}
-                      >
-                        <option value="">--SELECT--</option>
-                        <option value="Cash">Cash</option>
-                        <option value="Transfer">Transfer</option>
-                        <option value="Cheque">Cheque</option>
-                        <option value="Credit">Credit</option>
-                      </select>
-                    </div>
-
-                    {/* If Transfer is selected */}
-                    {paymentType === "Transfer" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* From Bank */}
-                        <div>
-                          <label className="block text-gray-600 font-medium">
-                            From Bank
-                          </label>
-                          <select
-                            className="border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                            value={fromBank}
-                            onChange={(e) => setFromBank(e.target.value)}
-                          >
-                            <option value="">--Select Bank--</option>
-                            <option value="CBE">CBE</option>
-                            <option value="Awash">Awash</option>
-                            <option value="Dashen">Dashen</option>
-                            <option value="Abysinia">Abysinia</option>
-                            <option value="Wegagen">Wegagen</option>
-                            <option value="COOP">COOP</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          {fromBank === "Other" && (
-                            <input
-                              type="text"
-                              placeholder="Enter Bank Name"
-                              className="mt-2 border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                              value={customFromBank}
-                              onChange={(e) =>
-                                setCustomFromBank(e.target.value)
-                              }
-                            />
-                          )}
-                        </div>
-
-                        {/* To Bank */}
-                        <div>
-                          <label className="block text-gray-600 font-medium">
-                            To Bank
-                          </label>
-                          <select
-                            className="border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                            value={toBank}
-                            onChange={(e) => setToBank(e.target.value)}
-                          >
-                            <option value="">--Select Bank--</option>
-                            <option value="CBE">CBE</option>
-                            <option value="Awash">Awash</option>
-                            <option value="Dashen">Dashen</option>
-                            <option value="Abysinia">Abysinia</option>
-                            <option value="Wegagen">Wegagen</option>
-                            <option value="COOP">COOP</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          {toBank === "Other" && (
-                            <input
-                              type="text"
-                              placeholder="Enter Bank Name"
-                              className="mt-2 border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                              value={customToBank}
-                              onChange={(e) => setCustomToBank(e.target.value)}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Payment Status */}
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Payment Status
-                      </label>
-                      <select
-                        className="border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                        value={paymentStatus}
-                        onChange={(e) => setPaymentStatus(e.target.value)}
-                      >
-                        <option value="Full Payment">Full Payment</option>
-                        <option value="Advanced Payment">
-                          Advanced Payment
-                        </option>
-                        <option value="No Payment">No Payment</option>
-                      </select>
-                    </div>
-
-                    {/* Remark */}
-                    <div>
-                      <label className="block text-gray-600 font-medium">
-                        Remark
-                      </label>
-                      <select
-                        className="border border-gray-300 rounded-md px-3 py-2 w-full focus:border-blue-500 focus:ring focus:ring-blue-200 transition"
-                        value={remark}
-                        onChange={(e) => setRemark(e.target.value)}
-                      >
-                        <option value="Sold">Sold</option>
-                        <option value="Pending">Pending</option>
-                        <option value="On Credit">On Credit</option>
-                        <option value="Canceled">Canceled</option>
-                        <option value="Returned">Returned</option>
-                        <option value="Refund">Refund</option>
-                        <option value="Delivery Note">Delivery Note</option>
-                        <option value="Others">Others</option>
-                      </select>
-                    </div>
-                  </div>
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    From (Location)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder=""
+                    className="border ..."
+                    value={customer.location}
+                    onChange={(e) =>
+                      setCustomer({ ...customer, location: e.target.value })
+                    }
+                  />
                 </div>
-              </div>
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    Approved By
+                  </label>
+                  <input
+                    type="text"
+                    placeholder=""
+                    className="border ..."
+                    value={customer.approvedBy}
+                    onChange={(e) =>
+                      setCustomer({ ...customer, approvedBy: e.target.value })
+                    }
+                  />
+                </div>
 
-              {/* Buttons */}
-              <div className="mt-6 flex gap-4 justify-end py-4">
-                <button
-                  onClick={handleSubmit}
-                  className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-                >
-                  Save Changes
-                </button>
-                <button className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400">
-                  Reset
-                </button>
+                {/* Requested Date */}
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    Requested Date
+                  </label>
+                  <DateInput
+                    value={customer.requestedDate}
+                    onChange={(val) =>
+                      setCustomer({ ...customer, requestedDate: val })
+                    }
+                    placeholder="DD/MM/YYYY"
+                    className="border rounded-lg px-3 py-2 text-sm w-full transition border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    Delivered By
+                  </label>
+                  <input
+                    type="text"
+                    placeholder=""
+                    className="border ..."
+                    value={customer.deliveredBy}
+                    onChange={(e) =>
+                      setCustomer({ ...customer, deliveredBy: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+
+                  <select
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    <option value="Requested">Requested</option>
+                    <option value="Store Out">Store Out</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Approved</option>
+                  </select>
+                </div>
+
+                <div className="mt-6 flex gap-4 justify-end py-4">
+                  <button
+                    onClick={handleSubmit}
+                    className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+                  >
+                    Save Changes
+                  </button>
+                  <button className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400">
+                    Reset
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -10,8 +10,8 @@ const ActionDropdown = ({ row, onDelete }) => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
-  // ✅ use jobId instead of job_id
-  const jobId = row.original.jobId;
+  // ✅ use the actual database `id`
+  const paymentId = row.original.id;
 
   const handleOutsideClick = (e) => {
     if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -48,7 +48,7 @@ const ActionDropdown = ({ row, onDelete }) => {
 
           <button
             onClick={() => {
-              navigate(`/payments/${jobId}`);
+              navigate(`/payments/${paymentId}`);
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
@@ -58,7 +58,7 @@ const ActionDropdown = ({ row, onDelete }) => {
 
           <button
             onClick={() => {
-              navigate(`/payments/edit/${jobId}`);
+              navigate(`/payments/edit/${paymentId}`);
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
@@ -68,7 +68,7 @@ const ActionDropdown = ({ row, onDelete }) => {
 
           <button
             onClick={async () => {
-              await onDelete(jobId); // ✅ Calls deleteRow with correct jobId
+              await onDelete(paymentId); // ✅ delete by id, not jobId
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100"
@@ -78,7 +78,7 @@ const ActionDropdown = ({ row, onDelete }) => {
 
           <button
             onClick={() => {
-              navigate(`/payments/attachment/${jobId}`);
+              navigate(`/payments/attachment/${paymentId}`);
               setOpen(false);
             }}
             className="block w-full px-4 py-2 text-sm text-left hover:bg-gray-100"

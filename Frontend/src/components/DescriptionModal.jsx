@@ -11,7 +11,6 @@ import { useReactToPrint } from "react-to-print";
 
 const DescriptionPage = ({}) => {
   const { id } = useParams();
-  console.log(id);
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -219,7 +218,7 @@ const DescriptionPage = ({}) => {
         job_id: jobInfo.jobId,
         tasks,
         spares,
-        other_cost: parseFloat(otherCost || ""),
+        other_cost: parseFloat(otherCost || 0),
         vat_applied: applyVAT, // use applyVAT state
         vat_amount: totalVAT, // computed VAT
         total_cost: totalCost, // computed Grand Total
@@ -296,357 +295,381 @@ const DescriptionPage = ({}) => {
               </div>
             </div>
 
-            {/* Tasks Table */}
             <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                 <h2 className="font-semibold text-lg text-gray-800">Tasks</h2>
-                <button
-                  onClick={() =>
-                    setNewTask({ name: "", cost: "", status: "not started" })
-                  }
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
-                >
-                  + Add Task
-                </button>
+                <div className="flex w-full sm:w-auto justify-end">
+                  <button
+                    onClick={() =>
+                      setNewTask({ name: "", cost: "", status: "not started" })
+                    }
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm w-full sm:w-auto"
+                  >
+                    + Add Task
+                  </button>
+                </div>
               </div>
 
+              {/* Responsive Scrollable Table */}
               <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-300 text-gray-900 text-xs uppercase">
-                    <tr>
-                      <th className="p-3 w-[45%]">Task Name</th>
-                      <th className="p-3 w-[20%]">Cost</th>
-                      <th className="p-3 w-[20%]">Status</th>
-                      <th className="p-3 w-[20%]">Assign To</th>
+                <div className="min-w-[800px] sm:min-w-full">
+                  <table className="w-full table-auto text-sm text-left">
+                    <thead className="bg-gray-300 text-gray-900 text-xs uppercase">
+                      <tr>
+                        <th className="p-3 w-[40%]">Task Name</th>
+                        <th className="p-3 w-[15%]">Cost</th>
+                        <th className="p-3 w-[15%]">Status</th>
+                        <th className="p-3 w-[20%]">Assign To</th>
+                        <th className="p-3 w-[10%] text-center">Actions</th>
+                      </tr>
+                    </thead>
 
-                      <th className="p-3 w-[15%] text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {tasks.map((task, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="p-3 flex items-center gap-2">
-                          {/* Numbering */}
-                          <span className="font-semibold text-gray-600">
-                            {i + 1}.
-                          </span>
-
+                    <tbody className="divide-y divide-gray-200">
+                      {tasks.map((task, i) => (
+                        <tr key={i} className="hover:bg-gray-50">
                           {/* Task Name */}
-                          {editingTaskIndex === i ? (
+                          <td className="p-3">
+                            {editingTaskIndex === i ? (
+                              <input
+                                value={task.name}
+                                onChange={(e) =>
+                                  handleTaskUpdate(i, "name", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                placeholder="Enter task name"
+                              />
+                            ) : (
+                              <span className="truncate">{task.name}</span>
+                            )}
+                          </td>
+
+                          {/* Cost */}
+                          <td className="p-3">
+                            {editingTaskIndex === i ? (
+                              <input
+                                type="number"
+                                value={task.cost}
+                                onChange={(e) =>
+                                  handleTaskUpdate(i, "cost", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <span>{task.cost}</span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3">
+                            {editingTaskIndex === i ? (
+                              <select
+                                value={task.status}
+                                onChange={(e) =>
+                                  handleTaskUpdate(i, "status", e.target.value)
+                                }
+                                className="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
+                              >
+                                <option value="not started">Not Started</option>
+                                <option value="started">Started</option>
+                                <option value="pending">Pending</option>
+                                <option value="in progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                              </select>
+                            ) : (
+                              <span
+                                className={`capitalize px-2 py-1 rounded-full text-white text-xs font-medium ${
+                                  task.status === "not started"
+                                    ? "bg-gray-400"
+                                    : task.status === "started"
+                                    ? "bg-blue-500"
+                                    : task.status === "pending"
+                                    ? "bg-yellow-500"
+                                    : task.status === "in progress"
+                                    ? "bg-indigo-500"
+                                    : task.status === "completed"
+                                    ? "bg-green-500"
+                                    : "bg-gray-400"
+                                }`}
+                              >
+                                {task.status}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Assign To */}
+                          <td className="p-3">
+                            {editingTaskIndex === i ? (
+                              <input
+                                type="text"
+                                value={task.assign_to}
+                                onChange={(e) =>
+                                  handleTaskUpdate(
+                                    i,
+                                    "assign_to",
+                                    e.target.value
+                                  )
+                                }
+                                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                                placeholder="Enter name"
+                              />
+                            ) : (
+                              <span className="truncate">{task.assign_to}</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-3 flex flex-col sm:flex-row justify-center gap-2">
+                            {editingTaskIndex === i ? (
+                              <button
+                                onClick={() => setEditingTaskIndex(null)}
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs w-full sm:w-auto"
+                              >
+                                Save
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setEditingTaskIndex(i)}
+                                  className="px-3 py-2 text-blue-600 hover:text-blue-800 rounded-lg text-xs w-full sm:w-auto"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleTaskDelete(i)}
+                                  className="px-3 py-2 text-red-600 hover:text-red-800 rounded-lg text-xs w-full sm:w-auto"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* New Task Row */}
+                      {newTask && (
+                        <tr className="bg-gray-50">
+                          <td className="p-3">
                             <input
-                              value={task.name}
+                              value={newTask.name}
                               onChange={(e) =>
-                                handleTaskUpdate(i, "name", e.target.value)
+                                setNewTask({ ...newTask, name: e.target.value })
                               }
-                              className="p-2 border rounded-md w-full text-sm"
+                              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                               placeholder="Enter task name"
                             />
-                          ) : (
-                            <span>{task.name}</span>
-                          )}
-                        </td>
-
-                        <td className="p-3">
-                          {editingTaskIndex === i ? (
+                          </td>
+                          <td className="p-3">
                             <input
                               type="number"
-                              value={task.cost}
+                              value={newTask.cost}
                               onChange={(e) =>
-                                handleTaskUpdate(i, "cost", e.target.value)
+                                setNewTask({ ...newTask, cost: e.target.value })
                               }
-                              className="p-2 border rounded-md w-full text-sm"
-                              // placeholder="0.00"
+                              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                              inputMode="decimal"
+                              placeholder="0.00"
                             />
-                          ) : (
-                            <span>{task.cost}</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {editingTaskIndex === i ? (
+                          </td>
+                          <td className="p-3">
                             <select
-                              value={task.status}
+                              value={newTask.status}
                               onChange={(e) =>
-                                handleTaskUpdate(i, "status", e.target.value)
+                                setNewTask({
+                                  ...newTask,
+                                  status: e.target.value,
+                                })
                               }
-                              className="p-2 border rounded-md w-full text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              className="w-full px-3 py-2 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
                             >
-                              <option value="not started">Not Started</option>
-                              <option value="started">Started</option>
-                              <option value="pending">Pending</option>
-                              <option value="in progress">In Progress</option>
-                              <option value="completed">Completed</option>
+                              <option>not started</option>
+                              <option>started</option>
+                              <option>pending</option>
+                              <option>in progress</option>
+                              <option>completed</option>
                             </select>
-                          ) : (
-                            <span
-                              className={`capitalize px-2 py-1 rounded-full text-white text-xs font-medium ${
-                                task.status === "not started"
-                                  ? "bg-gray-400"
-                                  : task.status === "started"
-                                  ? "bg-blue-500"
-                                  : task.status === "pending"
-                                  ? "bg-yellow-500"
-                                  : task.status === "in progress"
-                                  ? "bg-indigo-500"
-                                  : task.status === "completed"
-                                  ? "bg-green-500"
-                                  : "bg-gray-400"
-                              }`}
-                            >
-                              {task.status}
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {editingTaskIndex === i ? (
+                          </td>
+                          <td className="p-3">
                             <input
                               type="text"
-                              value={task.assign_to}
+                              value={newTask.assign_to}
                               onChange={(e) =>
-                                handleTaskUpdate(i, "assign_to", e.target.value)
+                                setNewTask({
+                                  ...newTask,
+                                  assign_to: e.target.value,
+                                })
                               }
-                              className="p-2 border rounded-md w-full text-sm"
-                              placeholder="enter a name"
+                              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                              placeholder="Enter name"
                             />
-                          ) : (
-                            <span>{task.assign_to}</span>
-                          )}
-                        </td>
-
-                        <td className="p-3 flex justify-center gap-2">
-                          {editingTaskIndex === i ? (
+                          </td>
+                          <td className="p-3 flex flex-col sm:flex-row justify-center gap-2">
                             <button
-                              onClick={() => setEditingTaskIndex(null)}
-                              className="px-3 py-1 bg-blue-600 text-white rounded-md text-xs"
+                              onClick={handleNewTaskSave}
+                              className="px-3 py-2 bg-green-600 text-white rounded-lg text-xs w-full sm:w-auto"
                             >
                               Save
                             </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => setEditingTaskIndex(i)}
-                                className="px-2 py-1 text-blue-600 hover:text-blue-800"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleTaskDelete(i)}
-                                className="px-2 py-1 text-red-600 hover:text-red-800"
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {newTask && (
-                      <tr className="bg-gray-50">
-                        <td className="p-3">
-                          <input
-                            value={newTask.name}
-                            onChange={(e) =>
-                              setNewTask({ ...newTask, name: e.target.value })
-                            }
-                            className="p-2 border rounded-md w-full text-sm"
-                            placeholder="Enter task name"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="number"
-                            value={newTask.cost}
-                            onChange={(e) =>
-                              setNewTask({ ...newTask, cost: e.target.value })
-                            }
-                            className="p-2 border rounded-md w-full text-sm no-spinner"
-                            placeholder="0.00"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <select
-                            value={newTask.status}
-                            onChange={(e) =>
-                              setNewTask({ ...newTask, status: e.target.value })
-                            }
-                            className="p-2 border rounded-md w-full text-sm"
-                          >
-                            <option>not started</option>
-                            <option>started</option>
-                            <option>pending</option>
-                            <option>in progress</option>
-                            <option>completed</option>
-                          </select>
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="text"
-                            value={newTask.assign_to}
-                            onChange={(e) =>
-                              setNewTask({
-                                ...newTask,
-                                assign_to: e.target.value,
-                              })
-                            }
-                            className="p-2 border rounded-md w-full text-sm"
-                            placeholder=" "
-                          />
-                        </td>
-                        <td className="p-3 flex justify-center gap-2">
-                          <button
-                            onClick={handleNewTaskSave}
-                            className="px-3 py-1 bg-green-600 text-white rounded-md text-xs"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setNewTask(null)}
-                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md text-xs"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                            <button
+                              onClick={() => setNewTask(null)}
+                              className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg text-xs w-full sm:w-auto"
+                            >
+                              Cancel
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              <p className="mt-3 text-right font-medium text-gray-700">
+              {/* Total */}
+              <p className="mt-3 text-right font-medium text-gray-700 text-sm sm:text-base">
                 Total Task Cost:{" "}
                 <span className="text-green-600">{totalTaskCost}</span>
               </p>
             </div>
 
-            {/* Spares Section */}
+            {/* ======= Spares Table ======= */}
             <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
                 <h2 className="font-semibold text-lg text-gray-800">Spares</h2>
                 <button
                   onClick={() => setNewSpare({ name: "", cost: "" })}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm w-full sm:w-auto"
                 >
                   + Add Spare
                 </button>
               </div>
 
               <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-gray-300 text-gray-900 text-xs uppercase">
-                    <tr>
-                      <th className="p-3 w-[60%]">Spare Name</th>
-                      <th className="p-3 w-[25%]">Cost</th>
+                <div className="min-w-[700px] sm:min-w-full">
+                  <table className="w-full table-auto text-sm text-left">
+                    <thead className="bg-gray-300 text-gray-900 text-xs uppercase">
+                      <tr>
+                        <th className="p-3 w-[60%]">Spare Name</th>
+                        <th className="p-3 w-[25%]">Cost</th>
+                        <th className="p-3 w-[15%] text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {spares.map((spare, i) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="p-3">
+                            <span className="font-semibold text-gray-600">
+                              {i + 1}.{" "}
+                            </span>
+                            {editingSpareIndex === i ? (
+                              <input
+                                value={spare.name}
+                                onChange={(e) =>
+                                  handleSpareUpdate(i, "name", e.target.value)
+                                }
+                                className="w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                                placeholder="Enter spare name"
+                              />
+                            ) : (
+                              <span className="truncate">{spare.name}</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {editingSpareIndex === i ? (
+                              <input
+                                type="number"
+                                value={spare.cost}
+                                onChange={(e) =>
+                                  handleSpareUpdate(i, "cost", e.target.value)
+                                }
+                                className="w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-green-400"
+                                placeholder="0.00"
+                              />
+                            ) : (
+                              <span>{spare.cost}</span>
+                            )}
+                          </td>
+                          <td className="p-3 flex justify-center gap-2 flex-col sm:flex-row">
+                            {editingSpareIndex === i ? (
+                              <button
+                                onClick={() => setEditingSpareIndex(null)}
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs w-full sm:w-auto"
+                              >
+                                Save
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setEditingSpareIndex(i)}
+                                  className="px-3 py-2 text-blue-600 hover:text-blue-800 rounded-lg text-xs w-full sm:w-auto"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleSpareDelete(i)}
+                                  className="px-3 py-2 text-red-600 hover:text-red-800 rounded-lg text-xs w-full sm:w-auto"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
 
-                      <th className="p-3 w-[15%] text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {spares.map((spare, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="p-4">
-                          <span className="font-semibold text-gray-600">
-                            {i + 1}.
-                          </span>
-                          {editingSpareIndex === i ? (
+                      {newSpare && (
+                        <tr className="bg-gray-50">
+                          <td className="p-3">
                             <input
-                              value={spare.name}
+                              value={newSpare.name}
                               onChange={(e) =>
-                                handleSpareUpdate(i, "name", e.target.value)
+                                setNewSpare({
+                                  ...newSpare,
+                                  name: e.target.value,
+                                })
                               }
-                              className="p-2 border rounded-md w-full text-sm"
+                              className="w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-green-400"
                               placeholder="Enter spare name"
                             />
-                          ) : (
-                            <span>{spare.name}</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          {editingSpareIndex === i ? (
+                          </td>
+                          <td className="p-3">
                             <input
                               type="number"
-                              value={spare.cost}
+                              value={newSpare.cost}
                               onChange={(e) =>
-                                handleSpareUpdate(i, "cost", e.target.value)
+                                setNewSpare({
+                                  ...newSpare,
+                                  cost: e.target.value,
+                                })
                               }
-                              className="p-2 border rounded-md w-full text-sm"
+                              className="w-full px-3 py-3 border rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-green-400"
                               placeholder="0.00"
                             />
-                          ) : (
-                            <span>{spare.cost}</span>
-                          )}
-                        </td>
-                        <td className="p-3 flex justify-center gap-2">
-                          {editingSpareIndex === i ? (
+                          </td>
+                          <td className="p-3 flex justify-center gap-2 flex-col sm:flex-row">
                             <button
-                              onClick={() => setEditingSpareIndex(null)}
-                              className="px-3 py-1 bg-blue-600 text-white rounded-md text-xs"
+                              onClick={handleNewSpareSave}
+                              className="px-3 py-2 bg-green-600 text-white rounded-lg text-xs w-full sm:w-auto"
                             >
                               Save
                             </button>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => setEditingSpareIndex(i)}
-                                className="px-2 py-1 text-blue-600 hover:text-blue-800"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleSpareDelete(i)}
-                                className="px-2 py-1 text-red-600 hover:text-red-800"
-                              >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {newSpare && (
-                      <tr className="bg-gray-50">
-                        <td className="p-3">
-                          <input
-                            value={newSpare.name}
-                            onChange={(e) =>
-                              setNewSpare({ ...newSpare, name: e.target.value })
-                            }
-                            className="p-2 border rounded-md w-full text-sm"
-                            placeholder="Enter spare name"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="number"
-                            value={newSpare.cost}
-                            onChange={(e) =>
-                              setNewSpare({ ...newSpare, cost: e.target.value })
-                            }
-                            className="p-2 border rounded-md w-full text-sm no-spinner"
-                            // placeholder="0.00"
-                          />
-                        </td>
-                        <td className="p-3 flex justify-center gap-2">
-                          <button
-                            onClick={handleNewSpareSave}
-                            className="px-3 py-1 bg-green-600 text-white rounded-md text-xs"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setNewSpare(null)}
-                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded-md text-xs"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                            <button
+                              onClick={() => setNewSpare(null)}
+                              className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg text-xs w-full sm:w-auto"
+                            >
+                              Cancel
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              <p className="mt-3 text-right font-medium text-gray-700">
+              <p className="mt-3 text-right font-medium text-gray-700 text-sm sm:text-base">
                 Total Spare Cost:{" "}
                 <span className="text-green-600">{totalSpareCost}</span>
               </p>

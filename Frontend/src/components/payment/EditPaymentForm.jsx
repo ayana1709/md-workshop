@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
@@ -10,51 +10,61 @@ import api from "@/api";
 import BackButton from "../BackButton";
 
 function EditPaymentForm() {
-  const { job_id } = useParams(); // useParams hook
-  const jobId = job_id; // your backend expects `jobId`
-
+  const { id } = useParams(); // fetch payment by ID (not jobId)
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [customer, setCustomer] = useState({});
   const [costs, setCosts] = useState({});
   const [payment, setPayment] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // Fetch payment by ID
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get(`/payments/job/${jobId}`);
+        const res = await api.get(`/payments/job/${id}`); // ✅ fetch by id
         const data = res.data;
 
-        setCustomer({
-          jobId: data.jobId,
-          name: data.name,
-          mobile: data.mobile,
-          plate: data.plate,
-          model: data.model,
-          priority: data.priority,
-          receivedDate: data.receivedDate,
-          dateOut: data.dateOut,
-        });
+        console.log("✅ Full fetched data:", data);
 
-        setPayment({
-          method: data.method,
-          status: data.status,
-          paidAmount: data.paidAmount,
-          remainingAmount: data.remainingAmount,
-          reference: data.reference,
-          date: data.date,
-          paidBy: data.paidBy,
-          approvedBy: data.approvedBy,
-          reason: data.reason,
-          remarks: data.remarks,
-        });
+        // 👤 Customer info (updated structure)
+        const customerData = {
+          date: data.date || "",
+          reference: data.reference || "",
+          fs: data.fs || "",
+          name: data.name || "",
+          mobile: data.mobile || "",
+          tin: data.tin || "",
+          vat: data.vat || "",
+        };
+        setCustomer(customerData);
+        console.log("👤 Customer data sent to EditCustomerInfo:", customerData);
 
-        setCosts({
+        // 💳 Payment info
+        const paymentData = {
+          method: data.method || "",
+          status: data.status || "",
+          paidAmount: data.paidAmount || 0,
+          remainingAmount: data.remainingAmount || 0,
+          reference: data.reference || "",
+          date: data.date || "",
+          paidBy: data.paidBy || "",
+          approvedBy: data.approvedBy || "",
+          reason: data.reason || "",
+          remarks: data.remarks || "",
+        };
+        setPayment(paymentData);
+        console.log("💳 Payment data sent to EditPaymentInfo:", paymentData);
+
+        // ⚙️ Cost info
+        const costData = {
           labour: data.labourCosts || [],
           spares: data.spareCosts || [],
           others: data.otherCosts || [],
           summary: data.summary || {},
-        });
+        };
+        setCosts(costData);
+        console.log("🧾 Cost data sent to EditCostTables:", costData);
 
         setLoading(false);
       } catch (err) {
@@ -64,34 +74,10 @@ function EditPaymentForm() {
     };
 
     fetchData();
-  }, [jobId]);
+  }, [id]);
 
-  // ...handleSubmit + validateData remain same
-
+  // Validate before update
   const validateData = () => {
-    if (!customer.jobId) {
-      Swal.fire({
-        title: "Error",
-        text: "Job ID is required",
-        icon: "error",
-      });
-      return false;
-    }
-
-    const missingCustomer = Object.entries(customer).filter(
-      ([key, value]) => key !== "jobId" && !value
-    );
-
-    if (missingCustomer.length > 0) {
-      Swal.fire({
-        title: "Warning",
-        text: `Some customer info is empty: ${missingCustomer
-          .map(([key]) => key)
-          .join(", ")}`,
-        icon: "warning",
-      });
-    }
-
     if (!payment.method || !payment.status || !payment.paidAmount) {
       Swal.fire({
         title: "Error",
@@ -100,51 +86,57 @@ function EditPaymentForm() {
       });
       return false;
     }
-
     return true;
   };
 
+  // Handle update
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateData()) return;
 
+    // 🧩 Build payload safely
     const payload = {
-      jobId: customer.jobId || "",
+      // Customer fields
+      date: customer.date || "",
+      reference: customer.reference || "",
+      fs: customer.fs || "",
       name: customer.name || "",
       mobile: customer.mobile || "",
-      plate: customer.plate || "",
-      model: customer.model || "",
-      priority: customer.priority || "",
-      receivedDate: customer.receivedDate || "",
-      dateOut: customer.dateOut || "",
+      tin: customer.tin || "",
+      vat: customer.vat || "",
+
+      // Payment fields
       method: payment.method || "cash",
       status: payment.status || "full",
-      paidAmount: payment.paidAmount || 0,
-      remainingAmount: payment.remainingAmount || 0,
-      reference: payment.reference || "",
-      date: payment.date || "",
+      paidAmount: Number(payment.paidAmount) || 0,
+      remainingAmount: Number(payment.remainingAmount) || 0,
       paidBy: payment.paidBy || "",
       approvedBy: payment.approvedBy || "",
       reason: payment.reason || "",
       remarks: payment.remarks || "",
-      labourCosts: costs.labour || [],
-      spareCosts: costs.spares || [],
-      otherCosts: costs.others || [],
-      summary: costs.summary || {},
+
+      // ✅ Only include cost arrays if they have data
+      ...(costs.labour?.length ? { labourCosts: costs.labour } : {}),
+      ...(costs.spares?.length ? { spareCosts: costs.spares } : {}),
+      ...(costs.others?.length ? { otherCosts: costs.others } : {}),
+      ...(Object.keys(costs.summary || {}).length
+        ? { summary: costs.summary }
+        : {}),
     };
 
+    console.log("🧾 Final update payload:", payload);
+
     try {
-      const response = await api.put(
-        `/payments/job/${customer.jobId}`,
-        payload
-      );
+      const response = await api.put(`/payments/job/${id}`, payload);
 
       Swal.fire({
         title: "Success!",
         text: response.data.message || "Payment updated successfully.",
         icon: "success",
         confirmButtonColor: "#16a34a",
+      }).then(() => {
+        navigate("/all-payments");
       });
 
       console.log("✅ Backend response:", response.data);
@@ -171,8 +163,9 @@ function EditPaymentForm() {
       <div className="flex flex-col flex-1">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-y-auto">
+          {/* <BackButton /> */}
+
           <div className="max-w-5xl mx-auto">
-            <BackButton />
             <form
               onSubmit={handleSubmit}
               className="bg-white shadow-lg rounded-2xl p-6 sm:p-8 space-y-8"
@@ -181,20 +174,31 @@ function EditPaymentForm() {
                 Edit Payment
               </h2>
 
+              {/* 👤 Customer Info */}
               <EditCustomerInfo value={customer} onChange={setCustomer} />
+
+              {/* ⚙️ Cost Tables */}
               <EditCostTables
                 value={{
-                  labour: costs.labourCosts || [],
-                  spares: costs.spareCosts || [],
-                  others: costs.otherCosts || [],
-                  vatLabour: costs.vatLabour ?? false,
-                  vatSpare: costs.vatSpare ?? false,
-                  vatOther: costs.vatOther ?? false,
+                  labour: costs.labour || [],
+                  spares: costs.spares || [],
+                  others: costs.others || [],
                   summary: costs.summary || {},
                 }}
-                onChange={setCosts}
+                onChange={(newCosts) => {
+                  setCosts({
+                    labour: newCosts.labourCosts || [],
+                    spares: newCosts.spareCosts || [],
+                    others: newCosts.otherCosts || [],
+                    summary: newCosts.summary || {},
+                    vatLabour: newCosts.vatLabour || false,
+                    vatSpare: newCosts.vatSpare || false,
+                    vatOther: newCosts.vatOther || false,
+                  });
+                }}
               />
 
+              {/* 💳 Payment Info */}
               <EditPaymentInfo value={payment} onChange={setPayment} />
 
               <div className="flex justify-end">

@@ -6,6 +6,9 @@ use App\Models\Item;
 use App\Models\ItemOut;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Storage;
+
 
 class ItemController extends Controller {
     // Fetch all items
@@ -14,7 +17,9 @@ class ItemController extends Controller {
     }
 
     // Store a new item
-   public function store(Request $request)
+// Store a new item
+
+public function store(Request $request)
 {
     // Validate fields
     $validated = $request->validate([
@@ -23,11 +28,9 @@ class ItemController extends Controller {
         'item_name' => 'nullable|string|max:255',
         'quantity' => 'nullable|integer|min:0',
         'brand' => 'nullable|string|max:255',
-        'model' => 'nullable|string|max:255',
-        // 'unit_price' => 'nullable|numeric|min:0',
         'total_price' => 'nullable|numeric|min:0',
         'location' => 'nullable|string|max:255',
-        // 'condition' => 'required|in:New,Used',
+        'condition' => 'nullable|string|max:255',
         'unit' => 'nullable|string|max:255',
         'purchase_price' => 'nullable|numeric|min:0',
         'selling_price' => 'nullable|numeric|min:0',
@@ -35,9 +38,11 @@ class ItemController extends Controller {
         'maximum_price' => 'nullable|numeric|min:0',
         'minimum_quantity' => 'nullable|integer|min:0',
         'low_quantity' => 'nullable|integer|min:0',
+        'shelf_number' => 'nullable|string|max:255',
+        'type' => 'nullable|string|max:255',
         'manufacturer' => 'nullable|string|max:255',
         'manufacturing_date' => 'nullable|date',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240', // 10MB
     ]);
 
     // Auto-generate code if not provided
@@ -45,26 +50,51 @@ class ItemController extends Controller {
         $validated['code'] = strtoupper(substr(uniqid(), -8));
     }
 
-    // Handle image upload
+    // Handle image upload with compression
     if ($request->hasFile('image')) {
-        $path = $request->file('image')->store('items', 'public');
-        $validated['image'] = $path;
+
+        $file = $request->file('image');
+
+        // Check if image is larger than 2MB
+        if ($file->getSize() > 2 * 1024 * 1024) {
+
+            // Compress image
+            $image = Image::make($file)->encode('jpg', 70); // 70% quality
+
+            // Create unique name
+            $filename = 'items/' . uniqid() . '.jpg';
+
+            // Store compressed image
+            \Storage::disk('public')->put($filename, (string) $image);
+
+            $validated['image'] = $filename;
+
+        } else {
+            // Store normally if <= 2MB
+            $validated['image'] = $file->store('items', 'public');
+        }
     }
+
+    // Ensure required numeric fields are never null
+    $validated['purchase_price'] = $validated['purchase_price'] ?? 0;
+    $validated['selling_price']  = $validated['selling_price'] ?? 0;
+    $validated['quantity']       = $validated['quantity'] ?? 0;
+    $validated['total_price']    = $validated['total_price'] ?? ($validated['quantity'] * $validated['purchase_price']);
 
     // Check if item already exists by part_number
     if (!empty($validated['part_number'])) {
         $existingItem = Item::where('part_number', $validated['part_number'])->first();
 
         if ($existingItem) {
-            // If exists, update quantity & optionally replace image
-            $existingItem->quantity += $validated['quantity'] ?? 0;
-            $existingItem->total_price = $existingItem->quantity * ($existingItem->unit_price ?? 0);
+            $existingItem->quantity += $validated['quantity'];
+            $existingItem->total_price = $existingItem->quantity * ($existingItem->purchase_price ?? 0);
 
             if (isset($validated['image'])) {
-                // Delete old image if exists
+
                 if ($existingItem->image && \Storage::disk('public')->exists($existingItem->image)) {
                     \Storage::disk('public')->delete($existingItem->image);
                 }
+
                 $existingItem->image = $validated['image'];
             }
 
@@ -85,6 +115,8 @@ class ItemController extends Controller {
         'item' => $item
     ], 201);
 }
+
+
 
 
 
@@ -115,11 +147,11 @@ class ItemController extends Controller {
         'item_name' => 'nullable|string|max:255',
         'quantity' => 'nullable|integer|min:0',
         'brand' => 'nullable|string|max:255',
-        'model' => 'nullable|string|max:255',
+        'type' => 'nullable|string|max:255',
         // 'unit_price' => 'nullable|numeric|min:0',
         'total_price' => 'nullable|numeric|min:0',
         'location' => 'nullable|string|max:255',
-        // 'condition' => 'required|in:New,Used',
+        'condition' => 'nullable|string|max:255',
         'unit' => 'nullable|string|max:255',
         'purchase_price' => 'nullable|numeric|min:0',
         'selling_price' => 'nullable|numeric|min:0',
@@ -127,9 +159,11 @@ class ItemController extends Controller {
         'maximum_price' => 'nullable|numeric|min:0',
         'minimum_quantity' => 'nullable|integer|min:0',
         'low_quantity' => 'nullable|integer|min:0',
+        'shelf_number'=>'nullable|string|max:255',
         'manufacturer' => 'nullable|string|max:255',
         'manufacturing_date' => 'nullable|date',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240', // 10MB
+
     ]);
 
     // Handle image upload if provided
@@ -243,7 +277,7 @@ public function itemOut(Request $request, $id) {
         'part_number' => $item->part_number,
         'description' => $item->description,
         'brand' => $item->brand,
-        'model' => $item->model,
+        'type' => $item->type,
         'condition' => $item->condition,
         'quantity' => $request->quantity,
         // 'unit_price' => $item->unit_price,
@@ -344,106 +378,171 @@ public function addMore(Request $request)
         'message' => 'Item not found',
     ], 404);
 }
-
+public function dashboardStats()
+{
+    return response()->json([
+        'total_items'      => Item::count(),                         // 1. Number of Total Items
+        'total_quantity'   => Item::sum('quantity'),                 // 2. Total Items by QTY
+        'out_of_stock'     => Item::where('quantity', 0)->count(),   // 3. Number of Out of Store
+        'low_stock'        => Item::where('quantity', '<', 10)->count() // 4. Low Quantity items
+    ]);
+}
 
 
 public function import(Request $request)
 {
-    $rawItems = $request->input('items', []);
+    $rows = $request->input('items', []);
 
-    // Normalize all values before validation
-    $normalizedItems = collect($rawItems)->map(function ($item) {
-        return collect($item)->map(function ($value) {
-            // Convert numbers to strings for string fields, keep null if empty
-            if (is_numeric($value)) {
-                return (string) $value;
+    if (!$rows || count($rows) === 0) {
+        return response()->json([
+            'message' => 'No rows were received from Excel.',
+            'items' => []
+        ], 400);
+    }
+
+    try {
+        $mappedItems = collect($rows)
+            ->map(function ($row, $index) {
+
+                // 1. Normalize Headers
+                $normalized = [];
+                foreach ($row as $key => $value) {
+                    $normalized[strtolower(trim($key))] = trim($value);
+                }
+
+                // 2. Skip empty rows
+                $allValues = implode("", array_map('strval', $normalized));
+                if (trim($allValues) === "") {
+                    return null;
+                }
+
+                // 3. Extract required fields
+                $item_name =
+                    $normalized['item_name'] ??
+                    $normalized['item name'] ??
+                    $normalized['item'] ??
+                    null;
+
+                $quantity =
+                    isset($normalized['quantity']) ? intval($normalized['quantity']) :
+                    (isset($normalized['qty']) ? intval($normalized['qty']) : null);
+
+                // 4. Required validations
+                if (!$item_name) {
+                    throw new \Exception("Row " . ($index + 1) . " is missing Item Name");
+                }
+
+                if ($quantity === null || $quantity === "") {
+                    throw new \Exception("Row " . ($index + 1) . " is missing Quantity");
+                }
+
+                // 5. Mapped clean data
+                return [
+                    'image'          => $normalized['image'] ?? null,
+                    'item_name'      => $item_name,
+                    'part_number'    => $normalized['part_number'] ?? null,
+                    'brand'          => $normalized['brand'] ?? null,
+                    'unit'           => $normalized['unit'] ?? null,
+                    'quantity'       => $quantity,
+                    'low_quantity'   => $normalized['low_quantity'] ?? 0,
+                    'purchase_price' => $normalized['purchase_price'] ?? 0,
+                    'selling_price'  => $normalized['selling_price'] ?? 0,
+                    'least_price'    => $normalized['least_price'] ?? 0,
+                    'condition'      => $normalized['condition'] ?? null,
+                    'type'      => $normalized['type'] ?? null,
+                    'manufacturer'      => $normalized['manufacturer'] ?? null,
+                    'location'   => $normalized['location'] ?? null,
+                    'shelf_number'   => $normalized['shelf_number'] ?? null,
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $items = $mappedItems->toArray();
+
+        $inserted = [];
+        $updated = [];
+
+        foreach ($items as $item) {
+
+            // 0. Convert empty → NULL
+            // 0. Convert empty → NULL
+foreach ($item as $key => $value) {
+    if ($value === "" || $value === " ") {
+        $item[$key] = null;
+    }
+}
+// FIX CRITICAL FIELDS → NEVER NULL
+$item['purchase_price'] = $item['purchase_price'] ?? 0;
+$item['selling_price']  = $item['selling_price'] ?? 0;
+$item['least_price']    = $item['least_price'] ?? 0;
+$item['low_quantity']   = $item['low_quantity'] ?? 0;
+$item['condition']      = $item['condition'] ?? "New";
+
+
+            // FIX: Condition can never be null (DB restriction)
+            if (empty($item['condition'])) {
+                $item['condition'] = "New";   // ← Default value
             }
-            return $value === '' ? null : $value;
-        })->toArray();
-    })->toArray();
 
-    // Validate after normalization
-    $validated = validator(
-        ['items' => $normalizedItems],
-        [
-            'items' => 'required|array',
-            'items.*.item_name' => 'nullable|string|max:255',
-            'items.*.part_number' => 'nullable|string|max:255',
-            'items.*.brand' => 'nullable|string|max:255',
-            'items.*.unit' => 'nullable|string|max:255',
-            'items.*.purchase_price' => 'nullable|numeric|min:0',
-            'items.*.selling_price' => 'nullable|numeric|min:0',
-            'items.*.quantity' => 'nullable|integer|min:0',
-            'items.*.location' => 'nullable|string|max:255',
-            'items.*.image' => 'nullable|string|max:255', // allow image but optional
-        ]
-    )->validate();
+            // AUTO-GENERATE PART NUMBER
+            if (empty($item['part_number'])) {
+                do {
+                    $pn = 'PN-' . strtoupper(Str::random(8));
+                } while (Item::where('part_number', $pn)->exists());
 
-    $items = $validated['items'];
+                $item['part_number'] = $pn;
+            }
 
-    // Get unique part numbers (to check existing)
-    $partNumbers = collect($items)->pluck('part_number')->filter()->unique();
+            // AUTO GENERATE CODE
+            $item['code'] = strtoupper(substr(uniqid(), -8));
 
-    // Fetch existing items
-    $existingItems = Item::whereIn('part_number', $partNumbers)
-        ->get()
-        ->keyBy('part_number');
+            // CALCULATE TOTAL PRICE
+            $item['total_price'] = $item['quantity'] * ($item['purchase_price'] ?? 0);
 
-    $updatedItems = [];
-    $newItems = [];
+            // CHECK IF ITEM EXISTS BY PART NUMBER OR NAME
+          // CHECK IF ITEM EXISTS BY PART NUMBER OR NAME
+$existing = Item::where('part_number', $item['part_number'])
+    ->orWhereRaw('LOWER(item_name) = ?', [strtolower($item['item_name'])])
+    ->first();
 
-   foreach ($items as $item) {
-    $partNumber = $item['part_number'] ?? null;
-    $quantity = $item['quantity'] ?? 0;
-    $purchasePrice = $item['purchase_price'] ?? 0;
+if ($existing) {
 
-    // Auto-calculate total price if not given
-    if (!isset($item['total_price'])) {
-        $item['total_price'] = $quantity * $purchasePrice;
-    }
+    $existing->fill($item);
+    $existing->quantity += $item['quantity'];
+    $existing->total_price =
+        $existing->quantity * ($existing->purchase_price ?? 0);
+    $existing->save();
+    $updated[] = $existing;
 
-    // Always assign default image if missing
-    if (empty($item['image'])) {
-        $item['image'] = 'items/default.jpg';
-    }
-
-    // 🔥 Generate part number if missing
-    if (empty($partNumber)) {
-        do {
-            $partNumber = 'PN-' . strtoupper(Str::random(8)); 
-        } while (Item::where('part_number', $partNumber)->exists());
-
-        $item['part_number'] = $partNumber;
-    }
-
-    if ($existingItems->has($partNumber)) {
-        // Update existing
-        $existing = $existingItems[$partNumber];
-        $existing->fill(array_filter($item, fn($v) => !is_null($v)));
-        $existing->quantity += $quantity;
-        $existing->total_price = $existing->quantity * ($existing->purchase_price ?? 0);
-
-        if (empty($existing->image)) {
-            $existing->image = 'defaults/item.png';
+} else {
+    // Default image if missing
+    // Default image for imported items
+if (empty($item['image'])) {
+    $item['image'] = 'items/default.jpg';
+}
+    // Create new item
+    $created = Item::create($item);
+    $inserted[] = $created;
+}
         }
 
-        $existing->save();
-        $updatedItems[] = $existing;
-    } else {
-        // New item
-        $created = Item::create($item);
-        $newItems[] = $created;
+        return response()->json([
+            'message'  => 'Import completed successfully',
+            'inserted' => count($inserted),
+            'updated'  => count($updated),
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Import failed: ' . $e->getMessage(),
+        ], 400);
     }
 }
 
 
-    return response()->json([
-        'message' => 'Items imported successfully',
-        'inserted' => count($newItems),
-        'updated' => count($updatedItems),
-        'items' => array_merge($newItems, $updatedItems),
-    ]);
-}
+
+
 
 
 

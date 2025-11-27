@@ -124,6 +124,10 @@ function StoreProvider({ children }) {
 
     fetchProformas();
   }, []);
+  // 🔥 Admin authentication state
+  const [admin, setAdmin] = useState(() => {
+    return !!localStorage.getItem("adminToken"); // stays logged in after refresh
+  });
 
   const handleDelete = async (id, type) => {
     if (!id) return;
@@ -343,6 +347,8 @@ function StoreProvider({ children }) {
         permissions,
         setPermissions,
         fetchPermissions,
+        admin,
+        setAdmin,
       }}
     >
       {children}

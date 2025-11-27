@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import ActionDropdown from "./ActionDropdown";
 import Swal from "sweetalert2";
 import Header from "@/partials/Header";
+import { format } from "date-fns"; // install with npm install date-fns
 
 function AllPaymentsTable() {
   const [data, setData] = useState([]);
@@ -52,7 +53,7 @@ function AllPaymentsTable() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
+  // const navigate = useNavigate();``
   const toggleRow = (id) => {
     setSelectedRows((prev) => {
       const newSet = new Set(prev);
@@ -101,12 +102,29 @@ function AllPaymentsTable() {
   };
 
   const handleBulkDelete = async () => {
-    if (confirm("Delete selected payments?")) {
-      await Promise.all(
-        [...selectedRows].map((id) => api.delete(`/payments/${id}`))
-      );
-      setData(data.filter((d) => !selectedRows.has(d.id)));
-      setSelectedRows(new Set());
+    if (selectedRows.size === 0) {
+      alert("No payments selected.");
+      return;
+    }
+
+    if (confirm(`Delete ${selectedRows.size} selected payment(s)?`)) {
+      try {
+        // Send one DELETE request with all IDs
+        await api.delete("/payments/bulk", {
+          data: { ids: Array.from(selectedRows) },
+        });
+
+        // Remove deleted items from state
+        setData((prev) => prev.filter((d) => !selectedRows.has(d.id)));
+
+        // Clear selection
+        setSelectedRows(new Set());
+
+        alert("✅ Selected payments deleted successfully.");
+      } catch (error) {
+        console.error("Bulk delete failed:", error);
+        alert("❌ Failed to delete selected payments.");
+      }
     }
   };
 
@@ -115,6 +133,9 @@ function AllPaymentsTable() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payments");
     XLSX.writeFile(workbook, "payments.xlsx");
+  };
+  const handleCreateFormalPayment = () => {
+    navigate("/formalpayment");
   };
 
   const handlePrintPDF = () => {
@@ -155,6 +176,64 @@ function AllPaymentsTable() {
   };
 
   const columns = useMemo(() => {
+    const getMethodBadge = (method) => {
+      if (!method) return <span className="text-gray-400 italic">—</span>;
+
+      const colors = {
+        cash: "bg-green-100 text-green-700 border-green-300",
+        transfer: "bg-blue-100 text-blue-700 border-blue-300",
+        card: "bg-purple-100 text-purple-700 border-purple-300",
+        cheque: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        credit: "bg-orange-100 text-orange-700 border-orange-300",
+      };
+
+      const methodNames = {
+        cash: "Cash",
+        transfer: "Bank Transfer",
+        card: "Card Payment",
+        cheque: "Cheque",
+        credit: "Credit",
+      };
+
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold border capitalize ${
+            colors[method] || "bg-gray-100 text-gray-700 border-gray-300"
+          }`}
+        >
+          {methodNames[method] || method}
+        </span>
+      );
+    };
+
+    const getStatusBadge = (status) => {
+      if (!status) return <span className="text-gray-400 italic">—</span>;
+
+      const colors = {
+        full: "bg-green-100 text-green-700 border-green-300",
+        partial: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        pending: "bg-blue-100 text-blue-700 border-blue-300",
+        nopayment: "bg-red-100 text-red-700 border-red-300",
+      };
+
+      const statusNames = {
+        full: "Full Payment",
+        partial: "Partial Payment",
+        pending: "Pending",
+        nopayment: "No Payment",
+      };
+
+      return (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold border capitalize ${
+            colors[status] || "bg-gray-100 text-gray-700 border-gray-300"
+          }`}
+        >
+          {statusNames[status] || status}
+        </span>
+      );
+    };
+
     return [
       {
         id: "select",
@@ -167,27 +246,50 @@ function AllPaymentsTable() {
           />
         ),
       },
-      { accessorKey: "jobId", header: "Job ID" },
+      {
+        accessorKey: "date",
+        header: "Date",
+        cell: ({ row }) => {
+          const date = row.original.date;
+          return date ? format(new Date(date), "dd/MM/yyyy") : "";
+        },
+      },
+      { accessorKey: "reference", header: "Ref Num" },
       { accessorKey: "name", header: "Customer Name" },
-      { accessorKey: "mobile", header: "Mobile" },
-      // { accessorKey: "plate", header: "Plate Number" },
-      { accessorKey: "model", header: "Model" },
-      { accessorKey: "priority", header: "Priority" },
-      { accessorKey: "receivedDate", header: "Received Date" },
-      { accessorKey: "dateOut", header: "Date Out" },
-      { accessorKey: "method", header: "Method" },
-      { accessorKey: "status", header: "Status" },
+      {
+        accessorKey: "reason",
+        header: "Payment For",
+        cell: ({ row }) => {
+          const reason = row.original.reason;
+          if (!reason) return "—";
+
+          const list = reason
+            .split("\n")
+            .filter((line) => line.trim() !== "")
+            .map((line, index) => (
+              <li key={index} className="list-disc ml-4">
+                {line}
+              </li>
+            ));
+
+          return <ul>{list}</ul>;
+        },
+      },
       { accessorKey: "paidAmount", header: "Paid (ETB)" },
       { accessorKey: "remainingAmount", header: "Remaining (ETB)" },
-      // { accessorKey: "reference", header: "Ref No" },
-      // { accessorKey: "date", header: "Date" },
-      // { accessorKey: "paidBy", header: "Paid By" },
-      // { accessorKey: "approvedBy", header: "Approved By" },
-      // { accessorKey: "reason", header: "Reason" },
-      // { accessorKey: "remarks", header: "Remarks" },
+      {
+        accessorKey: "method",
+        header: "Payment Method",
+        cell: ({ row }) => getMethodBadge(row.original.method),
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => getStatusBadge(row.original.status),
+      },
       {
         id: "actions",
-        header: "Actions",
+        header: "Action",
         cell: ({ row }) => <ActionDropdown row={row} onDelete={deleteRow} />,
       },
     ];
@@ -331,6 +433,13 @@ function AllPaymentsTable() {
             {/* Export & Actions */}
             <div className="flex flex-wrap gap-2">
               <button
+                onClick={handleCreateFormalPayment}
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
+              >
+                Create Formal Payment
+                {/* <FaFileExcel />  */}
+              </button>
+              <button
                 onClick={handleExportExcel}
                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
               >
@@ -338,7 +447,7 @@ function AllPaymentsTable() {
               </button>
               <button
                 onClick={handlePrintPDF}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 sm:px-4 py-2 rounded-md text-sm w-full sm:w-auto"
               >
                 <FaPrint /> PDF
               </button>

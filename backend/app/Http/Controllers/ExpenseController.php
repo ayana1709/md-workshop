@@ -12,8 +12,34 @@ class ExpenseController extends Controller
     {
         return response()->json(Expense::latest()->get());
     }
+public function generateRefNum()
+{
+    $lastExpense = Expense::whereNotNull('reference_no')
+                          ->orderBy('id', 'desc')
+                          ->first();
 
-    // Store new expense
+    if (!$lastExpense) {
+        return response()->json(['nextRef' => 'EXP-0001']);
+    }
+
+    preg_match('/(\d+)$/', $lastExpense->reference_no, $matches);
+
+    $lastNum = isset($matches[1]) ? (int)$matches[1] : 0;
+    $nextRef = 'EXP-' . str_pad($lastNum + 1, 4, '0', STR_PAD_LEFT);
+
+    return response()->json(['nextRef' => $nextRef]);
+}
+
+public function getLastRef()
+{
+    $last = Expense::whereNotNull('reference_no')
+                   ->orderBy('id', 'desc')
+                   ->value('reference_no');
+
+    return response()->json(['lastRef' => $last]);
+}
+
+    // ✅ Store new expense
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -21,7 +47,7 @@ class ExpenseController extends Controller
             'category' => 'required|string',
             'amount' => 'required|numeric',
             'payment_method' => 'nullable|string',
-            'reference_no' => 'nullable|string',
+            'reference_no' => 'nullable|string|unique:expenses,reference_no',
             'paid_by' => 'nullable|string',
             'approved_by' => 'nullable|string',
             'remarks' => 'nullable|string',
@@ -38,6 +64,11 @@ class ExpenseController extends Controller
             'contract_no' => 'nullable|string',
             'beneficiary' => 'nullable|string',
         ]);
+
+        // Auto-generate reference number if not provided
+        if (empty($data['reference_no'])) {
+            $data['reference_no'] = $this->generateRefNum()->getData()->nextRef;
+        }
 
         $expense = Expense::create($data);
         return response()->json($expense, 201);

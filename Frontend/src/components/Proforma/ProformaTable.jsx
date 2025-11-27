@@ -63,7 +63,7 @@ function ProformaTable({
     setLabourRows([
       ...labourRows,
       {
-        description: "",
+        description: " ",
         unit: "",
         estTime: "",
         cost: "",
@@ -75,7 +75,7 @@ function ProformaTable({
     setSpareRows([
       ...spareRows,
       {
-        description: "",
+        description: " ",
         unit: "",
         brand: "",
         qty: "",
@@ -84,6 +84,7 @@ function ProformaTable({
         remark: "",
       },
     ]);
+
   const removeLabourRow = (i) =>
     setLabourRows(labourRows.filter((_, idx) => idx !== i));
   const removeSpareRow = (i) =>
@@ -98,13 +99,16 @@ function ProformaTable({
   const spareVatAmount = spareVat ? spareSubtotal * vatRate : 0;
 
   // Total calculations
+
   const labourTotal = labourSubtotal + labourVatAmount;
   const spareTotal = spareSubtotal + spareVatAmount;
-
-  const total = labourTotal + spareTotal;
+  const total = labourSubtotal + spareSubtotal;
   const totalVat = labourVatAmount + spareVatAmount;
   const grossTotal =
-    total + (parseFloat(otherCost) || 0) - (parseFloat(discount) || 0);
+    total +
+    totalVat +
+    (parseFloat(otherCost) || 0) -
+    (parseFloat(discount) || 0);
   const netPay = grossTotal;
 
   // Updating the summary whenever values change
@@ -166,17 +170,71 @@ function ProformaTable({
                   className="text-center hover:bg-blue-50 transition-colors even:bg-gray-50"
                 >
                   <td className={cell}>{i + 1}</td>
+
                   <td className={cell}>
-                    <input
-                      type="text"
-                      value={row.description}
-                      onChange={(e) =>
-                        handleLabourChange(i, "description", e.target.value)
-                      }
-                      className={`${input} w-full sm:w-auto min-w-[160px]`}
-                      placeholder="Describe work..."
-                    />
+                    {row.isLabourTextarea ? (
+                      /* ================================
+       TEXTAREA MODE (after Enter)
+       ================================ */
+                      <textarea
+                        value={row.description}
+                        onChange={(e) =>
+                          handleLabourChange(i, "description", e.target.value)
+                        }
+                        onInput={(e) => {
+                          e.target.style.height = "auto";
+                          e.target.style.height = e.target.scrollHeight + "px";
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+
+                            // Always append bullet at END
+                            const newText =
+                              (row.description?.trim() || "") + "\n• ";
+
+                            handleLabourChange(i, "description", newText);
+
+                            setTimeout(() => {
+                              e.target.selectionStart = e.target.selectionEnd =
+                                newText.length;
+
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }, 0);
+                          }
+                        }}
+                        placeholder="Describe work..."
+                        className={`${input} w-full resize-none overflow-hidden sm:w-auto min-w-[160px] leading-relaxed`}
+                      />
+                    ) : (
+                      /* ================================
+       INPUT MODE (initial field)
+       ================================ */
+                      <input
+                        value={row.description}
+                        onChange={(e) =>
+                          handleLabourChange(i, "description", e.target.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+
+                            // Switch to textarea
+                            handleLabourChange(i, "isLabourTextarea", true);
+
+                            // First bullet
+                            const firstText = "• " + (row.description || "");
+                            handleLabourChange(i, "description", firstText);
+                          }
+                        }}
+                        placeholder="Describe work..."
+                        className={`${input} w-full min-w-[160px] border rounded-lg px-3 py-2 leading-relaxed`}
+                      />
+                    )}
                   </td>
+
                   <td className={cell}>
                     <input
                       type="text"
@@ -298,16 +356,70 @@ function ProformaTable({
                 >
                   <td className={cell}>{i + 1}</td>
 
+                  {/* <td className={cell}> */}
+
                   <td className={cell}>
-                    <input
-                      type="text"
-                      value={row.description}
-                      onChange={(e) =>
-                        handleSpareChange(i, "description", e.target.value)
-                      }
-                      className={`${input} w-full sm:w-auto min-w-[180px]`}
-                      placeholder="Describe item..."
-                    />
+                    {row.isSpareTextarea ? (
+                      /* ================================
+       TEXTAREA MODE (after Enter)
+       ================================ */
+                      <textarea
+                        value={row.description}
+                        onChange={(e) =>
+                          handleSpareChange(i, "description", e.target.value)
+                        }
+                        onInput={(e) => {
+                          e.target.style.height = "auto";
+                          e.target.style.height = e.target.scrollHeight + "px";
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+
+                            // Always append bullet at END
+                            const newText =
+                              (row.description?.trim() || "") + "\n• ";
+
+                            handleSpareChange(i, "description", newText);
+
+                            setTimeout(() => {
+                              e.target.selectionStart = e.target.selectionEnd =
+                                newText.length;
+
+                              e.target.style.height = "auto";
+                              e.target.style.height =
+                                e.target.scrollHeight + "px";
+                            }, 0);
+                          }
+                        }}
+                        placeholder="Describe item..."
+                        className={`${input} w-full resize-none overflow-hidden sm:w-auto min-w-[180px] leading-relaxed`}
+                      />
+                    ) : (
+                      /* ================================
+       INPUT MODE (first stage)
+       ================================ */
+                      <input
+                        value={row.description}
+                        onChange={(e) =>
+                          handleSpareChange(i, "description", e.target.value)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+
+                            // Switch to textarea mode
+                            handleSpareChange(i, "isSpareTextarea", true);
+
+                            // Insert first bullet
+                            const firstText = "• " + (row.description || "");
+                            handleSpareChange(i, "description", firstText);
+                          }
+                        }}
+                        placeholder="Describe item..."
+                        className={`${input} w-full min-w-[180px] sm:w-auto border rounded-lg px-3 py-2 leading-relaxed`}
+                      />
+                    )}
                   </td>
 
                   <td className={cell}>
@@ -431,7 +543,7 @@ function ProformaTable({
           </div>
 
           {/* Other Cost */}
-          <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
+          {/* <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
             <span>Other Cost</span>
             <input
               type="number"
@@ -439,10 +551,10 @@ function ProformaTable({
               onChange={(e) => setOtherCost(e.target.value)}
               className={`${input} w-full sm:w-28 text-right no-arrows`}
             />
-          </div>
+          </div> */}
 
           {/* Discount */}
-          <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
+          {/* <div className="flex flex-wrap items-center justify-between rounded-lg px-3 py-2 border gap-2">
             <span>Discount</span>
             <input
               type="number"
@@ -450,7 +562,7 @@ function ProformaTable({
               onChange={(e) => setDiscount(e.target.value)}
               className={`${input} w-full sm:w-28 text-right no-arrows`}
             />
-          </div>
+          </div> */}
 
           {/* Net Pay */}
           <div className="flex flex-wrap items-center justify-between bg-green-100 rounded-lg px-3 py-2 gap-2 sm:col-span-2">

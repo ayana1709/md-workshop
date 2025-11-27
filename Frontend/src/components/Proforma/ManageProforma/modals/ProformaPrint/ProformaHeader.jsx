@@ -1,64 +1,52 @@
 import React from "react";
 import { useStores } from "@/contexts/storeContext";
+import PrintHeader from "@/components/PrintHeader";
 
 function ProformaHeader({ proforma }) {
   const { companyData } = useStores();
 
   return (
-    <div className="px-8 print:px-12">
-      {/* Header: Logo + Company Names + Company Details */}
-      <div className="flex justify-between items-center bg-gray-200 p-4 rounded-md shadow-lg">
-        {/* Logo */}
-        {companyData?.logo && (
-          <div className="flex-shrink-0">
-            <img
-              src={`${import.meta.env.VITE_API_URL}/storage/${
-                companyData.logo
-              }`}
-              alt="Company Logo"
-              className="h-16 w-16 object-contain"
-            />
-          </div>
-        )}
+    <div className="w-full">
+      {/* Company Header */}
 
-        {/* Company Names */}
-        <div className="flex-1 ml-4">
-          <h2 className="font-bold text-red-600 text-xl">
-            {companyData?.name_am || "የኩባንያ ስም"}
+      {/* Top Row: Date + Title + Ref */}
+      <div className="flex justify-between items-center mt-1 px-2">
+        {/* Left: Empty / can add logo later */}
+        <div className="flex-1"></div>
+
+        {/* Center: Title */}
+        <div className="flex flex-col text-center flex-1">
+          <h2 className="text-[20px] font-bold mt-[1px] leading-tight">
+            የዋጋ ማቅረቢያ ደረሰኝ
           </h2>
-          <h2 className="font-bold text-gray-800 text-xl uppercase">
-            {companyData?.name_en || "Company Name"}
-          </h2>
+          <h1 className="text-[22px] font-extrabold underline underline-offset-4 leading-tight">
+            Proforma Invoice
+          </h1>
         </div>
 
-        {/* Company Details (Right Aligned) */}
-        <div className="text-sm text-right font-medium text-gray-700 space-y-1">
-          <p>Address / አድራሻ : {companyData?.address || "----"}</p>
-          <p>TIN Number / የታክስ ከፋይ መ.ቁ : {companyData?.tin || "----"}</p>
+        {/* Right: Date + Ref */}
+        <div className="flex flex-col items-end text-[14px] font-medium flex-1">
           <p>
-            VAT Reg. Num / የግብር ክፋይ ት.እ.ታ ቁጥር : {companyData?.vat || "----"}
+            Date / ቀን:{" "}
+            <span className="underline underline-offset-2 decoration-1 ml-1">
+              {proforma.date || "_____"}
+            </span>
+          </p>
+          <p>
+            Ref. No / መ.ቁ:{" "}
+            <span className="underline underline-offset-2 decoration-1 ml-1">
+              {proforma.ref_num || "_____"}
+            </span>
           </p>
         </div>
       </div>
 
-      {/* Title + Right Side Info */}
-      <div className="flex justify-between items-center my-6">
-        {/* Title */}
-        <h3 className="font-bold text-xl text-red-600 py-2 px-6 rounded-md bg-gray-100">
-          የዋጋ ማቅረቢያ / PROFORMA INVOICE
-        </h3>
-
-        {/* Right Side Small Info */}
-        <div className="text-sm text-right text-gray-800 space-y-1">
-          <p>Date | ቀን : {proforma.date}</p>
-          <p>Ref No | መለኪያ ቁጥር : {proforma.ref_num}</p>
-          <p>Customer TIN | ተጠቃሚ TIN : {proforma.customer_tin || "----"}</p>
-        </div>
-      </div>
-
       {/* Customer Name */}
-      <div className="mb-4 text-lg font-semibold">
-        <p>To | ለ: {proforma.customer_name}</p>
+      <div className="mb-1 text-[16px] font-semibold px-2 mt-2">
+        To / ለ:{" "}
+        <span className="underline underline-offset-2 decoration-1">
+          {proforma.customer_name || "_____"}
+        </span>
       </div>
     </div>
   );

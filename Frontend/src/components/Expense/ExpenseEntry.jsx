@@ -1,18 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "@/api";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
+import DateInput from "../DateInput";
+import { useStores } from "@/contexts/storeContext";
+import Swal from "sweetalert2";
 
 export default function ExpenseEntry() {
   const [form, setForm] = useState({
     date: "",
-    category: "",
+    category: "miscellaneous",
     amount: "",
-    payment_method: "",
+    payment_method: "cash",
     reference_no: "",
     paid_by: "",
     approved_by: "",
     remarks: "",
+    payment_reason: "",
+    attachment: null,
     staff_name: "",
     hours: "",
     rate: "",
@@ -33,17 +38,60 @@ export default function ExpenseEntry() {
 
   const banks = ["Awash", "CBE", "Dashen", "Coop", "Abyssinia", "Other"];
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { companyData } = useStores();
 
+  // ✅ Auto-generate reference number
+  useEffect(() => {
+    const generateRef = async () => {
+      try {
+        const res = await api.get("/expenses/last-ref");
+        setForm((prev) => ({
+          ...prev,
+          reference_no: res.data.nextRef,
+        }));
+      } catch (err) {
+        console.error("Error:", err);
+        setForm((prev) => ({
+          ...prev,
+          reference_no: "EXP-0001",
+        }));
+      }
+    };
+
+    generateRef();
+  }, []);
+
+  // ✅ Handle change for text inputs
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    const { name, value, files } = e.target;
+    if (name === "attachment") {
+      setForm({ ...form, attachment: files[0] });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
+  // ✅ Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/expenses", form);
-      alert("Expense entry submitted successfully!");
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      await api.post("/expenses", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Expense submitted successfully!",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+
+      // Reset form
       setForm({
         date: "",
         category: "",
@@ -53,6 +101,8 @@ export default function ExpenseEntry() {
         paid_by: "",
         approved_by: "",
         remarks: "",
+        payment_reason: "",
+        attachment: null,
         staff_name: "",
         hours: "",
         rate: "",
@@ -72,10 +122,15 @@ export default function ExpenseEntry() {
       });
     } catch (err) {
       console.error("Error submitting expense:", err);
-      alert("Failed to submit expense. Check console for details.");
+      Swal.fire({
+        icon: "error",
+        title: "Failed to submit expense!",
+        text: "Check console for details.",
+      });
     }
   };
 
+  // ✅ Dynamic fields by category (unchanged)
   const renderCategoryFields = () => {
     switch (form.category) {
       case "labor":
@@ -214,7 +269,7 @@ export default function ExpenseEntry() {
       case "miscellaneous":
         return (
           <div>
-            <label className="block font-medium">Beneficiary</label>
+            <label className="block font-medium">Paid For</label>
             <input
               type="text"
               name="beneficiary"
@@ -232,7 +287,6 @@ export default function ExpenseEntry() {
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
       <div className="flex-1 flex flex-col">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className="p-6">
@@ -243,12 +297,16 @@ export default function ExpenseEntry() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-medium">Date</label>
-                  <input
-                    type="date"
-                    name="date"
+                  <DateInput
                     value={form.date}
-                    onChange={handleChange}
-                    className="w-full p-2 border rounded-lg"
+                    onChange={(val) =>
+                      handleChange({
+                        target: { name: "date", value: val },
+                      })
+                    }
+                    placeholder={companyData?.date_format || "DD/MM/YYYY"}
+                    format={companyData?.date_format || "DD/MM/YYYY"}
+                    className="w-full border border-gray-300 p-2 rounded-md"
                   />
                 </div>
                 <div>
@@ -263,7 +321,7 @@ export default function ExpenseEntry() {
                     <option value="labor">Labor</option>
                     <option value="outsourcing">Outsourcing</option>
                     <option value="utilities">Utilities</option>
-                    <option value="operations">Garage Operations</option>
+                    <option value="operations">Operations</option>
                     <option value="miscellaneous">Miscellaneous</option>
                   </select>
                 </div>
@@ -281,7 +339,7 @@ export default function ExpenseEntry() {
                     name="amount"
                     value={form.amount}
                     onChange={handleChange}
-                    className="w-full p-2 border rounded-lg [appearance:textfield]"
+                    className="w-full p-2 border rounded-lg"
                   />
                 </div>
                 <div>
@@ -295,11 +353,42 @@ export default function ExpenseEntry() {
                     <option value="">-- Select Method --</option>
                     <option value="cash">Cash</option>
                     <option value="transfer">Bank Transfer</option>
+                    <option value="cheque">Cheque</option>
                     <option value="mobile">Mobile Money</option>
                     <option value="credit">Credit</option>
                   </select>
                 </div>
               </div>
+
+              {/* ✅ Payment Reason */}
+              <div>
+                <label className="block font-medium">Payment Reason</label>
+                <input
+                  type="text"
+                  name="payment_reason"
+                  value={form.payment_reason}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded-lg"
+                  placeholder="Enter payment purpose or details"
+                />
+              </div>
+
+              {/* ✅ Attachment for Transfer or Cheque */}
+              {(form.payment_method === "transfer" ||
+                form.payment_method === "cheque") && (
+                <div>
+                  <label className="block font-medium">
+                    Attachment (Proof)
+                  </label>
+                  <input
+                    type="file"
+                    name="attachment"
+                    onChange={handleChange}
+                    accept="image/*,application/pdf"
+                    className="w-full p-2 border rounded-lg"
+                  />
+                </div>
+              )}
 
               {/* Bank Transfer Extra Fields */}
               {form.payment_method === "transfer" && (

@@ -588,7 +588,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               </svg>
 
                               <span className="text-sm font-medium ml-4  duration-200">
-                                Sales
+                                Store Out
                               </span>
                             </div>
                             {/* Icon */}
@@ -621,7 +621,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                  Create Sales
+                                  New Store Out
                                 </span>
                               </NavLink>
                             </li>
@@ -638,7 +638,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                  Manage Sales
+                                  Manage Store Out
                                 </span>
                               </NavLink>
                             </li>

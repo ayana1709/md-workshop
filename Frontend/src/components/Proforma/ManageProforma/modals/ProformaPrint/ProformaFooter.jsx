@@ -5,81 +5,59 @@ function ProformaFooter({ proforma }) {
   const { companyData } = useStores();
 
   return (
-    <div className="mt-10 bg-gray-100 p-6 rounded-lg">
-      {/* Totals */}
-      <div className="flex justify-between border-b pb-4">
-        <div className="w-1/2 text-sm ">
-          <p className="font-bold border-t pt-1">
-            Performa Validity:
-            <span className="text-lg pl-2">
-              {proforma.validity_date || "___"}
-            </span>{" "}
-            Days
-          </p>
-          <p className="font-bold border-t pt-1">
-            ይህ ዋጋ ማቅረቢያ የሚያገለጊለው ለ
-            <span className="text-lg pl-2">
-              {proforma.validity_date || "___"}
+    <div className="mt-3 border border-black rounded-md text-[13px] font-sans leading-tight print:mt-2">
+      {/* Signature Section */}
+      <div className="grid grid-cols-2 gap-x-4 px-3 py-3">
+        <div className="space-y-2">
+          <p className="flex items-center">
+            <strong className="w-40 font-semibold text-[13px]">
+              ይህ ዋጋ ማቅረቢያ የሚያገለግለው ለ / Validity Date:
+            </strong>
+            <span className="flex-1 border-b border-black px-1">
+              {proforma.validity_date || "-----"} ቀን ነው / Days only
             </span>
-            ቀናት ብቻ ነው።
           </p>
-          <p className="font-bold border-t pt-1">
-            Date of Delivery:
-            <span className="text-lg pl-2">
-              {proforma.delivery_date || "_________"}
-            </span>{" "}
-          </p>
-          <p className="font-bold border-t  pt-1">
-            የማስረከቢያ ቀን:
-            <span className="text-lg pl-2">
-              {proforma.delivery_date || "_________"}
-            </span>{" "}
-          </p>
-          <p className="font-bold border-t pt-1">
-            Perpared By| ያዘጋጀው ስም :
-            <span className="text-lg pl-2">
-              {proforma.prepared_by || "_____________"}
-            </span>{" "}
-          </p>
-
-          <p className="font-bold border-t pt-1">
-            Signature| ፍርማ :
-            <span className="text-lg pl-2">{"__________________"}</span>{" "}
+          <p className="flex items-center">
+            <strong className="w-40 font-semibold text-[13px]">
+              የመረከቢያ ቀን / Delivery Date:
+            </strong>
+            <span className="flex-1 border-b border-black px-1">
+              {proforma.delivery_date || ""}
+            </span>
           </p>
         </div>
-        <div className="w-1/2 text-sm text-right">
-          <p className="font-bold border-t pt-1">
-            Total: <span className="font-semibold">{proforma.total} Birr</span>
-          </p>
 
-          <p className="font-bold border-t pt-1">
-            VAT (15%):{" "}
-            <span className="font-semibold">{proforma.total_vat} Birr</span>
-          </p>
-          <p className="font-bold border-t pt-1">
-            OtherCost:{" "}
-            <span className="font-semibold">{proforma.other_cost} Birr</span>
-          </p>
-          <p className="font-bold border-t pt-1">
-            Discount:{" "}
-            <span className="font-semibold">{proforma.discount} Birr</span>
-          </p>
-          <p className="font-bold border-t pt-1">
-            Grand Total:{" "}
-            <span className="text-lg">{proforma.net_pay} Birr</span>
-          </p>
-          <p className="font-bold border-t pt-1">
-            In words:
-            <span className="font-semibold">
-              {proforma.net_pay_in_words || "Zero Birr"}
+        <div className="space-y-2">
+          <p className="flex items-center">
+            <strong className="w-40 font-semibold text-[13px]">
+              ያዘጋጀው / Prepared By:
+            </strong>
+            <span className="flex-1 border-b border-black px-1">
+              {proforma.prepared_by || ""}
             </span>
+          </p>
+          <p className="flex items-center">
+            <strong className="w-40 font-semibold text-[13px]">
+              የክፍያ ሁነታ / Payment Type:
+            </strong>
+            <span className="flex-1 border-b border-black px-1">
+              {proforma.paymenttype || ""}
+            </span>
+          </p>
+          <p className="flex items-center h-[35px]">
+            <strong className="w-40 font-semibold text-[13px]">
+              ፊርማ / Signature:
+            </strong>
+            <span className="flex-1 border-b border-black px-1"></span>
           </p>
         </div>
       </div>
 
-      {/* Footer Line */}
-      <div className="text-center mt-4 text-xs text-gray-600">
-        <p>Thank you for doing business with us!</p>
+      {/* Thank You Message */}
+      <div className="border-t border-black text-center py-3 leading-tight">
+        <p className="text-[13px] font-semibold italic">
+          ስለመረጡን እናመሰግናለን! / Thanks for choosing us!
+        </p>
       </div>
     </div>
   );

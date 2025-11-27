@@ -22,7 +22,7 @@ const JobDetailsRightSection = ({ printData }) => {
       <div className="grid grid-cols-2 gap-4 border p-2 mb-4 text-[11px]">
         <div>
           <p>
-            <strong>Job ID:</strong> {printData?.job_card_no}
+            <strong>Job ID:</strong> {printData?.job_id}
           </p>
           <p>
             <strong>Customer Name:</strong> {printData?.customer_name}
@@ -31,10 +31,25 @@ const JobDetailsRightSection = ({ printData }) => {
             <strong>Phone:</strong> {printData?.mobile}
           </p>
           <p>
-            <strong>Received Date:</strong> {printData?.received_date}
+            <strong>Received Date:</strong>{" "}
+            {printData?.received_date
+              ? new Date(printData.received_date).toLocaleDateString("en-US", {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "numeric",
+                })
+              : ""}
           </p>
+
           <p>
-            <strong>Promise Date:</strong> {printData?.promise_date}
+            <strong>Promise Date:</strong>{" "}
+            {printData?.promise_date
+              ? new Date(printData.promise_date).toLocaleDateString("en-US", {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "numeric",
+                })
+              : ""}
           </p>
         </div>
         <div>

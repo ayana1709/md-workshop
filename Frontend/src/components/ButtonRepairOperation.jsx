@@ -151,10 +151,7 @@ function ButtonRepairOperation({
         "Promise Date": row.promise_date || "N/A",
         "Received By": row.received_by || "N/A",
         "Received Date": row.received_date || "N/A",
-        // "Repair Category": formatArray(row.repair_category),
-        // "Selected Items": formatArray(row.selected_items),
-        "Spare Change": formatArray(row.spare_change),
-        // Vehicles: formatVehicles(row.vehicles),
+
         "Updated At": row.updated_at || "N/A",
       }))
     );
@@ -178,6 +175,31 @@ function ButtonRepairOperation({
       }
     }
     return Array.isArray(data) ? data.join(", ") : data;
+  };
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/repair/import`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.status === "success") {
+        alert("Import successful!");
+        window.location.reload(); // Optional
+      } else {
+        alert("Import failed: " + data.message);
+      }
+    } catch (error) {
+      alert("Error uploading file");
+    }
   };
 
   const formatVehicles = (vehicles) =>
@@ -265,6 +287,21 @@ function ButtonRepairOperation({
 
   return (
     <div className="phone:ml-6 tablet:ml-0 flex items-center gap-2">
+      <button
+        onClick={() => document.getElementById("importExcel").click()}
+        className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition"
+      >
+        Import
+      </button>
+
+      <input
+        id="importExcel"
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleImportExcel}
+      />
+
       <button
         onClick={handleExport}
         className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"

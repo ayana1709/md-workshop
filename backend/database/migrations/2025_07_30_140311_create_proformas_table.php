@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('ref_num')->nullable();
             $table->string('validity_date')->nullable();
             $table->text('notes')->nullable();
+            $table->text('paymenttype')->nullable();
             $table->decimal('payment_before', 15, 2)->default(0);
             $table->decimal('discount', 15, 2)->default(0);
             $table->decimal('other_cost', 15, 2)->default(0);

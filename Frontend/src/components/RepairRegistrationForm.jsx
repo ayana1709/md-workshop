@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useStores } from "../contexts/storeContext";
 import PrintModal from "./PrintModal";
 import BackButton from "./BackButton";
+import DateInput from "./DateInput";
 
 export default function RepairRegistrationForm() {
   const { isPrintModalOpen, setIsPrintModalOpen, setRepairData } = useStores();
@@ -66,24 +67,27 @@ export default function RepairRegistrationForm() {
       setFormData((prevData) => {
         let updatedData = { ...prevData, [name]: value };
 
-        // ✅ If both estimated_date (days) and received_date exist, calculate promise_date
+        // ✅ Calculate promise_date only when both are valid and complete
         if (
           (name === "estimated_date" || name === "received_date") &&
           updatedData.estimated_date &&
           updatedData.received_date
         ) {
-          try {
-            const received = new Date(updatedData.received_date);
-            const estimatedDays = parseInt(updatedData.estimated_date, 10);
+          // Check if received_date is a valid ISO date (YYYY-MM-DD)
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (dateRegex.test(updatedData.received_date)) {
+            try {
+              const received = new Date(updatedData.received_date);
+              const estimatedDays = parseInt(updatedData.estimated_date, 10);
 
-            if (!isNaN(received.getTime()) && !isNaN(estimatedDays)) {
-              const promise = new Date(received);
-              promise.setDate(received.getDate() + estimatedDays);
-
-              updatedData.promise_date = promise.toISOString().split("T")[0]; // format YYYY-MM-DD
+              if (!isNaN(received.getTime()) && !isNaN(estimatedDays)) {
+                const promise = new Date(received);
+                promise.setDate(received.getDate() + estimatedDays);
+                updatedData.promise_date = promise.toISOString().split("T")[0];
+              }
+            } catch (error) {
+              console.error("Date calculation error:", error);
             }
-          } catch (error) {
-            console.error("Date calculation error:", error);
           }
         }
 
@@ -91,7 +95,7 @@ export default function RepairRegistrationForm() {
       });
     }
 
-    // customer search logic remains the same
+    // 🔍 Customer name search logic
     if (name === "customer_name" && value.length > 1) {
       try {
         const response = await api.get(`/search-customers?q=${value}`);
@@ -108,13 +112,69 @@ export default function RepairRegistrationForm() {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    const compressImage = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxSize = 600; // max width/height
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) return reject(new Error("Compression failed"));
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              },
+              "image/jpeg",
+              0.7 // compression quality
+            );
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const compressedFile = await compressImage(file);
       setFormData((prev) => ({
         ...prev,
-        image: file, // 👈 this is what FormData expects
+        image: compressedFile, // store compressed image for FormData
       }));
+      setPreviewUrl(URL.createObjectURL(compressedFile)); // show preview
+    } catch (err) {
+      console.error("Image compression failed", err);
+      setFormData((prev) => ({ ...prev, image: file })); // fallback
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -412,33 +472,39 @@ export default function RepairRegistrationForm() {
 
                     <div>
                       <label className="dark:text-gray-200">
-                        Received Date/የተቀበሉበት ቀን{" "}
-                        <span className="text-red-500 ">*</span>
+                        Received Date / የተቀበሉበት ቀን{" "}
+                        <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="date"
-                        name="received_date"
+                      <DateInput
                         value={formData.received_date}
-                        onChange={handleChange}
-                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                        required
+                        onChange={(val) =>
+                          handleChange({
+                            target: { name: "received_date", value: val },
+                          })
+                        }
+                        placeholder="MM/DD/YYYY"
+                        className="w-full border border-gray-300 p-2 rounded-md dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
 
                     <div>
                       <label className="dark:text-gray-200">
-                        {" "}
-                        Date Out/የምያልቅበት ቀን{" "}
+                        Date Out / የምያልቅበት ቀን{" "}
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           (Optional)
                         </span>
                       </label>
-                      <input
-                        type="date"
-                        name="promise_date"
+                      <DateInput
                         value={formData.promise_date}
-                        onChange={handleChange}
-                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        onChange={(val) =>
+                          handleChange({
+                            target: {
+                              name: "promise_date",
+                              value: val,
+                              userModified: true,
+                            },
+                          })
+                        }
                       />
                     </div>
 
@@ -478,17 +544,12 @@ export default function RepairRegistrationForm() {
                     />
                   </div>
                   <div>
-                    <label className="dark:text-gray-200">
-                      {" "}
-                      Serial Code
-                      <span className="text-red-500 ">*</span>
-                    </label>
+                    <label className="dark:text-gray-200"> Serial Code</label>
                     <input
                       type="text"
                       name="serial_code"
                       value={formData.serial_code}
-                      onChange={handleChange}
-                      required
+                      on
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>
@@ -791,6 +852,7 @@ export default function RepairRegistrationForm() {
                         </div>
                       )}
                     </div>
+
                     <div className="mt-6 text-right text-lg font-bold border-t pt-4  text-dark-700 dark:text-white">
                       Sub Total Estimated Price/ንዑስ ጠቅላላ የተገመተው ዋጋ:{" "}
                       {getGrandTotal().toLocaleString()} ETB

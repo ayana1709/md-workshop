@@ -6,15 +6,12 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
     status: "",
     paidAmount: "",
     remainingAmount: "",
-    reference: "",
-    date: "",
     paidBy: "",
     approvedBy: "",
     reason: "",
-    remarks: "",
   });
 
-  // Prefill payment info when editing
+  // 🔹 Prefill payment info when editing
   useEffect(() => {
     if (value && Object.keys(value).length > 0) {
       setPayment((prev) => ({
@@ -24,22 +21,49 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
     }
   }, [value]);
 
-  // Update remaining when paidAmount or totalAmount changes
+  // 🔹 Auto-update paid & remaining when totalAmount changes
   useEffect(() => {
     if (totalAmount > 0) {
-      const paid = parseFloat(payment.paidAmount) || 0;
-      const remaining = Math.max(totalAmount - paid, 0);
-      setPayment((prev) => ({
-        ...prev,
-        remainingAmount: remaining.toFixed(2),
-      }));
+      setPayment((prev) => {
+        const paid =
+          prev.status === "full"
+            ? totalAmount // if full payment → paid = total
+            : parseFloat(prev.paidAmount) || 0;
+        const remaining = Math.max(totalAmount - paid, 0);
+
+        const updated = {
+          ...prev,
+          paidAmount: prev.status === "full" ? totalAmount.toFixed(2) : paid,
+          remainingAmount: remaining.toFixed(2),
+        };
+
+        // notify parent
+        onChange?.(updated);
+        return updated;
+      });
     }
-  }, [payment.paidAmount, totalAmount]);
+  }, [totalAmount, payment.status]);
 
   const handleChange = (field, value) => {
-    const updated = { ...payment, [field]: value };
-    setPayment(updated);
-    onChange?.(updated);
+    setPayment((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      // recalc remaining if paidAmount changes
+      if (field === "paidAmount") {
+        const paid = parseFloat(value) || 0;
+        const remaining = Math.max(totalAmount - paid, 0);
+        updated.remainingAmount = remaining.toFixed(2);
+      }
+
+      // handle full payment
+      if (field === "status" && value === "full") {
+        updated.paidAmount = totalAmount.toFixed(2);
+        updated.remainingAmount = "0.00";
+      }
+
+      onChange?.(updated);
+      return updated;
+    });
   };
 
   return (
@@ -59,6 +83,7 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
             <option value="cash">Cash</option>
             <option value="transfer">Transfer</option>
             <option value="card">Card</option>
+            <option value="cheque">Cheque</option>
           </select>
         </div>
 
@@ -84,7 +109,7 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
             type="number"
             value={payment.paidAmount}
             onChange={(e) => handleChange("paidAmount", e.target.value)}
-            className="w-full border rounded px-2 py-1"
+            className="w-full border rounded px-2 py-1 no-spinner"
           />
         </div>
 
@@ -95,30 +120,9 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
           </label>
           <input
             type="number"
-            value={payment.remainingAmount}
             readOnly
-            className="w-full border rounded px-2 py-1 bg-gray-100"
-          />
-        </div>
-
-        {/* Reference No */}
-        <div>
-          <label className="block text-gray-600 mb-1">Reference No</label>
-          <input
-            value={payment.reference}
-            onChange={(e) => handleChange("reference", e.target.value)}
-            className="w-full border rounded px-2 py-1"
-          />
-        </div>
-
-        {/* Date */}
-        <div>
-          <label className="block text-gray-600 mb-1">Date of Payment</label>
-          <input
-            type="date"
-            value={payment.date}
-            onChange={(e) => handleChange("date", e.target.value)}
-            className="w-full border rounded px-2 py-1"
+            value={payment.remainingAmount}
+            className="w-full border rounded px-2 py-1 bg-gray-100 no-spinner"
           />
         </div>
 
@@ -142,23 +146,15 @@ function EditPaymentInfo({ value = {}, onChange, totalAmount = 0 }) {
           />
         </div>
 
-        {/* Reason of Payment */}
+        {/* Paid For */}
         <div className="md:col-span-2">
-          <label className="block text-gray-600 mb-1">Reason of Payment</label>
-          <input
+          <label className="block text-gray-600 mb-1">Paid For</label>
+          <textarea
             value={payment.reason}
             onChange={(e) => handleChange("reason", e.target.value)}
-            className="w-full border rounded px-2 py-1"
-          />
-        </div>
-
-        {/* Remarks */}
-        <div className="md:col-span-2">
-          <label className="block text-gray-600 mb-1">Remarks</label>
-          <textarea
-            value={payment.remarks}
-            onChange={(e) => handleChange("remarks", e.target.value)}
-            className="w-full border rounded px-2 py-1"
+            placeholder="Parts, labor, diagnostics..."
+            rows={2}
+            className="w-full border rounded px-2 py-1 resize-y"
           />
         </div>
       </div>

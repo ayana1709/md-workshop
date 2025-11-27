@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 
 function ProformaActions({ row, onView, onPrint, onEdit, onDelete }) {
   const [open, setOpen] = useState(false);
-  const { job_id } = row.original;
+  const { ref_num } = row.original; // ✅ Use ref_num instead of job_id
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -38,7 +38,7 @@ function ProformaActions({ row, onView, onPrint, onEdit, onDelete }) {
           <button
             onClick={() => {
               setOpen(false);
-              onView(job_id);
+              onView(ref_num);
             }}
             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
           >
@@ -47,7 +47,7 @@ function ProformaActions({ row, onView, onPrint, onEdit, onDelete }) {
           <button
             onClick={() => {
               setOpen(false);
-              onPrint(job_id);
+              onPrint(ref_num); // ✅ changed to ref_num
             }}
             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
           >
@@ -56,7 +56,7 @@ function ProformaActions({ row, onView, onPrint, onEdit, onDelete }) {
           <button
             onClick={() => {
               setOpen(false);
-              onEdit(job_id);
+              onEdit(ref_num); // ✅ changed to ref_num
             }}
             className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
           >
@@ -65,7 +65,7 @@ function ProformaActions({ row, onView, onPrint, onEdit, onDelete }) {
           <button
             onClick={() => {
               setOpen(false);
-              onDelete(job_id);
+              onDelete(ref_num); // ✅ changed to ref_num
             }}
             className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
           >

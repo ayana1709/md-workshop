@@ -18,7 +18,7 @@ function ProformaForm() {
   const { setProformas } = useStores();
 
   const [formData, setFormData] = useState({
-    jobId: "",
+    // jobId: "",
     date: format(new Date(), "yyyy-MM-dd"),
     refNum: "",
     customerName: "",
@@ -60,30 +60,11 @@ function ProformaForm() {
   });
   const printRef = useRef();
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef, // ✅ new API
-    documentTitle: `Proforma_${formData.jobId || "Invoice"}`,
-  });
-
-  const validateForm = () => {
-    const requiredFields = ["jobId", "customerName"];
-    const missing = requiredFields.filter((field) => !formData[field]);
-    if (missing.length > 0) {
-      Swal.fire(
-        "Validation Error",
-        `Please fill in required fields: ${missing.join(", ")}`,
-        "warning"
-      );
-      return false;
-    }
-    return true;
-  };
-
   // inside your component
   const navigate = useNavigate();
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
     setLoading(true);
 
     try {
@@ -121,7 +102,7 @@ function ProformaForm() {
 
   const resetForm = () => {
     setFormData({
-      jobId: "",
+      // jobId: "",
       date: format(new Date(), "yyyy-MM-dd"),
       refNum: "",
       customerName: "",
@@ -130,6 +111,8 @@ function ProformaForm() {
       validityDate: "",
       deliveryDate: "",
       preparedBy: "",
+      paymenttype: "cash",
+
       paymentBefore: "",
       notes: "",
     });
@@ -159,6 +142,44 @@ function ProformaForm() {
     setOtherCost("");
     setDiscount("");
   };
+  const handleSubmitWithStatus = async (statusType) => {
+    setLoading(true);
+    try {
+      const payload = {
+        ...formData,
+        status: statusType || formData.status || "active", // 👈 set "draft" or "active"
+        labourRows,
+        spareRows,
+        labourVat,
+        spareVat,
+        otherCost,
+        discount,
+        summary,
+      };
+
+      const { data } = await api.post("/proformas", payload);
+
+      setProformas((prev) => [...prev, data]);
+
+      Swal.fire({
+        title: "Success!",
+        text:
+          statusType === "draft"
+            ? "Proforma saved as draft."
+            : "Proforma registered successfully.",
+        icon: "success",
+        confirmButtonText: "OK",
+      }).then(() => {
+        resetForm();
+        navigate("/manage-proforma");
+      });
+    } catch (error) {
+      console.error("Proforma save failed:", error);
+      Swal.fire("Error", "Failed to save proforma.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -170,8 +191,6 @@ function ProformaForm() {
             <h1 className="text-2xl font-semibold mb-6 text-center">
               Proforma Invoice
             </h1>
-
-            {/* ✅ This part is just the interactive form (not printed) */}
             <div className="space-y-6">
               <ProformaHeader formData={formData} setFormData={setFormData} />
               <ProformaTable
@@ -193,10 +212,28 @@ function ProformaForm() {
             </div>
 
             <div className="flex justify-end gap-4 mt-6">
+              {/* Save as Draft */}
               <button
-                onClick={handleSubmit}
+                onClick={() => handleSubmitWithStatus("draft")}
                 disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className={`px-4 py-2 rounded shadow-md font-medium transition-all ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-yellow-500 hover:bg-yellow-600 text-white transform hover:scale-105 active:scale-95"
+                }`}
+              >
+                {loading ? "Saving..." : "Save as Draft"}
+              </button>
+
+              {/* Save Proforma */}
+              <button
+                onClick={() => handleSubmitWithStatus("active")}
+                disabled={loading}
+                className={`px-4 py-2 rounded shadow-md font-medium transition-all ${
+                  loading
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white transform hover:scale-105 active:scale-95"
+                }`}
               >
                 {loading ? "Saving..." : "Save Proforma"}
               </button>

@@ -10,6 +10,9 @@ class Sale extends Model
     use HasFactory;
 
     protected $fillable = [
+        'ref_num',
+        'approved_by',
+
         'sales_date',
         'customer_name',
         'company_name',
@@ -31,12 +34,18 @@ class Sale extends Model
         'payment_type',
         'remark',
         'other_info',
+
+        // ⭐ NEW
+        'location',
+        'delivered_by',
+        'requested_date',
+        'status',
     ];
 
     public function items()
     {
         return $this->belongsToMany(Item::class, 'sale_items')
-                    ->withPivot(['item_name', 'part_number', 'brand', 'unit', 'selling_price', 'sale_quantity'])
-                    ->withTimestamps();
+            ->withPivot(['item_name', 'part_number', 'brand', 'unit', 'selling_price', 'sale_quantity'])
+            ->withTimestamps();
     }
 }

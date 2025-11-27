@@ -65,21 +65,25 @@ function PaymentDetail() {
               <DetailCard title="Customer Info">
                 <DetailItem label="Customer Name" value={payment.name} />
                 <DetailItem label="Mobile" value={payment.mobile} />
-                <DetailItem label="Plate Number" value={payment.plate} />
-                <DetailItem label="Model" value={payment.model} />
-                <DetailItem label="Job ID" value={payment.id} />
-                <DetailItem label="Priority" value={payment.priority} />
+
                 <DetailItem
-                  label="Received Date"
-                  value={payment.receivedDate}
+                  label=" Date"
+                  value={
+                    payment.date
+                      ? new Date(payment.date).toLocaleDateString("en-US", {
+                          month: "2-digit",
+                          day: "2-digit",
+                          year: "numeric",
+                        })
+                      : ""
+                  }
                 />
-                <DetailItem label="Date Out" value={payment.dateOut} />
               </DetailCard>
 
               {/* Payment Info */}
               <DetailCard title="Payment Info">
-                <DetailItem label="Method" value={payment.method} />
-                <DetailItem label="Status" value={payment.status} />
+                <DetailItem label="Payment Method" value={payment.method} />
+                <DetailItem label="Payment Status" value={payment.status} />
                 <DetailItem
                   label="Paid Amount"
                   value={`${payment.paidAmount} ETB`}
@@ -93,7 +97,18 @@ function PaymentDetail() {
               {/* Reference Info */}
               <DetailCard title="Reference Info">
                 <DetailItem label="Reference" value={payment.reference} />
-                <DetailItem label="Payment Date" value={payment.date} />
+                <DetailItem
+                  label="Payment Date"
+                  value={
+                    payment.date
+                      ? new Date(payment.date).toLocaleDateString("en-US", {
+                          month: "2-digit",
+                          day: "2-digit",
+                          year: "numeric",
+                        })
+                      : ""
+                  }
+                />
                 <DetailItem label="Paid By" value={payment.paidBy} />
                 <DetailItem label="Approved By" value={payment.approvedBy} />
               </DetailCard>

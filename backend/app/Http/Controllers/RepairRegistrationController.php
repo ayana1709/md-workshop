@@ -32,7 +32,6 @@ public function index()
 
     
     
-   
 
 
 

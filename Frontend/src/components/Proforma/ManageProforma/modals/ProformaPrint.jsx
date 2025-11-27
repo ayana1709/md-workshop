@@ -3,6 +3,7 @@ import { useReactToPrint } from "react-to-print";
 import ProformaHeader from "./ProformaPrint/ProformaHeader";
 import ProformaTable from "./ProformaPrint/ProformaTable";
 import ProformaFooter from "./ProformaPrint/ProformaFooter";
+import PrintHeader from "@/components/PrintHeader";
 
 function ProformaPrint({ proforma, open, onClose }) {
   if (!open || !proforma) return null;
@@ -10,76 +11,39 @@ function ProformaPrint({ proforma, open, onClose }) {
   const componentRef = useRef();
 
   const handlePrint = useReactToPrint({
-    contentRef: componentRef, // ✅ v3 API
-    documentTitle: `Proforma-${proforma?.id || ""}`,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 10mm;
-      }
-      body {
-        font-family: Arial, sans-serif;
-        font-size: 11px;
-        color: black;
-      }
-      .no-print {
-        display: none !important;
-      }
-      .print-container {
-        all: unset;
-        display: block;
-        width: 100%;
-      }
-
-      /* ===== Table Styles for Print ===== */
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-        font-size: 11px;
-      }
-      th, td {
-        border: 1px solid black;
-        padding: 6px;
-      }
-      th {
-        background-color: #e5e7eb !important; /* Tailwind gray-200 */
-        font-weight: bold;
-        text-align: center;
-      }
-      td {
-        text-align: left;
-      }
-
-      /* Align totals/footer to the right */
-      .totals-row td {
-        font-weight: bold;
-        text-align: right !important;
-      }
-    `,
+    contentRef: componentRef, // ✅ ReactToPrint v3 API
+    documentTitle: `Proforma_company-${proforma?.ref_num || ""}`,
   });
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
-      <div className="bg-white w-[900px] max-h-[95vh] overflow-y-auto rounded-lg shadow-lg p-8 relative print-container">
-        {/* Print Section */}
-        <div ref={componentRef} className="font-sans text-sm text-black">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-30 print:bg-transparent print:inset-auto">
+      <div className="bg-white w-auto max-h-[95vh] overflow-y-auto rounded-md shadow-lg p-6 relative print:p-0 print:shadow-none print:rounded-none print:overflow-visible">
+        {/* Printable Section */}
+        <div
+          ref={componentRef}
+          className="print-area text-black font-sans bg-white w-[210mm] mx-auto overflow-visible print:w-full"
+          style={{ pageBreakInside: "avoid" }}
+        >
+          <PrintHeader />
+
           <ProformaHeader proforma={proforma} />
+
           <ProformaTable proforma={proforma} />
+
           <ProformaFooter proforma={proforma} />
         </div>
 
-        {/* Bottom Buttons (hidden in print) */}
-        <div className="flex justify-center gap-4 mt-6 no-print">
+        {/* Buttons (hidden on print) */}
+        <div className="flex justify-center gap-4 mt-4 no-print">
           <button
             onClick={handlePrint}
-            className="px-6 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700"
+            className="px-5 py-2 bg-green-600 text-white rounded-md shadow hover:bg-green-700 transition"
           >
             Print
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700"
+            className="px-5 py-2 bg-red-600 text-white rounded-md shadow hover:bg-red-700 transition"
           >
             Cancel
           </button>

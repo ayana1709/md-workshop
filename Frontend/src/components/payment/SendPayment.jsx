@@ -532,6 +532,27 @@ function SendPayment() {
                         {customerInfo.priority}
                       </li>
                     </ul>
+                    {customerInfo.vehicles.map((vehicle, index) => (
+                      <ul key={index} className="space-y-2">
+                        <li className="dark:text-gray-200">
+                          <strong className="dark:text-gray-100">
+                            Plate Number :
+                          </strong>{" "}
+                          {vehicle.plate_no}
+                        </li>
+
+                        <li className="dark:text-gray-200">
+                          <strong className="dark:text-gray-100">Model:</strong>{" "}
+                          {vehicle.model}
+                        </li>
+                        <li className="dark:text-gray-200">
+                          <strong className="dark:text-gray-100">
+                            Car Condition:
+                          </strong>{" "}
+                          {vehicle.condition}
+                        </li>
+                      </ul>
+                    ))}
                   </div>
                 </div>
               )}

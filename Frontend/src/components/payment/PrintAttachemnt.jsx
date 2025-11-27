@@ -343,23 +343,58 @@ function PrintAttachemnt() {
         <main className="grow mt-0">
           <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
             <div className="print-container">
-              <div className="w-full flex gap-20 items-center justify-center">
-                <img src={logoUrl} className="w-[40%]" />
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    {companyData?.name_am || "የኩባንያ ስም (AM)"}
-                  </h2>
-                  <h2 className="text-2xl uppercase tracking-wider font-bold text-gray-800 dark:text-white">
-                    {/* speed meter trading plc */}
-                    {companyData?.name_en || "COMPANY NAME (EN)"}
-                  </h2>
+              <div className="w-full flex flex-col items-center justify-center p-4">
+                {/* Top Section: Logos and Names */}
+                <div className="w-full flex items-center justify-between">
+                  {/* Left Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Left"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Center Company Name */}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
+                      {companyData?.name_am || "የኩባንያ ስም (AM)"}
+                    </h2>
+                    <h2 className="text-lg sm:text-xl uppercase tracking-wider font-semibold text-gray-800 dark:text-white">
+                      {companyData?.name_en || "COMPANY NAME (EN)"}
+                    </h2>
+                  </div>
+
+                  {/* Right Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Right"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Bottom Info Row */}
+                <div className="w-full flex flex-wrap items-center justify-center gap-6 mt-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+                  <div>
+                    <span className="font-semibold">TIN:</span>{" "}
+                    {companyData?.tin || "Not Available"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Address:</span>{" "}
+                    {companyData?.address || "Not Provided"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Mobile:</span>{" "}
+                    {companyData?.phone || "N/A"}
+                  </div>
                 </div>
               </div>
-
               {/* <p className="text-gray-600 dark:text-white">
                 Plate Number: {plateNumber}
               </p> */}
-
+              a
               <h2 className="text-2xl font-semibold text-center mb-4 border-b  p-6 ">
                 Print Summary
               </h2>
@@ -367,64 +402,68 @@ function PrintAttachemnt() {
               {customerInfo && (
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
-                    Customer & Vehicle Information
+                    Customer & Vehicle Information / የደንበኛ እና መኪና መረጃ
                   </h3>
                   <div className="grid grid-cols-3 gap-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md">
                     <ul className="space-y-2">
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
-                          Customer Name:
+                          Customer Name / የደንበኛ ስም:
                         </strong>{" "}
                         {customerInfo.customer_name}
                       </li>
                       <li className="dark:text-gray-200">
-                        <strong className="dark:text-gray-100">Mobile:</strong>{" "}
+                        <strong className="dark:text-gray-100">
+                          Mobile / ሞባይል:
+                        </strong>{" "}
                         {customerInfo.mobile}
                       </li>
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
-                          {" "}
-                          Customer Type:
+                          Customer Type / የደንበኛ አይነት:
                         </strong>{" "}
                         {customerInfo.customer_type}
                       </li>
                     </ul>
+
                     <ul className="space-y-2">
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
-                          Received Date:
+                          Received Date / የተቀበለበት ቀን:
                         </strong>{" "}
                         {customerInfo.received_date}
                       </li>
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
-                          Date Out:
+                          Date Out / የመውጫ ቀን:
                         </strong>{" "}
                         {customerInfo.promise_date}
                       </li>
                       <li className="dark:text-gray-200">
                         <strong className="dark:text-gray-100">
-                          Priority:
+                          Priority / ቅድሚያ:
                         </strong>{" "}
                         {customerInfo.priority}
                       </li>
                     </ul>
+
                     {customerInfo.vehicles.map((vehicle, index) => (
                       <ul key={index} className="space-y-2">
                         <li className="dark:text-gray-200">
                           <strong className="dark:text-gray-100">
-                            Plate Number :
+                            Plate Number / የሰሌዳ ቁጥር:
                           </strong>{" "}
                           {vehicle.plate_no}
                         </li>
-
                         <li className="dark:text-gray-200">
-                          <strong className="dark:text-gray-100">Model:</strong>{" "}
+                          <strong className="dark:text-gray-100">
+                            Model / ሞዴል:
+                          </strong>{" "}
                           {vehicle.model}
                         </li>
                         <li className="dark:text-gray-200">
                           <strong className="dark:text-gray-100">
-                            Car Condition:
+                            Car Condition / የመኪና ሁኔታ:
                           </strong>{" "}
                           {vehicle.condition}
                         </li>
@@ -435,7 +474,7 @@ function PrintAttachemnt() {
               )}
               {/* Labour Table */}
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
-                Labour Cost
+                Labour Cost/የእጅ ዋጋ
               </h3>
               <div className="flex items-center mt-2 no-print">
                 <input
@@ -511,10 +550,9 @@ function PrintAttachemnt() {
                   </tbody>
                 </table>
               </div>
-
               {/* Spare Request Items Table */}
               <h3 className="text-lg font-semibold text-gray-800 mt-6 dark:text-gray-200">
-                Spare Change Cost
+                Spare Change Cost/የመለዋወጫ እቃዎች ወጪ
               </h3>
               <div className="flex items-center mt-2 no-print">
                 <input
@@ -598,7 +636,6 @@ function PrintAttachemnt() {
                   </tbody>
                 </table>
               </div>
-
               {/* Out source  table  */}
               <h3 className="text-lg font-semibold text-gray-800 mt-6">
                 Out Source
@@ -714,9 +751,7 @@ function PrintAttachemnt() {
                 Apply VAT (15%)
               </label>
             </div> */}
-
               {/* Final Cost Summary */}
-
               <h3 className="text-lg font-semibold text-gray-800 mt-6">
                 Final Cost Summary
               </h3>

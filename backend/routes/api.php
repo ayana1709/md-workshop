@@ -210,6 +210,7 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
 
+Route::get('/items/stats', [ItemController::class, 'dashboardStats']);
 
 
 
@@ -279,10 +280,6 @@ Route::post('/items/import', [ItemController::class, 'import']);
 
 
 
-
-
-// spare request
-//request item out route
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
 Route::patch('/request-item-out/{id}/approve', [RequestItemOutController::class, 'approve']);
@@ -329,42 +326,37 @@ Route::get('/service-reminders/plate/{plateNumber}', [ServiceReminderController:
 
 
 
-//sales contrller
 Route::post('/sales', [SaleController::class, 'store']);
-Route::get('/sales', [SaleController::class, 'index']); // Fetch all sales
+Route::get('/sales/latest-ref', [SaleController::class, 'latestRef']); // 👈 Must come BEFORE {id}
+Route::get('/sales', [SaleController::class, 'index']);
 Route::put('/sales/{id}', [SaleController::class, 'update']);
-Route::get('/sales/{id}', [SaleController::class, 'show']); // Fetch single sale by ID
-
-
-
-
-//purchase controller
-// routes/api.php
-
+Route::get('/sales/{id}', [SaleController::class, 'show']);
 
 
 Route::post('/purchases', [PurchaseOrderController::class, 'store']);
 Route::get('/purchases', [PurchaseOrderController::class, 'index']);
 
+
+
+
+
+
+
 // payment  route 
 // use App\Http\Controllers\PaymentsController;
 
-Route::post('/payments', [PaymentController::class, 'store']);
-Route::post('/payments/quick', [PaymentController::class, 'quickStore']); // Quick/manual entry
 
-Route::get('/payments/job/{jobId}', [PaymentController::class, 'getByJobId']);
 Route::get('/payments', [PaymentController::class, 'index']);
+Route::post('/payments', [PaymentController::class, 'store']);
+Route::get('/payments/job/{id}', [PaymentController::class, 'show']);
+Route::put('/payments/job/{id}', [PaymentController::class, 'update']);
+Route::delete('/payments/job/{id}', [PaymentController::class, 'destroy']);
+Route::get('/payments/latest-ref', [PaymentController::class, 'generateRefNum']);
+Route::delete('/payments/bulk', [PaymentController::class, 'bulkDestroy']);
+Route::delete('/payments/job/{id}/item', [PaymentController::class, 'deleteItem']);
 
-// Route::get('/payments/{id}', [PaymentController::class, 'show']); 
 
-Route::get('/payments/{id}', [PaymentController::class, 'show'])
-     ->where('id', '[A-Za-z0-9]+');
-// Get payment detail
-Route::put('/payments/{id}', [PaymentController::class, 'update']);   // Update payment
-Route::get('/payments/by-job/{jobId}', [PaymentController::class, 'getByJobId']);
-Route::get('/payments/by-job/{job_id}', [PaymentController::class, 'getByJobId']);
-Route::put('/payments/by-job/{job_id}', [PaymentController::class, 'updateByJobId']);
-Route::delete('/payments/by-job/{job_id}', [PaymentController::class, 'destroyByJobId']);
+
 
 
 
@@ -391,15 +383,15 @@ Route::post('/job-delivery-status/batch', [PostDriveTestController::class, 'batc
 
 
 
-// Route::get('/proforma', [ProformaController::class, 'index']);
-// Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
-// Route::get('/proformas/{id}', [ProformaController::class, 'show']);
+
+
 
 Route::post('/proformas', [ProformaController::class, 'store']);
 Route::get('/proformas', [ProformaController::class, 'index']);
-Route::get('/proformas/{jobId}', [ProformaController::class, 'show']);
-Route::put('/proformas/{jobId}', [ProformaController::class, 'update']);
-Route::delete('/proformas/{jobId}', [ProformaController::class, 'destroy']);
+Route::get('/proformas/{refNum}', [ProformaController::class, 'show']);
+Route::put('/proformas/{refNum}', [ProformaController::class, 'update']);
+Route::delete('/proformas/{refNum}', [ProformaController::class, 'destroy']);
+Route::get('/proforma/generate-ref', [ProformaController::class, 'generateRefNum']);
 
 
 
@@ -407,6 +399,21 @@ Route::delete('/proformas/{jobId}', [ProformaController::class, 'destroy']);
 
 Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
+Route::post('/settings/reset', [CompanySettingController::class, 'resetSystem']);
+// Route::get('/settings/export', [CompanySettingController::class, 'export']);
+Route::get('/settings/export', [CompanySettingController::class, 'exportDatabase']);
+Route::get('/download-backup/{filename}', function($filename){
+    $path = storage_path("app/backups/" . $filename);
+
+    if (!file_exists($path)) {
+        return abort(404, "File not found");
+    }
+
+    return response()->download($path);
+});
+
+
+
 
 
 

@@ -95,6 +95,7 @@ export default function Users() {
               <thead className="bg-purple-100 text-purple-900">
                 <tr>
                   <th className="p-3">ID</th>
+                  <th className="p-3">Image</th>
                   <th className="p-3">Full Name</th>
                   <th className="p-3">Username</th>
                   <th className="p-3">Email</th>
@@ -103,48 +104,71 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
-                  <tr
-                    key={u.id}
-                    className="border-b hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <td className="p-3">{u.id}</td>
-                    <td className="p-3 font-semibold">{u.name}</td>
-                    <td className="p-3">{u.username}</td>
-                    <td className="p-3">{u.email}</td>
-                    <td className="p-3">
-                      {u.roles && u.roles.length > 0
-                        ? u.roles.map((r) => r.name).join(", ")
-                        : "-"}
-                    </td>
-                    <td className="p-3 space-x-2">
-                      {u.username === "admin" ? ( // 👈 change this username to your actual super admin username
-                        <span className="text-gray-400 italic">Protected</span>
-                      ) : (
-                        <>
-                          <Link
-                            to={`/edit-user/${u.id}`}
-                            className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(u.id)}
-                            className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            onClick={() => handleOpenModal(u)}
-                            className="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600"
-                          >
-                            Reset Password
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {users.map((u) => {
+                  const imgSrc = u.profile_image
+                    ? `${import.meta.env.VITE_API_URL}/storage/profile_images/${
+                        u.profile_image
+                      }`
+                    : `${
+                        import.meta.env.VITE_API_URL
+                      }/storage/profile_images/userprofile.jpg
+        
+                    
+                   `; // 👈 Put a default profile placeholder in /public folder
+
+                  return (
+                    <tr
+                      key={u.id}
+                      className="border-b hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <td className="p-3">{u.id}</td>
+
+                      <td className="p-3">
+                        <img
+                          src={imgSrc}
+                          alt="Profile"
+                          className="w-10 h-10 rounded-full object-cover border"
+                        />
+                      </td>
+                      <td className="p-3 font-semibold">{u.name}</td>
+                      <td className="p-3">{u.username}</td>
+                      <td className="p-3">{u.email}</td>
+                      <td className="p-3">
+                        {u.roles?.length > 0
+                          ? u.roles.map((r) => r.name).join(", ")
+                          : "-"}
+                      </td>
+                      <td className="p-3 space-x-2">
+                        {u.username === "admin" ? (
+                          <span className="text-gray-400 italic">
+                            Protected
+                          </span>
+                        ) : (
+                          <>
+                            <Link
+                              to={`/edit-user/${u.id}`}
+                              className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => handleDelete(u.id)}
+                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={() => handleOpenModal(u)}
+                              className="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600"
+                            >
+                              Reset Password
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 

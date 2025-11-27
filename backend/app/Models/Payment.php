@@ -6,35 +6,42 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    protected $fillable = [
-        'jobId',          // camelCase
-        'name',
-        'mobile',
-        'plate',
-        'model',
-        'priority',
-        'receivedDate',
-        'dateOut',
-        'method',
-        'status',
-        'paidAmount',
-        'remainingAmount',
-        'reference',
-        'date',
-        'paidBy',
-        'approvedBy',
-        'reason',
-        'remarks',
-        'labourCosts',
-        'spareCosts',
-        'otherCosts',
-        'summary',
-    ];
+   protected $fillable = [
+    'date',
+    'name',
+    'reference',
+    'fs',
+    'mobile',
+    'tin',
+    'vat',
+    'method',
+    'status',
+    'paidAmount',
+    'remainingAmount',
+    'paidBy',
+    'approvedBy',
+    'reason',
+    'remarks',
+    'fromBank',
+    'toBank',
+    'otherFromBank',
+    'otherToBank',
+    'chequeNumber',
+    'image',
+    'labourCosts',
+    'spareCosts',
+    'otherCosts',
+    'summary',
+];
+
 
     protected $casts = [
-        'labourCosts' => 'array',
-        'spareCosts'  => 'array',
-        'otherCosts'  => 'array',
-        'summary'     => 'array',
+        'date'          => 'date',
+        'paidAmount'    => 'decimal:2',
+        'remainingAmount' => 'decimal:2',
+        'labourCosts'   => 'array',
+        'spareCosts'    => 'array',
+        'otherCosts'    => 'array',
+        'summary'       => 'array',
     ];
 }

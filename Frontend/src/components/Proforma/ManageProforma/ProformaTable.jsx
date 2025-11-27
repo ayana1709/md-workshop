@@ -21,16 +21,15 @@ function ProformaTable({
 }) {
   const columns = useMemo(
     () => [
-      { accessorKey: "id", header: "#", cell: (info) => info.row.index + 1 },
-      { accessorKey: "job_id", header: "Job ID" },
-      { accessorKey: "ref_num", header: "Ref Num" },
+      { accessorKey: "id", header: "#" },
+      { accessorKey: "ref_num", header: "Ref Num" }, // ✅ Use ref_num
       { accessorKey: "date", header: "Proforma Date" },
       { accessorKey: "delivery_date", header: "Delivery Date" },
       { accessorKey: "customer_name", header: "Customer Name" },
       {
         accessorKey: "net_pay",
         header: "Total Amount",
-        cell: (info) => `${Number(info.getValue()).toFixed(2)} Birr`,
+        cell: (info) => `${Number(info.getValue() || 0).toFixed(2)} Birr`,
       },
       {
         accessorKey: "status",
@@ -131,27 +130,6 @@ function ProformaTable({
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* ===== Mobile Cards ===== */}
-      <div className="md:hidden space-y-4">
-        {table.getRowModel().rows.map((row) => (
-          <div
-            key={row.id}
-            className="border rounded-xl p-4 bg-white shadow hover:shadow-md transition relative overflow-visible"
-          >
-            {row.getVisibleCells().map((cell) => (
-              <div key={cell.id} className="flex justify-between py-1">
-                <span className="text-gray-500 text-sm font-medium">
-                  {cell.column.columnDef.header}
-                </span>
-                <span className="text-gray-900 text-sm font-semibold">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </span>
-              </div>
-            ))}
-          </div>
-        ))}
       </div>
 
       {/* Pagination */}
