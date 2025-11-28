@@ -174,6 +174,146 @@ public function update(Request $request, $id)
     }
 }
 
+private function parseDate($value)
+{
+    if (empty($value)) return null;
+
+    // Excel numeric date
+    if (is_numeric($value)) {
+        try {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
+                ->format('Y-m-d H:i:s');
+        } catch (\Exception $e) {}
+    }
+
+    // Many formats
+    $formats = [
+        'Y-m-d','m/d/Y','d/m/Y','m-d-Y','d-m-Y',
+        'M d, Y','d M Y','F d, Y','d F Y','m/d/y','d/m/y',
+    ];
+
+    foreach ($formats as $format) {
+        $d = \DateTime::createFromFormat($format, trim($value));
+        if ($d && $d->format($format) === trim($value)) {
+            return $d->format('Y-m-d H:i:s');
+        }
+    }
+
+    // fallback
+    try {
+        return date('Y-m-d H:i:s', strtotime($value));
+    } catch (\Exception $e) { return null; }
+}
+
+
+public function importExcel(Request $request)
+{
+    if (!$request->hasFile('file')) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No file uploaded.'
+        ], 400);
+    }
+
+    try {
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)
+            ->getActiveSheet()
+            ->toArray(null, true, true, true);
+
+        if (count($sheet) < 2) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Excel file is empty.'
+            ], 400);
+        }
+
+        // Map headers
+        $headers = [];
+        foreach ($sheet[1] as $col => $value) {
+            $normalized = strtolower(trim($value));
+            if ($normalized !== "") {
+                $headers[$normalized] = $col;
+            }
+        }
+
+        $map = [
+            'customer name' => 'customer_name',
+            'mobile' => 'mobile',
+            'job type' => 'types_of_jobs',
+            'product' => 'product_name',
+            'serial code' => 'serial_code',
+            'duration' => 'estimated_date',        // number!
+            'start date' => 'received_date',
+            'end date' => 'promise_date',
+            'received by' => 'received_by',
+            'status' => 'priority',
+        ];
+
+        $inserted = 0;
+
+        foreach ($sheet as $i => $row) {
+            if ($i == 1) continue; // Skip header
+
+            $data = [];
+
+            // Read columns
+            foreach ($map as $excelName => $dbField) {
+                $data[$dbField] = isset($headers[$excelName])
+                    ? ($row[$headers[$excelName]] ?? null)
+                    : null;
+            }
+
+            if (empty($data['customer_name']) && empty($data['mobile'])) {
+                continue;
+            }
+
+            // DATE FIELDS
+            $received = $this->parseDate($data['received_date']) ?? now();
+            $promise  = $this->parseDate($data['promise_date']);
+
+            // ✔ FIXED: Duration logic
+            if (is_numeric($data['estimated_date'])) {
+                // Keep duration as raw number
+                $data['estimated_date'] = (int)$data['estimated_date'];
+            } else {
+                // If duration empty → calculate difference from dates
+                if ($received && $promise) {
+                    $d1 = new \DateTime($received);
+                    $d2 = new \DateTime($promise);
+                    $data['estimated_date'] = $d1->diff($d2)->days; // numeric
+                } else {
+                    $data['estimated_date'] = 0; // default
+                }
+            }
+
+            // Save parsed back
+            $data['received_date'] = $received;
+            $data['promise_date']  = $promise;
+
+            // ✔ FIXED: default image
+            $data['image'] = 'repair_images/default.jpg';
+
+            RepairRegistration::create($data);
+            $inserted++;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Imported $inserted rows."
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Import failed',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
 
 
 
@@ -204,7 +344,6 @@ public function show($id)
         'id' => $repair->id,
         'job_id' => $repair->job_id,
         'customer_name' => $repair->customer_name,
-        // 'customer_type' => $repair->customer_type,
         'mobile' => $repair->mobile,
         'types_of_jobs' => $repair->types_of_jobs,
         'product_name' => $repair->product_name,

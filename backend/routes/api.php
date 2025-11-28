@@ -230,6 +230,7 @@ Route::get('/during-drive-tests/{id}', [DurinDriveTestController::class, 'show']
 //selected bulk operation
 Route::delete('/repairs', [RepairRegistrationController::class, 'deleteRepairs']);
 Route::post('/repairs/add-to-work', [RepairRegistrationController::class, 'addToWork']);
+Route::post('/repair/import', [RepairRegistrationController::class, 'importExcel']);
 
 //selected bulk operation for bolo
 Route::delete('/bolos', [BolloController::class, 'deleteRepairs']);

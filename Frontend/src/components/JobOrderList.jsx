@@ -85,7 +85,7 @@ const JobOrderList = () => {
           ? response.data.data
           : [];
         // Sort in ascending order by `id`
-        repairs.sort((a, b) => a.id - b.id);
+        // repairs.sort((a, b) => a.id - b.id);
         setRepairs(repairs);
       } catch (error) {
         console.error("Error fetching repair registrations:", error);
