@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  // baseURL: "https://wms.solanamgmt.com/api",
   baseURL: "http://127.0.0.1:8000/api",
+  // baseURL: "https://md.nileworkshop.com/api",
   // headers: {
   //   "Content-Type": "application/json",
   // },

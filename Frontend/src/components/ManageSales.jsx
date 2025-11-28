@@ -84,12 +84,15 @@ export default function ManageSales() {
 
   const columns = [
     { accessorKey: "id", header: "#" },
-    { accessorKey: "ref_num", header: "REF NUM" },
+    { accessorKey: "ref_num", header: "REF Num" },
 
     { accessorKey: "sales_date", header: " Date" },
-    { accessorKey: "tin_number", header: "Reaquest By" },
+    { accessorKey: "tin_number", header: "Reaquested By" },
 
-    { accessorKey: "customer_name", header: "Reason" },
+    { accessorKey: "customer_name", header: "To" },
+
+    { accessorKey: "company_name", header: "Reason" },
+
     { accessorKey: "approved_by", header: "Approved By" },
 
     { accessorKey: "requested_date", header: "Requested Date" },
@@ -368,7 +371,6 @@ export default function ManageSales() {
               >
                 View
               </Button>
-
               <Button
                 variant="ghost"
                 className="w-full justify-start"
@@ -376,6 +378,7 @@ export default function ManageSales() {
               >
                 Edit
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start"
@@ -398,28 +401,8 @@ export default function ManageSales() {
     },
   ];
 
-  const filteredSales = sales.filter((row) => {
-    // Search filter
-    const matchesSearch = Object.values(row)
-      .join(" ")
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    // Date range filter
-    const saleDate = new Date(row.sales_date);
-    const from = startDate ? new Date(startDate) : null;
-    const to = endDate ? new Date(endDate) : null;
-
-    const matchesDate = (!from || saleDate >= from) && (!to || saleDate <= to);
-
-    // Status filter
-    const matchesStatus = !statusFilter || row.status === statusFilter;
-
-    return matchesSearch && matchesDate && matchesStatus;
-  });
-
   const table = useReactTable({
-    data: filteredSales,
+    data: sales,
     columns,
     state: {
       columnVisibility,

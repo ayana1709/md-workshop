@@ -91,9 +91,7 @@ function ButtonRepairOperation({
     doc.setFontSize(12);
     doc.text(title, 14, 70);
 
-    const tableHeaders = [...headers, "Plate Number", "Condition"].map(
-      (key) => headerMappings[key] || key
-    );
+    const tableHeaders = [...headers].map((key) => headerMappings[key] || key);
 
     const tableBody = tableData.map((row) =>
       headers
@@ -138,7 +136,6 @@ function ButtonRepairOperation({
       pageHeight - 20,
       { align: "center" }
     );
-
     doc.save(`${title}.pdf`);
   };
 

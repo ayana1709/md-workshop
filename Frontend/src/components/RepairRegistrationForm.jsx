@@ -19,6 +19,7 @@ export default function RepairRegistrationForm() {
   const [selectedFuel, setSelectedFuel] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const { companyData } = useStores();
 
   // console.log(suggestions);
 
@@ -28,9 +29,12 @@ export default function RepairRegistrationForm() {
     );
   };
 
+  // const placeholderImage = "/images/defa.jpg";
+
+  const placeholderImage = "/images/defa.jpg";
+
   const [formData, setFormData] = useState({
     customer_name: "",
-    // customer_type: "",
     mobile: "",
     types_of_jobs: "Repair",
     received_date: "",
@@ -39,13 +43,12 @@ export default function RepairRegistrationForm() {
     priority: "Medium",
     product_name: "",
     serial_code: "",
-    // customer_observation: ["1. "], // Default starts with "1. "
     spare_change: [
       { item: "1. ", part_number: "", qty: "", unit_price: "", total_price: 0 },
     ],
     job_description: [{ task: "1. ", price: "" }],
     received_by: "",
-    image: null, // ✅ Add this line
+    image: placeholderImage, // 👈 Default placeholder
   });
 
   const navigate = useNavigate();
@@ -475,6 +478,7 @@ export default function RepairRegistrationForm() {
                         Received Date / የተቀበሉበት ቀን{" "}
                         <span className="text-red-500">*</span>
                       </label>
+
                       <DateInput
                         value={formData.received_date}
                         onChange={(val) =>
@@ -482,7 +486,8 @@ export default function RepairRegistrationForm() {
                             target: { name: "received_date", value: val },
                           })
                         }
-                        placeholder="MM/DD/YYYY"
+                        placeholder={companyData?.date_format || "DD/MM/YYYY"} // placeholder matches format
+                        format={companyData?.date_format || "DD/MM/YYYY"} // ✅ sets the format
                         className="w-full border border-gray-300 p-2 rounded-md dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
@@ -494,17 +499,17 @@ export default function RepairRegistrationForm() {
                           (Optional)
                         </span>
                       </label>
+
                       <DateInput
                         value={formData.promise_date}
                         onChange={(val) =>
                           handleChange({
-                            target: {
-                              name: "promise_date",
-                              value: val,
-                              userModified: true,
-                            },
+                            target: { name: "promise_date", value: val },
                           })
                         }
+                        placeholder={companyData?.date_format || "DD/MM/YYYY"} // placeholder matches format
+                        format={companyData?.date_format || "DD/MM/YYYY"} // ✅ sets the format
+                        className="w-full border border-gray-300 p-2 rounded-md dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
 
@@ -549,7 +554,7 @@ export default function RepairRegistrationForm() {
                       type="text"
                       name="serial_code"
                       value={formData.serial_code}
-                      on
+                      onChange={handleChange}
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>

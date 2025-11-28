@@ -230,36 +230,33 @@ public function importExcel(Request $request)
             ], 400);
         }
 
-        // Map headers
+        // Read column headers
         $headers = [];
         foreach ($sheet[1] as $col => $value) {
-            $normalized = strtolower(trim($value));
-            if ($normalized !== "") {
-                $headers[$normalized] = $col;
-            }
+            $headers[strtolower(trim($value))] = $col;
         }
 
+        // Column mapping
         $map = [
             'customer name' => 'customer_name',
             'mobile' => 'mobile',
             'job type' => 'types_of_jobs',
             'product' => 'product_name',
             'serial code' => 'serial_code',
-            'duration' => 'estimated_date',        // number!
+            'duration' => 'estimated_date',
             'start date' => 'received_date',
             'end date' => 'promise_date',
             'received by' => 'received_by',
-            'status' => 'priority',
+            'status' => 'priority'
         ];
 
         $inserted = 0;
 
-        foreach ($sheet as $i => $row) {
-            if ($i == 1) continue; // Skip header
+        foreach ($sheet as $index => $row) {
+            if ($index == 1) continue;
 
             $data = [];
 
-            // Read columns
             foreach ($map as $excelName => $dbField) {
                 $data[$dbField] = isset($headers[$excelName])
                     ? ($row[$headers[$excelName]] ?? null)
@@ -270,39 +267,66 @@ public function importExcel(Request $request)
                 continue;
             }
 
-            // DATE FIELDS
+            // Auto Date Conversion
             $received = $this->parseDate($data['received_date']) ?? now();
             $promise  = $this->parseDate($data['promise_date']);
 
-            // ✔ FIXED: Duration logic
+            // Estimate days
             if (is_numeric($data['estimated_date'])) {
-                // Keep duration as raw number
                 $data['estimated_date'] = (int)$data['estimated_date'];
             } else {
-                // If duration empty → calculate difference from dates
                 if ($received && $promise) {
-                    $d1 = new \DateTime($received);
-                    $d2 = new \DateTime($promise);
-                    $data['estimated_date'] = $d1->diff($d2)->days; // numeric
+                    $start = new \DateTime($received);
+                    $end = new \DateTime($promise);
+                    $data['estimated_date'] = $start->diff($end)->days;
                 } else {
-                    $data['estimated_date'] = 0; // default
+                    $data['estimated_date'] = 0;
                 }
             }
 
-            // Save parsed back
             $data['received_date'] = $received;
-            $data['promise_date']  = $promise;
+            $data['promise_date'] = $promise;
 
-            // ✔ FIXED: default image
+            // Default values same with store()
             $data['image'] = 'repair_images/default.jpg';
+            $data['status'] = 'not started';
+
+            // Default array format (NOT JSON string)
+            $data['spare_change'] = [
+                [
+                    "item" => "1. ",
+                    "part_number" => "",
+                    "qty" => "",
+                    "unit_price" => "",
+                    "total_price" => 0,
+                ]
+            ];
+
+            $data['job_description'] = [
+                [
+                    "task" => "1. ",
+                    "price" => "",
+                ]
+            ];
+
+            // Generate Sequential Job ID
+            $lastJob = RepairRegistration::latest('job_id')->first();
+            $nextJobId = $lastJob ? str_pad(((int)$lastJob->job_id) + 1, 4, '0', STR_PAD_LEFT) : '0001';
+            while (RepairRegistration::where('job_id', $nextJobId)->exists()) {
+                $nextJobId = str_pad(((int)$nextJobId) + 1, 4, '0', STR_PAD_LEFT);
+            }
+
+            $data['job_id'] = $nextJobId;
 
             RepairRegistration::create($data);
+
             $inserted++;
         }
 
         return response()->json([
             'status' => 'success',
-            'message' => "Imported $inserted rows."
+            'count' => $inserted,
+            'message' => "Successfully imported $inserted repairs."
         ]);
 
     } catch (\Exception $e) {
@@ -313,6 +337,7 @@ public function importExcel(Request $request)
         ], 500);
     }
 }
+
 
 
 

@@ -85,7 +85,7 @@ const JobOrderList = () => {
           ? response.data.data
           : [];
         // Sort in ascending order by `id`
-        // repairs.sort((a, b) => a.id - b.id);
+        repairs.sort((a, b) => b.id - a.id);
         setRepairs(repairs);
       } catch (error) {
         console.error("Error fetching repair registrations:", error);
@@ -164,6 +164,7 @@ const JobOrderList = () => {
         : [...prevSelected, id]
     );
   };
+  const placeholderImage = "/images/defa.jpg";
 
   // Toggle selection of all rows
   const toggleSelectAll = () => {
@@ -465,40 +466,34 @@ const JobOrderList = () => {
                       className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-400"
                     />
                   </td>
-
-                  {/* Image Cell */}
                   <td className="border border-table-border px-2 py-3 text-center">
                     <img
                       src={
-                        repair.image
+                        repair.image &&
+                        repair.image !== "repair_images/default.jpg"
                           ? `${import.meta.env.VITE_API_URL}/storage/${
                               repair.image
                             }`
-                          : `${
-                              import.meta.env.VITE_API_URL
-                            }/storage/repair_images/default.jpg`
+                          : placeholderImage
                       }
                       alt="repair"
                       className="w-10 h-10 object-cover rounded-md cursor-pointer mx-auto"
                       onClick={() =>
                         setPopupImage(
-                          repair.image
+                          repair.image &&
+                            repair.image !== "repair_images/default.jpg"
                             ? `${import.meta.env.VITE_API_URL}/storage/${
                                 repair.image
                               }`
-                            : `${
-                                import.meta.env.VITE_API_URL
-                              }/storage/repair_images/default.jpg`
+                            : placeholderImage
                         )
                       }
                     />
                   </td>
-
                   {/* Job ID */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.job_id?.toString().padStart(4, "0")}
                   </td>
-
                   {/* Customer */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
@@ -506,7 +501,6 @@ const JobOrderList = () => {
                   >
                     {repair.customer_name}
                   </td>
-
                   {/* Mobile */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[120px]"
@@ -514,7 +508,6 @@ const JobOrderList = () => {
                   >
                     {repair.mobile}
                   </td>
-
                   {/* Job Type */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
@@ -522,7 +515,6 @@ const JobOrderList = () => {
                   >
                     {repair.types_of_jobs || "-"}
                   </td>
-
                   {/* Product */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
@@ -530,7 +522,6 @@ const JobOrderList = () => {
                   >
                     {repair.product_name || "-"}
                   </td>
-
                   {/* Serial Code */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
@@ -538,7 +529,6 @@ const JobOrderList = () => {
                   >
                     {repair.serial_code || "-"}
                   </td>
-
                   {/* Duration */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.estimated_date
@@ -547,22 +537,18 @@ const JobOrderList = () => {
                         : `${repair.estimated_date} Days`
                       : "-"}
                   </td>
-
                   {/* Start Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.received_date}
                   </td>
-
                   {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.promise_date || "-"}
                   </td>
-
                   {/* Status */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     <StatusCell repair={repair} />
                   </td>
-
                   {/* Actions */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center relative">
                     <div className="relative inline-block w-full">
