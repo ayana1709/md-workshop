@@ -3,6 +3,7 @@
 use App\Http\Controllers\JobCardController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
 use App\Models\Admin;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +43,15 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\CompanySettingController;
+use App\Http\Controllers\RepairDetailController; 
+
+
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\PermissionController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -200,6 +210,7 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
 
+Route::get('/items/stats', [ItemController::class, 'dashboardStats']);
 
 
 
@@ -219,6 +230,7 @@ Route::get('/during-drive-tests/{id}', [DurinDriveTestController::class, 'show']
 //selected bulk operation
 Route::delete('/repairs', [RepairRegistrationController::class, 'deleteRepairs']);
 Route::post('/repairs/add-to-work', [RepairRegistrationController::class, 'addToWork']);
+Route::post('/repair/import', [RepairRegistrationController::class, 'importExcel']);
 
 //selected bulk operation for bolo
 Route::delete('/bolos', [BolloController::class, 'deleteRepairs']);
@@ -262,22 +274,17 @@ Route::put('/items/{item}', [ItemController::class, 'update']); // PUT /api/item
 Route::delete('/items/{item}', [ItemController::class, 'destroy']); // DELETE /api/items/{id} - Delete an item
 Route::patch('/items/{id}/update-field', [ItemController::class, 'updateField']);
 Route::post('/items/{id}/item-out', [ItemController::class, 'itemOut']);
-
 Route::post('/items/add-more', [ItemController::class, 'addMore']);
 Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems']);
+Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
+Route::post('/items/import', [ItemController::class, 'import']);
 
 
 
-
-// spare request
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
-
-//request item out route
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
 Route::patch('/request-item-out/{id}/approve', [RequestItemOutController::class, 'approve']);
 Route::delete('/request-item-out/{id}/reject', [RequestItemOutController::class, 'reject']);
-
-
 Route::get('/requested-items', [RequestItemOutController::class, 'getRequestedItems']);
 
 
@@ -320,47 +327,42 @@ Route::get('/service-reminders/plate/{plateNumber}', [ServiceReminderController:
 
 
 
-//sales contrller
 Route::post('/sales', [SaleController::class, 'store']);
-Route::get('/sales', [SaleController::class, 'index']); // Fetch all sales
+Route::get('/sales/latest-ref', [SaleController::class, 'latestRef']); // 👈 Must come BEFORE {id}
+Route::get('/sales', [SaleController::class, 'index']);
 Route::put('/sales/{id}', [SaleController::class, 'update']);
-
-
-
-//purchase controller
-// routes/api.php
-
+Route::get('/sales/{id}', [SaleController::class, 'show']);
 
 
 Route::post('/purchases', [PurchaseOrderController::class, 'store']);
 Route::get('/purchases', [PurchaseOrderController::class, 'index']);
-Route::post('/items/import', [ItemController::class, 'import']);
+
+
+
+
+
+
 
 // payment  route 
 // use App\Http\Controllers\PaymentsController;
 
-Route::post('/payments', [PaymentController::class, 'store']);
-Route::post('/payments/quick', [PaymentController::class, 'quickStore']); // Quick/manual entry
 
-Route::get('/payments/job/{jobId}', [PaymentController::class, 'getByJobId']);
 Route::get('/payments', [PaymentController::class, 'index']);
-
-// Route::get('/payments/{id}', [PaymentController::class, 'show']); 
-
-Route::get('/payments/{id}', [PaymentController::class, 'show'])
-     ->where('id', '[A-Za-z0-9]+');
-// Get payment detail
-Route::put('/payments/{id}', [PaymentController::class, 'update']);   // Update payment
-Route::get('/payments/by-job/{jobId}', [PaymentController::class, 'getByJobId']);
-Route::get('/payments/by-job/{job_id}', [PaymentController::class, 'getByJobId']);
-Route::put('/payments/by-job/{job_id}', [PaymentController::class, 'updateByJobId']);
-Route::delete('/payments/by-job/{job_id}', [PaymentController::class, 'destroyByJobId']);
+Route::post('/payments', [PaymentController::class, 'store']);
+Route::get('/payments/job/{id}', [PaymentController::class, 'show']);
+Route::put('/payments/job/{id}', [PaymentController::class, 'update']);
+Route::delete('/payments/job/{id}', [PaymentController::class, 'destroy']);
+Route::get('/payments/latest-ref', [PaymentController::class, 'generateRefNum']);
+Route::delete('/payments/bulk', [PaymentController::class, 'bulkDestroy']);
+Route::delete('/payments/job/{id}/item', [PaymentController::class, 'deleteItem']);
 
 
 
 
-// dailly Cheacklist 
-// routes/api.php
+
+
+
+
 
 // Route::post('/daily-progress', [DailyProgressController::class, 'store']);
 Route::get('/work-orders/{job_card_no}/average-progress', [WorkOrderController::class, 'getAverageProgressByJobCardNo']);
@@ -383,14 +385,14 @@ Route::post('/job-delivery-status/batch', [PostDriveTestController::class, 'batc
 
 
 
+
+
 Route::post('/proformas', [ProformaController::class, 'store']);
-// Route::get('/proforma', [ProformaController::class, 'index']);
-// Route::delete('/proforma/{id}', [ProformaController::class, 'destroy']);
-// Route::get('/proformas/{id}', [ProformaController::class, 'show']);
 Route::get('/proformas', [ProformaController::class, 'index']);
-Route::get('/proformas/{jobId}', [ProformaController::class, 'show']);
-Route::put('/proformas/{jobId}', [ProformaController::class, 'update']);
-Route::delete('/proformas/{jobId}', [ProformaController::class, 'destroy']);
+Route::get('/proformas/{refNum}', [ProformaController::class, 'show']);
+Route::put('/proformas/{refNum}', [ProformaController::class, 'update']);
+Route::delete('/proformas/{refNum}', [ProformaController::class, 'destroy']);
+Route::get('/proforma/generate-ref', [ProformaController::class, 'generateRefNum']);
 
 
 
@@ -398,6 +400,87 @@ Route::delete('/proformas/{jobId}', [ProformaController::class, 'destroy']);
 
 Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
+Route::post('/settings/reset', [CompanySettingController::class, 'resetSystem']);
+// Route::get('/settings/export', [CompanySettingController::class, 'export']);
+Route::get('/settings/export', [CompanySettingController::class, 'exportDatabase']);
+Route::get('/download-backup/{filename}', function($filename){
+    $path = storage_path("app/backups/" . $filename);
+
+    if (!file_exists($path)) {
+        return abort(404, "File not found");
+    }
+
+    return response()->download($path);
+});
 
 
-Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
+
+
+
+
+Route::prefix('repairsdetail')->group(function () {
+    Route::get('{jobId}', [RepairDetailController::class, 'show']);
+    Route::post('/', [RepairDetailController::class, 'store']);
+    Route::put('{jobId}', [RepairDetailController::class, 'update']);
+    Route::delete('{jobId}', [RepairDetailController::class, 'destroy']);
+});
+
+
+
+
+Route::prefix('expenses')->group(function () {
+    Route::get('/', [ExpenseController::class, 'index']);
+    Route::post('/', [ExpenseController::class, 'store']);
+    Route::get('/{id}', [ExpenseController::class, 'show']);          // view one
+    Route::put('/{id}', [ExpenseController::class, 'update']);        // update one
+    Route::delete('/{id}', [ExpenseController::class, 'destroy']);    // delete one
+
+    // job_id based
+    Route::put('/job/{job_id}', [ExpenseController::class, 'updateByJobId']);
+    Route::delete('/job/{job_id}', [ExpenseController::class, 'deleteByJobId']);
+
+    // bulk delete
+    Route::post('/bulk-delete', [ExpenseController::class, 'bulkDelete']);
+});
+
+
+
+
+   
+
+
+
+Route::get('/roles', [RoleController::class, 'index']);
+Route::get('/roles/{id}', [RoleController::class, 'show']);
+Route::post('/roles', [RoleController::class, 'store']);
+Route::put('/roles/{id}', [RoleController::class, 'update']);
+Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
+
+
+
+Route::prefix('users')->group(function () {
+    Route::get('/', [UserController::class, 'index']); // List all users
+    Route::post('/', [UserController::class, 'store']); // Create user
+    Route::get('/{id}', [UserController::class, 'show']); // Single user
+    Route::put('/{id}', [UserController::class, 'update']); // Update user
+    Route::delete('/{id}', [UserController::class, 'destroy']); // Delete user
+});
+// routes/web.php OR routes/api.php
+Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+
+// routes/api.php
+
+Route::get('/permissions', [PermissionController::class, 'index']);
+
+// Create or update permissions for a role
+Route::post('/permissions', [PermissionController::class, 'store']);
+
+// Delete ALL permissions for a role (by role_id)
+Route::delete('/permissions/role/{roleId}', [PermissionController::class, 'destroy']);
+
+// Get permissions for a specific role (by role_id)
+Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRole']);
+// Update permissions for a role by role_id
+Route::put('/permissions/role/{roleId}', [PermissionController::class, 'updateByRole']);
+Route::get('/role-permissions/{roleId}', [PermissionController::class, 'getByRole']);

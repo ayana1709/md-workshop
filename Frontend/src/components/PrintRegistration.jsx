@@ -17,7 +17,7 @@ const PrintRegistration = () => {
   const { repairData } = location.state || {}; // Access repairData from the location state
 
   const hasPrinted = useRef(false);
-  // console.log(repairData);
+  console.log(repairData);
   useEffect(() => {
     const images = document.images;
     let loadedCount = 0;

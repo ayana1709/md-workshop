@@ -67,11 +67,17 @@ const TotalItem = () => {
         "Item Name",
         "Part Number",
         "Brand",
-        "Unit",
+        // "Unit",
         "Quantity",
+        // "Low In  Qty",
         "Purchase Price",
         "Selling Price",
+        // "Least Price",
+        "Condition",
+        "Type",
+        // "Manufacturer",
         "Location",
+        "Shelf Number",
       ],
     ];
     const data = filteredItems.map((item) => [
@@ -79,11 +85,17 @@ const TotalItem = () => {
       item.item_name || "",
       item.part_number || "",
       item.brand || "",
-      item.unit || "",
+      // item.unit || "",
       item.quantity || "",
+      // item.low_quantity || "",
       item.purchase_price || "",
       item.selling_price || "",
+      // item.least_price || "",
+      item.condition || "",
+      item.type || "",
+      // item.manufacturer || "",
       item.location || "",
+      item.shelf_number || "",
     ]);
     doc.autoTable({
       startY: 30,
@@ -96,7 +108,24 @@ const TotalItem = () => {
   };
 
   const handleExportExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filteredItems);
+    const exportData = filteredItems.map((item) => ({
+      item_name: item.item_name || "",
+      part_number: item.part_number || "",
+      brand: item.brand || "",
+      unit: item.unit || "",
+      quantity: item.quantity || "",
+      low_quantity: item.low_quantity || "",
+      purchase_price: item.purchase_price || "",
+      selling_price: item.selling_price || "",
+      least_price: item.least_price || "",
+      condition: item.condition || "",
+      type: item.type || "",
+      manufacturer: item.manufacturer || "",
+      location: item.location || "",
+      shelf_number: item.shelf_number || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Store Items");
     XLSX.writeFile(wb, "store-items.xlsx");
@@ -115,25 +144,23 @@ const TotalItem = () => {
   const handleDownloadTemplate = () => {
     const templateData = [
       {
-        code: "",
-        part_number: "",
         item_name: "",
+        part_number: "",
         brand: "",
-        model: "",
         unit: "",
         quantity: "",
+        low_quantity: "",
         purchase_price: "",
         selling_price: "",
         least_price: "",
-        maximum_price: "",
-        minimum_quantity: "",
-        low_quantity: "",
-        location: "",
+        condition: "",
+        type: "",
         manufacturer: "",
-        manufacturing_date: "",
-        image: "",
+        location: "",
+        shelf_number: "",
       },
     ];
+
     const ws = XLSX.utils.json_to_sheet(templateData, { skipHeader: false });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Store Template");
@@ -200,23 +227,99 @@ const TotalItem = () => {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const importedItems = XLSX.utils.sheet_to_json(worksheet);
-      const response = await api.post("/items/import", {
-        items: importedItems,
+
+      const rows = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+        raw: true,
       });
-      toast.success("Items imported successfully!");
-      if (response.data.items) {
-        setItems((prev) => [...prev, ...response.data.items]);
+
+      if (!rows.length) {
+        toast.error("Import failed: No rows found.");
+        return;
       }
+
+      const cleaned = rows
+        .map((row) => {
+          const normalized = {};
+          for (const key in row) {
+            normalized[key.trim().toLowerCase()] = row[key];
+          }
+
+          // skip empty
+          if (Object.values(normalized).join("").trim() === "") return null;
+
+          const quantity =
+            normalized["quantity"] ||
+            normalized["qty"] ||
+            normalized["qnty"] ||
+            "";
+
+          return {
+            item_name:
+              normalized["item name"] ||
+              normalized["item_name"] ||
+              normalized["item"] ||
+              "",
+            part_number:
+              normalized["part number"] || normalized["part_number"] || null,
+            brand: normalized["brand"] || "",
+            unit: normalized["unit"] || "",
+            quantity: Number(quantity) || 0,
+            low_quantity:
+              normalized["low quantity"] || normalized["low_quantity"] || 0,
+            purchase_price:
+              normalized["purchase price"] || normalized["purchase_price"] || 0,
+            selling_price:
+              normalized["selling price"] || normalized["selling_price"] || 0,
+            least_price:
+              normalized["least price"] || normalized["least_price"] || 0,
+
+            // Default image automatically
+            image: normalized["image"] || "items/default.jpg",
+
+            condition: normalized["condition"] || "New",
+            type: normalized["type"] || "",
+            manufacturer: normalized["manufacturer"] || "",
+            location: normalized["location"] || "",
+            shelf_number:
+              normalized["shelf number"] || normalized["shelf_number"] || "",
+          };
+        })
+        .filter(Boolean);
+
+      const response = await api.post("/items/import", {
+        items: cleaned,
+      });
+
+      toast.success("Items imported successfully!");
+
+      // 🟢 Re-fetch items instead of manual setItems
+      await fetchItems(); // <-- You MUST create this function
     } catch (error) {
       toast.error(
         "Import failed: " + (error.response?.data?.message || error.message)
       );
+    }
+  };
+  const fetchItems = async () => {
+    try {
+      const res = await api.get("/items");
+      console.log("FETCH RESPONSE:", res.data);
+
+      // FIX: If backend returns plain array
+      if (Array.isArray(res.data)) {
+        setItems(res.data);
+      } else {
+        setItems(res.data.items || []);
+      }
+    } catch (err) {
+      console.log("Failed to fetch items", err);
     }
   };
 
@@ -337,11 +440,7 @@ const TotalItem = () => {
             setIsItemModalOpen,
             setSelectedRepairId,
           })}
-          data={paginatedItems}
-          manualPagination
-          pageCount={totalPages}
-          pageIndex={currentPage - 1}
-          onPaginationChange={(page) => setCurrentPage(page + 1)}
+          data={filteredItems} // 👈 send all filtered items
         />
       </div>
     </div>

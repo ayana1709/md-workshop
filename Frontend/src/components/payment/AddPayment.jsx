@@ -1,301 +1,265 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Swal from "sweetalert2";
+import CustomerInfo from "./CustomerInfo";
+import CostTables from "./CostTables";
+import PaymentInfo from "./PaymentInfo";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
-import BackButton from "../BackButton";
 import api from "@/api";
+import { useNavigate } from "react-router-dom";
 
 function AddPayment() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false); // prevent double submit
+  const navigate = useNavigate();
 
-  const generateJobId = () =>
-    Math.random().toString(36).substring(2, 10).toUpperCase(); // 6-digit number
-  const generateRefNo = () =>
-    Math.random().toString(36).substring(2, 10).toUpperCase();
+  // States for the 3 sections
+  const [customer, setCustomer] = useState({});
+  const [costs, setCosts] = useState({});
+  const [payment, setPayment] = useState({});
 
-  const [formData, setFormData] = useState({
-    job_id: generateJobId(),
-    ref_no: generateRefNo(),
-    customer_name: "",
-    plate_number: "",
-    payment_method: "Cash",
-    payment_status: "Full Payment",
-    paid_amount: "",
-    remaining_amount: "",
-    payment_date: "",
-    paid_by: "",
-    approved_by: "",
-    reason: "",
-    remark: "",
-    from_bank: "",
-    to_bank: "",
-  });
+  const handleCustomerChange = (data) => setCustomer(data);
+  const handleCostChange = (data) => setCosts(data);
+  const handlePaymentChange = (data) => setPayment(data);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const resetForm = () => {
+    setCustomer({});
+    setCosts({});
+    setPayment({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+
     try {
-      await api.post("/payments/quick", formData);
+      // Use FormData to support image uploads
+      const payload = new FormData();
+
+      // Customer info
+      payload.append("date", customer.date || "");
+      payload.append("name", customer.customerName || "");
+      payload.append("reference", customer.refNum || "");
+      payload.append("fs", customer.fsNum || "");
+      payload.append("mobile", customer.mobile || "");
+      payload.append("tin", customer.tin || "");
+      payload.append("vat", customer.vat || "");
+
+      // Payment info
+      payload.append("method", payment.method || "cash");
+      payload.append("status", payment.status || "full");
+      payload.append("paidAmount", payment.paidAmount || 0);
+      payload.append("remainingAmount", payment.remainingAmount || 0);
+      payload.append("paidBy", payment.paidBy || "");
+      payload.append("approvedBy", payment.approvedBy || "");
+      payload.append("reason", payment.reason || "");
+      payload.append("remarks", payment.remarks || "");
+
+      // 🔹 Include bank or cheque details
+      payload.append("fromBank", payment.fromBank || "");
+      payload.append("toBank", payment.toBank || "");
+      payload.append("otherFromBank", payment.otherFromBank || "");
+      payload.append("otherToBank", payment.otherToBank || "");
+      payload.append("chequeNumber", payment.chequeNumber || "");
+
+      // 🔹 Attach image (for both transfer or cheque)
+      if (payment.image) {
+        payload.append("image", payment.image);
+      }
+
+      // 🔹 Add cost details (must stringify for FormData)
+      payload.append("labourCosts", JSON.stringify(costs.labour || []));
+      payload.append("spareCosts", JSON.stringify(costs.spares || []));
+      payload.append("otherCosts", JSON.stringify(costs.others || []));
+      payload.append("summary", JSON.stringify(costs.summary || {}));
+
+      // Send request
+      const response = await api.post("/payments", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
       Swal.fire({
+        title: "Success!",
+        text: response.data.message || "Payment saved successfully.",
         icon: "success",
-        title: "Success 🎉",
-        text: "Payment submitted successfully!",
-        timer: 2000,
-        showConfirmButton: false,
+        confirmButtonColor: "#16a34a",
+      }).then(() => {
+        resetForm();
+        navigate("/all-payments");
       });
-
-      setFormData((prev) => ({
-        ...prev,
-        job_id: generateJobId(),
-        ref_no: generateRefNo(),
-        paid_amount: "",
-        remaining_amount: "",
-        payment_date: "",
-        paid_by: "",
-        approved_by: "",
-        reason: "",
-        remark: "",
-        from_bank: "",
-        to_bank: "",
-      }));
-    } catch (err) {
+    } catch (error) {
+      console.error("❌ Error sending payment:", error);
       Swal.fire({
+        title: "Error!",
+        text:
+          error.response?.data?.message ||
+          "Something went wrong while saving the payment.",
         icon: "error",
-        title: "Oops!",
-        text: err?.response?.data?.message || "Submission failed.",
+        confirmButtonColor: "#dc2626",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const inputStyle =
-    "w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const handleSubmitWithStatus = async (statusType) => {
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      const payload = new FormData();
+
+      // Customer info
+      payload.append("date", customer.date || "");
+      payload.append("name", customer.customerName || "");
+      payload.append("reference", customer.refNum || "");
+      payload.append("fs", customer.fsNum || "");
+      payload.append("mobile", customer.mobile || "");
+      payload.append("tin", customer.tin || "");
+      payload.append("vat", customer.vat || "");
+
+      // Payment info
+      payload.append("method", payment.method || "cash");
+      payload.append("status", statusType || payment.status || "full"); // 👈 Draft or full
+      payload.append("paidAmount", payment.paidAmount || 0);
+      payload.append("remainingAmount", payment.remainingAmount || 0);
+      payload.append("paidBy", payment.paidBy || "");
+      payload.append("approvedBy", payment.approvedBy || "");
+      payload.append("reason", payment.reason || "");
+      payload.append("remarks", payment.remarks || "");
+
+      // Bank / Cheque / Image
+      payload.append("fromBank", payment.fromBank || "");
+      payload.append("toBank", payment.toBank || "");
+      payload.append("otherFromBank", payment.otherFromBank || "");
+      payload.append("otherToBank", payment.otherToBank || "");
+      payload.append("chequeNumber", payment.chequeNumber || "");
+      if (payment.image) payload.append("image", payment.image);
+
+      // Cost Details
+      payload.append("labourCosts", JSON.stringify(costs.labour || []));
+      payload.append("spareCosts", JSON.stringify(costs.spares || []));
+      payload.append("otherCosts", JSON.stringify(costs.others || []));
+      payload.append("summary", JSON.stringify(costs.summary || {}));
+
+      const response = await api.post("/payments", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Swal.fire({
+        title: "Success!",
+        text:
+          statusType === "draft"
+            ? "Saved as draft successfully."
+            : response.data.message || "Payment saved successfully.",
+        icon: "success",
+        confirmButtonColor: "#16a34a",
+      }).then(() => {
+        resetForm();
+        navigate("/all-payments");
+      });
+    } catch (error) {
+      console.error("❌ Error sending payment:", error);
+      Swal.fire({
+        title: "Error!",
+        text:
+          error.response?.data?.message ||
+          "Something went wrong while saving the payment.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="flex min-h-screen overflow-hidden">
+    <div className="flex min-h-screen bg-gray-50 text-gray-800 overflow-x-hidden">
+      {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="flex flex-col flex-1 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white overflow-y-auto">
+      {/* Main Content */}
+      <div className="flex flex-col flex-1 min-w-0">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <div className="w-full max-w-5xl mx-auto px-6 py-12">
-          {/* <BackButton /> */}
-          <h1 className="text-3xl font-bold mb-6 border-b pb-2">
-            Payment Entry Form
-          </h1>
-
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {/* Job ID & Ref No */}
-            <InputField
-              name="job_id"
-              label="Job ID"
-              type="string"
-              value={formData.job_id}
-              handleChange={handleChange}
-              readOnly
-              className={inputStyle + " bg-gray-100 dark:bg-gray-800"}
-            />
-            <InputField
-              name="ref_no"
-              label="Reference Number"
-              value={formData.ref_no}
-              handleChange={handleChange}
-              readOnly
-              className={inputStyle + " bg-gray-100 dark:bg-gray-800"}
-            />
-
-            {/* Customer Info */}
-            <InputField
-              name="customer_name"
-              label="Customer Name"
-              value={formData.customer_name}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-            <InputField
-              name="plate_number"
-              label="Plate Number"
-              value={formData.plate_number}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-
-            {/* Payment Method & Status */}
-            <SelectField
-              name="payment_method"
-              label="Payment Method"
-              value={formData.payment_method}
-              handleChange={handleChange}
-              className={inputStyle}
+        <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-y-auto">
+          <div className="w-full max-w-5xl mx-auto">
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white shadow-lg rounded-2xl p-4 sm:p-6 md:p-8 space-y-8 w-full max-w-full"
             >
-              <option>Cash</option>
-              <option>Transfer</option>
-              <option>Credit</option>
-              <option>Cheque</option>
-            </SelectField>
+              {/* Page Title */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                  Create New Payment
+                </h2>
+              </div>
 
-            <SelectField
-              name="payment_status"
-              label="Payment Status"
-              value={formData.payment_status}
-              handleChange={handleChange}
-              className={inputStyle}
-            >
-              <option>Full Payment</option>
-              <option>Advance</option>
-              <option>Credit</option>
-              <option>Remaining</option>
-            </SelectField>
+              {/* Customer Info */}
+              <section className="space-y-6">
+                <CustomerInfo onChange={handleCustomerChange} />
+              </section>
 
-            {/* If Transfer */}
-            {formData.payment_method === "Transfer" && (
-              <>
-                <InputField
-                  name="from_bank"
-                  label="From Bank"
-                  value={formData.from_bank}
-                  handleChange={handleChange}
-                  className={inputStyle}
+              {/* Cost Tables (scroll only this if needed) */}
+              <section className="space-y-6 overflow-x-auto">
+                <CostTables
+                  onChange={(data) => {
+                    handleCostChange(data);
+                    // Update PaymentInfo default paidAmount when grandTotal changes
+                    if (data?.summary?.grandTotal) {
+                      setPayment((prev) => ({
+                        ...prev,
+                        paidAmount: data.summary.grandTotal.toFixed(2),
+                        remainingAmount: 0, // initially fully paid
+                      }));
+                    }
+                  }}
                 />
-                <InputField
-                  name="to_bank"
-                  label="To Bank"
-                  value={formData.to_bank}
-                  handleChange={handleChange}
-                  className={inputStyle}
+              </section>
+
+              {/* Payment Info */}
+              <section className="space-y-6">
+                <PaymentInfo
+                  onChange={handlePaymentChange}
+                  totalAmount={costs.summary?.grandTotal || 0}
+                  defaultPaid={costs.summary?.grandTotal || 0}
                 />
-              </>
-            )}
+              </section>
 
-            {/* Amounts */}
-            <InputField
-              name="paid_amount"
-              label="Paid Amount (ETB)"
-              type="number"
-              value={formData.paid_amount}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-            <InputField
-              name="remaining_amount"
-              label="Remaining Amount (ETB)"
-              type="number"
-              value={formData.remaining_amount}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-
-            {/* Dates & People */}
-            <InputField
-              name="payment_date"
-              label="Payment Date"
-              type="date"
-              value={formData.payment_date}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-            <InputField
-              name="paid_by"
-              label="Paid By"
-              value={formData.paid_by}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-            <InputField
-              name="approved_by"
-              label="Approved By"
-              value={formData.approved_by}
-              handleChange={handleChange}
-              className={inputStyle}
-            />
-
-            {/* Reason & Remarks */}
-            <InputField
-              name="reason"
-              label="Reason of Payment"
-              value={formData.reason}
-              handleChange={handleChange}
-              className={inputStyle + " col-span-1 md:col-span-2"}
-            />
-            <div className="md:col-span-2">
-              <label className="block font-medium mb-1">Remark</label>
-              <textarea
-                name="remark"
-                value={formData.remark}
-                onChange={handleChange}
-                rows={4}
-                className={`${inputStyle} resize-none`}
-              />
-            </div>
-
-            <div className="md:col-span-2 text-right mt-4">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition"
-              >
-                Submit Payment
-              </button>
-            </div>
-          </form>
-        </div>
+              {/* Action Buttons */}
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-end gap-3">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className={`w-full sm:w-auto px-6 py-3 rounded-lg shadow-md transition-all font-medium ${
+                    submitting
+                      ? "bg-gray-400 cursor-not-allowed text-white"
+                      : "bg-green-600 hover:bg-green-700 text-white transform hover:scale-105 active:scale-95"
+                  }`}
+                >
+                  {submitting ? "Saving..." : "Save Payment"}
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleSubmitWithStatus("draft")}
+                  className={`w-full sm:w-auto px-6 py-3 rounded-lg shadow-md transition-all font-medium ${
+                    submitting
+                      ? "bg-gray-400 cursor-not-allowed text-white"
+                      : "bg-yellow-500 hover:bg-yellow-600 text-white transform hover:scale-105 active:scale-95"
+                  }`}
+                >
+                  {submitting ? "Saving..." : "Save as Draft"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </main>
       </div>
     </div>
   );
 }
-
-// Reusable Input Field
-const InputField = ({
-  name,
-  label,
-  value,
-  handleChange,
-  className,
-  type = "text",
-  readOnly = false,
-}) => (
-  <div>
-    <label className="block font-medium mb-1">{label}</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={handleChange}
-      readOnly={readOnly}
-      className={className}
-    />
-  </div>
-);
-
-// Reusable Select Field
-const SelectField = ({
-  name,
-  label,
-  value,
-  handleChange,
-  className,
-  children,
-}) => (
-  <div>
-    <label className="block font-medium mb-1">{label}</label>
-    <select
-      name={name}
-      value={value}
-      onChange={handleChange}
-      className={className}
-    >
-      {children}
-    </select>
-  </div>
-);
 
 export default AddPayment;

@@ -28,34 +28,42 @@ const RequestSpare = () => {
     return savedRows ? JSON.parse(savedRows) : [];
   });
   const [workDetails, setWorkDetails] = useState([]);
+  const [isAddingRow, setIsAddingRow] = useState(false);
+
+  // helper: check if row is empty
+  const isRowEmpty = (row) => {
+    return (
+      !row.itemname?.trim() &&
+      !row.partnumber?.trim() &&
+      !row.model?.trim() &&
+      !row.requestquantity?.toString().trim() &&
+      !row.requestedby?.trim()
+    );
+  };
 
   // console.log(rows);
 
   useEffect(() => {
     localStorage.setItem("rows", JSON.stringify(rows));
   }, [rows]);
+  // state for loading
+
   const addRow = async (jobCardNo) => {
-    // Check if the last row is empty
-    if (rows.length > 0) {
-      const lastRow = rows[rows.length - 1];
-
-      // You can customize this to check only the fields you care about
-      const isEmpty =
-        !lastRow.itemname?.trim() &&
-        !lastRow.partnumber?.trim() &&
-        !lastRow.model?.trim() &&
-        !lastRow.requestquantity?.toString().trim() &&
-        !lastRow.requestedby?.trim();
-
-      if (isEmpty) {
-        Swal.fire(
-          "Warning!",
-          "Please fill the last row before adding a new one.",
-          "warning"
-        );
-        return;
-      }
+    if (isAddingRow) {
+      Swal.fire("Please wait!", "Still adding the previous row...", "warning");
+      return;
     }
+
+    if (rows.length > 0 && isRowEmpty(rows[rows.length - 1])) {
+      Swal.fire(
+        "Warning!",
+        "Please complete the last row before adding a new one.",
+        "warning"
+      );
+      return;
+    }
+
+    setIsAddingRow(true); // 🚀 lock
 
     try {
       const response = await api.get(`/spare-request?job_card_no=${jobCardNo}`);
@@ -64,14 +72,11 @@ const RequestSpare = () => {
         (order) => order.sparedetails
       );
 
-      const allIds = allWorkDetails
-        .map((w) => w.id)
-        .filter((id) => Number.isFinite(id));
-      const rowIds = rows.map((r) => r.id).filter((id) => Number.isFinite(id));
-
       const maxWorkDetailId = Math.max(
-        allIds.length > 0 ? Math.max(...allIds) : 0,
-        rowIds.length > 0 ? Math.max(...rowIds) : 0
+        allWorkDetails.length > 0
+          ? Math.max(...allWorkDetails.map((w) => w.id))
+          : 0,
+        rows.length > 0 ? Math.max(...rows.map((r) => r.id)) : 0
       );
 
       const newRow = {
@@ -80,7 +85,6 @@ const RequestSpare = () => {
         partnumber: "",
         brand: "",
         model: "",
-        // condition: "",
         description: "",
         requestquantity: "",
         requestedby: "",
@@ -89,8 +93,10 @@ const RequestSpare = () => {
 
       setRows((prevRows) => [...prevRows, newRow]);
     } catch (error) {
-      console.error("Error fetching work details:", error);
-      Swal.fire("Error!", "Failed to fetch work order details.", "error");
+      console.error("Error fetching spare details:", error);
+      Swal.fire("Error!", "Failed to fetch spare request details.", "error");
+    } finally {
+      setIsAddingRow(false); // ✅ unlock
     }
   };
 
@@ -375,65 +381,72 @@ const RequestSpare = () => {
         <div className="border rounded-md border-blue-500 py-6 px-6 overflow-hidden">
           {/* Job Card No */}
           <button
-            onClick={addRow}
-            className="mt-4 mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 "
+            onClick={() => addRow(id)}
+            disabled={isAddingRow}
+            className={`mt-4 mb-4 px-4 py-2 rounded text-white ${
+              isAddingRow
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
           >
-            + Add New Spare
+            {isAddingRow ? "Adding..." : "+ Add New Spare"}
           </button>
-          <div className="overflow-x-auto">
-            <table className="table-fixed min-w-full border-collapse border-2 border-gray-800 overflow-x-auto">
-              <thead className="bg-gray-800 text-white text-left text-sm font-medium">
+
+          <div className="overflow-x-auto scroll-smooth rounded-lg border border-gray-300 shadow-md">
+            <table className="min-w-[900px] w-full table-auto border-collapse text-sm">
+              {/* HEADER */}
+              <thead className="bg-gray-800 text-white sticky top-0 z-10">
                 <tr>
-                  <th className="border-2 border-gray-300 p-2 w-[40px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[50px]">
                     ID
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[140px]">
                     Item Name
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[120px]">
                     Part Number
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[120px]">
                     Brand
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[120px]">
                     Model
                   </th>
-                  {/* <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
-                    Item Description
-                  </th> */}
-                  <th className="border-2 border-gray-300 p-2 w-[70px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[90px]">
                     Req Qty
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[70px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[100px]">
                     Req By
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[70px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[110px]">
                     Status
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px] font-medium">
+                  <th className="border-2 border-gray-300 px-3 py-2 min-w-[130px]">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="font-semimedium text-sm">
+              {/* BODY */}
+              <tbody className="text-gray-800 dark:text-gray-200">
                 {[...workDetails, ...rows].map((row, index) => {
                   const isFetchedData = workDetails.some(
                     (workRow) => workRow.id === row.id
                   );
                   const isEditing = editingRow === row.id;
+
                   return (
                     <tr
                       key={`${row.id}-${index}`}
-                      className="border-t-2 border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-300"
+                      className="border-t border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
                     >
-                      <td className="border-2 border-gray-300 p-2 text-center font-medium">
+                      {/* ID */}
+                      <td className="border-2 border-gray-300 px-3 py-2 text-center font-semibold">
                         {index + 1}
                       </td>
 
-                      {/* item name */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* Item Name */}
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.itemname
                         ) : (
@@ -447,17 +460,18 @@ const RequestSpare = () => {
                             onChange={(e) =>
                               handleChange(row.id, "itemname", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[140px] border rounded px-2 py-1 dark:bg-gray-700"
                           />
                         )}
                       </td>
 
                       {/* Part Number */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.partnumber
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.partnumber
@@ -466,14 +480,13 @@ const RequestSpare = () => {
                             onChange={(e) =>
                               handleChange(row.id, "partnumber", e.target.value)
                             }
-                            type="number"
-                            className=" no-spinner w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[120px] border rounded px-2 py-1 dark:bg-gray-700 no-spinner"
                           />
                         )}
                       </td>
 
                       {/* Brand */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.brand
                         ) : (
@@ -485,12 +498,13 @@ const RequestSpare = () => {
                             onChange={(e) =>
                               handleChange(row.id, "brand", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[120px] border rounded px-2 py-1 dark:bg-gray-700"
                           />
                         )}
                       </td>
-                      {/* model */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+
+                      {/* Model */}
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.model
                         ) : (
@@ -502,40 +516,18 @@ const RequestSpare = () => {
                             onChange={(e) =>
                               handleChange(row.id, "model", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[120px] border rounded px-2 py-1 dark:bg-gray-700"
                           />
                         )}
                       </td>
-                      {/* Description */}
-                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
-                        {isFetchedData && !isEditing ? (
-                          row.description
-                        ) : (
-                          <input
-                            type="text"
-                            value={
-                              isEditing
-                                ? editValues.description
-                                : row.description || ""
-                            }
-                            onChange={(e) =>
-                              handleChange(
-                                row.id,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
-                          />
-                        )}
-                      </td> */}
 
-                      {/* Request Quantity */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* Req Qty */}
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.requestquantity
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.requestquantity
@@ -548,18 +540,18 @@ const RequestSpare = () => {
                                 e.target.value
                               )
                             }
-                            type="number"
-                            className="  no-spinner w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[100px] border rounded px-2 py-1 dark:bg-gray-700 no-spinner"
                           />
                         )}
                       </td>
 
-                      {/* Requested By */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* Req By */}
+                      <td className="border-2 border-gray-300 px-3 py-2">
                         {isFetchedData && !isEditing ? (
                           row.requestedby || "N/A"
                         ) : (
                           <input
+                            type="text"
                             value={
                               isEditing
                                 ? editValues.requestedby
@@ -572,20 +564,17 @@ const RequestSpare = () => {
                                 e.target.value
                               )
                             }
-                            type="text"
-                            className="  no-spinner w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full min-w-[120px] border rounded px-2 py-1 dark:bg-gray-700"
                           />
                         )}
                       </td>
 
-                      {/* Condition */}
-                      <td className="border-2 border-gray-300 p-2 font-medium">
+                      {/* Status */}
+                      <td className="border-2 border-gray-300 px-3 py-2 text-center">
                         {isFetchedData && !isEditing ? (
                           <span
-                            className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                              row.condition === "Not Requested"
-                                ? "bg-gray-200 text-gray-700"
-                                : row.condition === "Requested"
+                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              row.condition === "Requested"
                                 ? "bg-yellow-100 text-yellow-800 animate-pulse"
                                 : row.condition === "Approved"
                                 ? "bg-green-100 text-green-800"
@@ -593,7 +582,7 @@ const RequestSpare = () => {
                                 ? "bg-red-100 text-red-700"
                                 : row.condition === "Recieved"
                                 ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-300 text-gray-900"
+                                : "bg-gray-200 text-gray-700"
                             }`}
                           >
                             {row.condition || "N/A"}
@@ -608,7 +597,7 @@ const RequestSpare = () => {
                             onChange={(e) =>
                               handleChange(row.id, "condition", e.target.value)
                             }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
+                            className="w-full border rounded px-2 py-1 dark:bg-gray-700"
                           >
                             <option value="Not Requested">Not Requested</option>
                             <option value="Requested">Requested</option>
@@ -619,60 +608,22 @@ const RequestSpare = () => {
                         )}
                       </td>
 
-                      {/* status */}
-                      {/* <td className="border-2 border-gray-300 p-2 font-medium">
-                        {isFetchedData && !isEditing ? (
-                          <span
-                            className={`px-2 py-1 rounded-full text-sm font-semibold
-        ${
-          row.status === "Available"
-            ? "bg-green-100 text-green-700"
-            : row.status === "Insufficient"
-            ? "bg-yellow-100 text-yellow-700"
-            : "bg-red-100 text-red-700"
-        }
-      `}
-                          >
-                            {row.status || "N/A"}
-                          </span>
-                        ) : (
-                          <input
-                            type="text"
-                            disabled
-                            value={
-                              isEditing ? editValues.status : row.status || ""
-                            }
-                            onChange={(e) =>
-                              handleChange(row.id, "status", e.target.value)
-                            }
-                            className="w-full border rounded px-2 py-1 dark:bg-gray-800 dark:text-gray-200"
-                          />
-                        )}
-                      </td> */}
-
                       {/* Actions */}
-
-                      {/* <ActionCell row={row} index={index} />
-                       */}
-
-                      <td className="relative border-2 border-gray-200 dark:border-gray-700 p-3 text-left font-medium">
-                        <div
-                          className="inline-block relative"
-                          ref={dropdownRef}
-                        >
+                      <td className="border-2 border-gray-300 px-3 py-2">
+                        <div className="relative inline-block min-w-[120px]">
                           <button
                             onClick={() =>
                               setDropdownOpen(
                                 dropdownOpen === index ? null : index
                               )
                             }
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition duration-200 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2 transition shadow-sm"
                           >
-                            Action <FiChevronDown size={18} />
+                            Action <FiChevronDown size={16} />
                           </button>
 
                           {dropdownOpen === index && (
-                            <div className="absolute top-full left-0 mt-2 w-34 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 animate-fade-in">
+                            <div className="absolute left-0 mt-2 w-40 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
                               <button
                                 onClick={() => handleView(row)}
                                 className="flex items-center gap-2 px-4 py-2 text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 w-full"
@@ -712,6 +663,7 @@ const RequestSpare = () => {
               </tbody>
             </table>
           </div>
+
           {viewData && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50 animate-fade-in">
               <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-2xl w-full max-w-md relative overflow-y-auto max-h-[90vh] transition-all transform scale-100">

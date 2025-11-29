@@ -112,21 +112,25 @@ function StoreProvider({ children }) {
     fetchItems();
   }, []);
 
+  useEffect(() => {
+    const fetchProformas = async () => {
+      try {
+        const response = await api.get("/proformas");
+        setProformas(response.data);
+      } catch (error) {
+        console.error("Failed to fetch proformas:", error);
+      }
+    };
+
+    fetchProformas();
+  }, []);
+  // 🔥 Admin authentication state
+  const [admin, setAdmin] = useState(() => {
+    return !!localStorage.getItem("adminToken"); // stays logged in after refresh
+  });
+
   const handleDelete = async (id, type) => {
     if (!id) return;
-
-    useEffect(() => {
-      const fetchProformas = async () => {
-        try {
-          const response = await api.get("/proformas");
-          setProformas(response.data);
-        } catch (error) {
-          console.error("Failed to fetch proformas:", error);
-        }
-      };
-
-      fetchProformas();
-    }, []);
 
     //     const handleDelete = async (id, type) => {
     //   try {
@@ -208,17 +212,57 @@ function StoreProvider({ children }) {
   const getGrandTotal = (jobId) => {
     return grandTotals[jobId] || 0;
   };
+  // ✅ 1. Hydrate from localStorage instantly
   const [companyData, setCompanyData] = useState(() => {
     const stored = localStorage.getItem("companyData");
     return stored ? JSON.parse(stored) : null;
   });
 
+  // ✅ 2. Persist whenever updated
   useEffect(() => {
     if (companyData) {
       localStorage.setItem("companyData", JSON.stringify(companyData));
     }
   }, [companyData]);
 
+  // ✅ 3. Fetch once on mount → overwrite if newer
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        const res = await api.get("/settings");
+        setCompanyData(res.data); // auto-saves to localStorage
+      } catch (err) {
+        console.error("Failed to fetch company settings", err);
+        toast.error("Failed to load company settings");
+      }
+    };
+    fetchCompanyData();
+  }, []);
+
+  const [permissions, setPermissions] = useState([]);
+
+  // fetch permissions by roleId
+  const fetchPermissions = async (roleId) => {
+    try {
+      const res = await api.get(`/role-permissions/${roleId}`);
+      const perms = Array.isArray(res.data) ? res.data : res.data.data || [];
+      setPermissions(perms);
+      localStorage.setItem("permissions", JSON.stringify(perms));
+      return perms; // important
+    } catch (err) {
+      console.error("Failed to fetch permissions", err);
+      setPermissions([]);
+      return [];
+    }
+  };
+
+  // ✅ hydrate from localStorage when app loads
+  useEffect(() => {
+    const saved = localStorage.getItem("permissions");
+    if (saved) {
+      setPermissions(JSON.parse(saved));
+    }
+  }, []);
   return (
     <StoreContext.Provider
       value={{
@@ -299,6 +343,12 @@ function StoreProvider({ children }) {
         setCompanyData,
         proformas,
         setProformas,
+
+        permissions,
+        setPermissions,
+        fetchPermissions,
+        admin,
+        setAdmin,
       }}
     >
       {children}

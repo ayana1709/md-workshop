@@ -4,48 +4,50 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up()
-    {
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            // $table->unsignedBigInteger('repair_registration_id'); 
-            // $table->unsignedBigInteger('repair_registration_id')->nullable()->change();
-            $table->unsignedBigInteger('repair_registration_id')->nullable();
+return new class extends Migration
+{
+   public function up()
+{
+    Schema::create('payments', function (Blueprint $table) {
+        $table->id();
 
+        // 🔹 Basic customer and reference info
+        $table->date('date')->nullable();
+        $table->string('name')->nullable();
+        $table->string('reference')->nullable();
+        $table->string('fs')->nullable();
+        $table->string('mobile')->nullable();
+        $table->string('tin')->nullable();
+        $table->string('vat')->nullable();
 
-            // Foreign key
-            // $table->string('job_id'); // Still store job_id for readability
-            $table->string('job_id')->unique(); // Add this constraint
+        // 🔹 Payment info
+        $table->enum('method', ['cash', 'transfer', 'card', 'cheque'])->default('cash');
+        $table->string('status')->nullable();
+        $table->decimal('paidAmount', 12, 2)->default(0);
+        $table->decimal('remainingAmount', 12, 2)->default(0);
+        $table->string('paidBy')->nullable();
+        $table->string('approvedBy')->nullable();
+        $table->string('reason')->nullable();
+        $table->text('remarks')->nullable();
 
-            $table->string('customer_name');
-            $table->string('plate_number');
+        // 🔹 New optional fields for transfer/cheque
+        $table->string('fromBank')->nullable();
+        $table->string('toBank')->nullable();
+        $table->string('otherFromBank')->nullable();
+        $table->string('otherToBank')->nullable();
+        $table->string('chequeNumber')->nullable();
+        $table->string('image')->nullable(); // file path for slip or cheque
 
-            $table->enum('payment_method', ['Cash', 'Transfer', 'Credit', 'Cheque']);
-            $table->enum('payment_status', ['Full Payment', 'Advance', 'Credit', 'Remaining']);
+        // 🔹 JSON fields for cost breakdowns
+        $table->json('labourCosts')->nullable();
+        $table->json('spareCosts')->nullable();
+        $table->json('otherCosts')->nullable();
+        $table->json('summary')->nullable();
 
-            $table->decimal('paid_amount', 10, 2);
-            $table->decimal('remaining_amount', 10, 2)->nullable();
+        $table->timestamps();
+    });
+}
 
-            $table->string('ref_no')->nullable();
-            $table->date('payment_date')->nullable();
-            $table->string('paid_by')->nullable();
-            $table->string('approved_by')->nullable();
-            $table->string('reason')->nullable();
-            $table->text('remark')->nullable();
-
-            // ✅ Added for Transfer-specific details
-            $table->string('from_bank')->nullable();
-            $table->string('to_bank')->nullable();
-
-            $table->timestamps();
-
-            $table->foreign('repair_registration_id')
-                ->references('id')
-                ->on('repair_registrations')
-                ->onDelete('cascade');
-        });
-    }
 
     public function down()
     {

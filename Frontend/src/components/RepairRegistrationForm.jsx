@@ -8,6 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useStores } from "../contexts/storeContext";
 import PrintModal from "./PrintModal";
 import BackButton from "./BackButton";
+import DateInput from "./DateInput";
 
 export default function RepairRegistrationForm() {
   const { isPrintModalOpen, setIsPrintModalOpen, setRepairData } = useStores();
@@ -18,6 +19,7 @@ export default function RepairRegistrationForm() {
   const [selectedFuel, setSelectedFuel] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const { companyData } = useStores();
 
   // console.log(suggestions);
 
@@ -27,24 +29,26 @@ export default function RepairRegistrationForm() {
     );
   };
 
+  // const placeholderImage = "/images/defa.jpg";
+
+  const placeholderImage = "/images/defa.jpg";
+
   const [formData, setFormData] = useState({
     customer_name: "",
-    customer_type: "",
     mobile: "",
-    types_of_jobs: "",
+    types_of_jobs: "Repair",
     received_date: "",
     estimated_date: "",
     promise_date: "",
-    priority: "",
+    priority: "Medium",
     product_name: "",
     serial_code: "",
-    customer_observation: ["1. "], // Default starts with "1. "
     spare_change: [
       { item: "1. ", part_number: "", qty: "", unit_price: "", total_price: 0 },
     ],
     job_description: [{ task: "1. ", price: "" }],
     received_by: "",
-    image: null, // ✅ Add this line
+    image: placeholderImage, // 👈 Default placeholder
   });
 
   const navigate = useNavigate();
@@ -63,21 +67,45 @@ export default function RepairRegistrationForm() {
           : prevData.repair_category.filter((cat) => cat !== value),
       }));
     } else {
-      setFormData((prevData) => ({ ...prevData, [name]: value }));
+      setFormData((prevData) => {
+        let updatedData = { ...prevData, [name]: value };
+
+        // ✅ Calculate promise_date only when both are valid and complete
+        if (
+          (name === "estimated_date" || name === "received_date") &&
+          updatedData.estimated_date &&
+          updatedData.received_date
+        ) {
+          // Check if received_date is a valid ISO date (YYYY-MM-DD)
+          const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+          if (dateRegex.test(updatedData.received_date)) {
+            try {
+              const received = new Date(updatedData.received_date);
+              const estimatedDays = parseInt(updatedData.estimated_date, 10);
+
+              if (!isNaN(received.getTime()) && !isNaN(estimatedDays)) {
+                const promise = new Date(received);
+                promise.setDate(received.getDate() + estimatedDays);
+                updatedData.promise_date = promise.toISOString().split("T")[0];
+              }
+            } catch (error) {
+              console.error("Date calculation error:", error);
+            }
+          }
+        }
+
+        return updatedData;
+      });
     }
 
+    // 🔍 Customer name search logic
     if (name === "customer_name" && value.length > 1) {
       try {
         const response = await api.get(`/search-customers?q=${value}`);
-        console.log("API Response:", response.data); // Debugging API response
-
-        // Ensure response is an array
         let data = response.data;
         if (!Array.isArray(data)) {
-          data = data.data || []; // Extract array from object
+          data = data.data || [];
         }
-
-        // setSuggestions(data.length ? data : [""]); // Show "No results" if empty
       } catch (error) {
         console.error("Error fetching customers:", error);
         setSuggestions([]);
@@ -87,18 +115,81 @@ export default function RepairRegistrationForm() {
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (!file) return;
+
+    const compressImage = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxSize = 600; // max width/height
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) return reject(new Error("Compression failed"));
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              },
+              "image/jpeg",
+              0.7 // compression quality
+            );
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const compressedFile = await compressImage(file);
       setFormData((prev) => ({
         ...prev,
-        image: file, // 👈 this is what FormData expects
+        image: compressedFile, // store compressed image for FormData
       }));
+      setPreviewUrl(URL.createObjectURL(compressedFile)); // show preview
+    } catch (err) {
+      console.error("Image compression failed", err);
+      setFormData((prev) => ({ ...prev, image: file })); // fallback
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
+  // state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isSubmitting) return; // 🚫 prevent double submit
+    setIsSubmitting(true);
+
     try {
       // Normalize customer observation
       const formattedCustomerObservation = Array.isArray(
@@ -118,7 +209,6 @@ export default function RepairRegistrationForm() {
       const formDataToSend = new FormData();
       formDataToSend.append("payload", JSON.stringify(payloadData));
 
-      // ✅ Add image to FormData if available
       if (formData.image) {
         formDataToSend.append("image", formData.image);
       }
@@ -126,9 +216,7 @@ export default function RepairRegistrationForm() {
       console.log("Sending to backend:", JSON.stringify(payloadData, null, 2));
 
       const response = await api.post("/repairs", formDataToSend, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success(response.data.message, {
@@ -136,17 +224,15 @@ export default function RepairRegistrationForm() {
         autoClose: 1000,
       });
 
-      setRepairData(payloadData); // Store repair details
-      setIsPrintModalOpen(true); // Open modal
+      setRepairData(payloadData);
+      setIsPrintModalOpen(true);
     } catch (error) {
       console.error("Error submitting form:", error.response?.data || error);
-
       const errorMessage =
         error.response?.data?.message || "Failed to submit form.";
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      toast.error(errorMessage, { position: "top-right", autoClose: 3000 });
+    } finally {
+      setIsSubmitting(false); // ✅ re-enable button
     }
   };
 
@@ -241,6 +327,29 @@ export default function RepairRegistrationForm() {
       return total + (isNaN(price) ? 0 : price);
     }, 0);
   };
+  const addJobRow = () => {
+    const newRowNumber = formData.job_description.length + 1;
+    const newJobs = [
+      ...formData.job_description,
+      { task: ` ${newRowNumber}.`, price: "" },
+    ];
+    setFormData({ ...formData, job_description: newJobs });
+  };
+
+  const addSpareRow = () => {
+    const newRowNumber = formData.spare_change.length + 1;
+    const newItems = [
+      ...formData.spare_change,
+      {
+        item: `${newRowNumber}. `,
+        part_number: "",
+        qty: "",
+        unit_price: "",
+        total_price: 0,
+      },
+    ];
+    setFormData({ ...formData, spare_change: newItems });
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -313,25 +422,6 @@ export default function RepairRegistrationForm() {
 
                     <div>
                       <label className="dark:text-gray-200">
-                        Customer Type/ የደንበኛ አይነት
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="customer_type"
-                        value={formData.customer_type}
-                        onChange={handleChange}
-                        placeholder="የደንበኛው አይነት"
-                        className="placeholder:text-sm dark:bg-gray-800 placeholder:dark:text-white dark:text-white w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                        required
-                      >
-                        <option value="">Select Type</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Contract">Contract</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="dark:text-gray-200">
                         Mobile /ስልክ ቁጥር<span className="text-red-500 ">*</span>
                       </label>
                       <input
@@ -364,52 +454,65 @@ export default function RepairRegistrationForm() {
                         <option value="installation">Installation</option>
                       </select>
                     </div>
+
                     <div>
                       <label className="dark:text-gray-200">
-                        E. Date/የሚገመተው ቀን{" "}
+                        E. Date/የሚገመተው ቀን (Days)
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           (Optional)
                         </span>
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         name="estimated_date"
                         value={formData.estimated_date}
                         onChange={handleChange}
-                        className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
-                      />
-                    </div>
-                    <div>
-                      <label className="dark:text-gray-200">
-                        Received Date/የተቀበሉበት ቀን{" "}
-                        <span className="text-red-500 ">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="received_date"
-                        value={formData.received_date}
-                        onChange={handleChange}
-                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        min="1"
                         required
+                        className="no-spinner placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
 
                     <div>
                       <label className="dark:text-gray-200">
-                        {" "}
-                        Date Out/የምያልቅበት ቀን{" "}
+                        Received Date / የተቀበሉበት ቀን{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+
+                      <DateInput
+                        value={formData.received_date}
+                        onChange={(val) =>
+                          handleChange({
+                            target: { name: "received_date", value: val },
+                          })
+                        }
+                        placeholder={companyData?.date_format || "DD/MM/YYYY"} // placeholder matches format
+                        format={companyData?.date_format || "DD/MM/YYYY"} // ✅ sets the format
+                        className="w-full border border-gray-300 p-2 rounded-md dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-1 transition duration-200"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="dark:text-gray-200">
+                        Date Out / የምያልቅበት ቀን{" "}
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           (Optional)
                         </span>
                       </label>
-                      <input
-                        type="date"
-                        name="promise_date"
+
+                      <DateInput
                         value={formData.promise_date}
-                        onChange={handleChange}
-                        className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
+                        onChange={(val) =>
+                          handleChange({
+                            target: { name: "promise_date", value: val },
+                          })
+                        }
+                        placeholder={companyData?.date_format || "DD/MM/YYYY"} // placeholder matches format
+                        format={companyData?.date_format || "DD/MM/YYYY"} // ✅ sets the format
+                        className="w-full border border-gray-300 p-2 rounded-md dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-1 transition duration-200"
                       />
                     </div>
+
                     <div>
                       <label className="dark:text-gray-200 font-medium">
                         Priority/ቅድሚያ የሚሰጡዋቸውን{" "}
@@ -441,15 +544,12 @@ export default function RepairRegistrationForm() {
                       name="product_name"
                       value={formData.product_name}
                       onChange={handleChange}
+                      required
                       className="placeholder:text-sm dark:bg-gray-800 dark:text-white placeholder:dark:text-gray-100 w-full border border-gray-300 p-2 rounded-md focus:border-blue-500 focus:ring-1 transition duration-200"
                     />
                   </div>
                   <div>
-                    <label className="dark:text-gray-200">
-                      {" "}
-                      Serial Code
-                      <span className="text-red-500 ">*</span>
-                    </label>
+                    <label className="dark:text-gray-200"> Serial Code</label>
                     <input
                       type="text"
                       name="serial_code"
@@ -460,249 +560,273 @@ export default function RepairRegistrationForm() {
                   </div>
 
                   {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
-                  <div className="flex flex-col gap-4 mt-6">
-                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
-                      <h3 className="font-semibold mb-2 dark:text-gray-200">
-                        Customer Observation /የደንበኛ ምልከታ
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          {" "}
-                          (Optional)
-                        </span>
-                      </h3>
-                      <textarea
-                        value={formData.customer_observation.join("\n")}
-                        onChange={handleCustomerObservationChange}
-                        onKeyDown={handleCustomerObservationKeyDown}
-                        className="w-full border border-gray-300 dark:text-white p-2 rounded mb-2 dark:bg-gray-800 placeholder:dark:text-gray-100 min-h-[100px]"
-                        rows={5}
-                      />
-                    </div>
-                    {/* job to be done */}
-                    <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-auto">
-                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Jobs To Be Done /የሚደረጉ ስራዎች
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          {" "}
-                          (Optional)
-                        </span>
-                      </h3>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Job Description</th>
-                            <th className="p-2 border text-right">
-                              Estimated Price (ETB)
-                            </th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.job_description.map((job, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`task-${index}`}
-                                  type="text"
-                                  value={job.task}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "task",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder={`Task ${index + 1}`}
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={job.price}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder="0.00"
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.job_description.length > 1) {
-                                      const updated = [
-                                        ...formData.job_description,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        job_description: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                  <div className="flex flex-col gap-4 mt-6">
+                    {/* Jobs To Be Done */}
+                    <div className="mt-10 border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-4 overflow-x-auto">
+                      <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-black z-10 py-2 shadow-sm">
+                        <h3 className="font-semibold dark:text-gray-200 text-lg">
+                          Jobs To Be Done /የሚሰሩ ስራዎች
+                          <span className="text-gray-400 text-sm dark:text-gray-200">
+                            {" "}
+                            (Optional)
+                          </span>
+                        </h3>
+
+                        {/* Always visible button */}
+                        <button
+                          type="button"
+                          onClick={addJobRow}
+                          className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-500 transition"
+                        >
+                          + Add Row
+                        </button>
+                      </div>
+
+                      <div className="min-w-[600px]">
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-3 border text-left">
+                                Job Description
+                              </th>
+                              <th className="p-3 border text-right">
+                                Estimated Price (ETB)
+                              </th>
+                              <th className="p-3 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.job_description.map((job, index) => (
+                              <tr
+                                key={index}
+                                className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
+                                <td className="p-2 border">
+                                  <input
+                                    id={`task-${index}`}
+                                    type="text"
+                                    value={job.task}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "task",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder={`Task ${index + 1}`}
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="number"
+                                    value={job.price}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder="0.00"
+                                    className="w-full px-3 py-2 rounded-md text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.job_description.length > 1) {
+                                        const updated = [
+                                          ...formData.job_description,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          job_description: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
-                        Total Estimated Price/ጠቅላላ የተገመተው ዋጋ:{" "}
+                        Total Estimated Price:{" "}
                         {getTotalEstimatedPrice().toLocaleString()} ETB
                       </div>
                     </div>
+                    {/* Spare Change */}
+                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-x-auto">
+                      <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-black z-10 py-2 shadow-sm">
+                        <h3 className="font-semibold dark:text-gray-200 text-lg">
+                          Spare Change /መለዋወጫ ለውጥ
+                          <span className="text-gray-400 text-sm dark:text-gray-200">
+                            {" "}
+                            (Optional)
+                          </span>
+                        </h3>
 
-                    {/* spare chage  */}
-                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-auto">
-                      <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Spare Change /መለዋወጫ ለውጥ{" "}
-                        <span className="text-gray-400 text-sm dark:text-gray-200">
-                          (Optional)
-                        </span>
-                      </h3>
+                        {/* Always visible button */}
+                        <button
+                          type="button"
+                          onClick={addSpareRow}
+                          className="px-3 py-1.5 rounded-md bg-green-600 text-white text-sm font-medium hover:bg-green-500 transition"
+                        >
+                          + Add Row
+                        </button>
+                      </div>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Item Name</th>
-                            <th className="p-2 border">Part Number</th>
-                            <th className="p-2 border text-center">Qty</th>
-                            <th className="p-2 border text-center">
-                              Unit Price
-                            </th>
-                            <th className="p-2 border text-right">Total</th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.spare_change.map((item, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`spare-item-${index}`}
-                                  type="text"
-                                  value={item.item}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "item",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border">
-                                <input
-                                  type="text"
-                                  value={item.part_number || ""}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "part_number",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="Part #"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.qty}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "qty",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.unit_price}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "unit_price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={item.total_price.toFixed(2)}
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.spare_change.length > 1) {
-                                      const updated = [
-                                        ...formData.spare_change,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        spare_change: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                      <div className="min-w-[800px]">
+                        <table className="w-full text-sm border-collapse">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-3 border text-left">
+                                Item Name
+                              </th>
+                              <th className="p-3 border text-left">
+                                Part Number
+                              </th>
+                              <th className="p-3 border text-center w-32">
+                                Qty
+                              </th>
+                              <th className="p-3 border text-center w-40">
+                                Unit Price
+                              </th>
+                              <th className="p-3 border text-right w-44">
+                                Total
+                              </th>
+                              <th className="p-3 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.spare_change.map((item, index) => (
+                              <tr
+                                key={index}
+                                className="border-b hover:bg-gray-50 dark:hover:bg-gray-800"
+                              >
+                                <td className="p-2 border">
+                                  <input
+                                    type="text"
+                                    value={item.item}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "item",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border">
+                                  <input
+                                    type="text"
+                                    value={item.part_number || ""}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "part_number",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="Part #"
+                                    className="w-full px-3 py-2 rounded-md bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="number"
+                                    value={item.qty}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "qty",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    placeholder="0"
+                                    className="w-full px-3 py-2 rounded-md text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="number"
+                                    value={item.unit_price}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "unit_price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    placeholder="0"
+                                    className="w-full px-3 py-2 rounded-md text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none no-spinner"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    value={item.total_price.toFixed(2)}
+                                    className="w-full px-3 py-2 rounded-md text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.spare_change.length > 1) {
+                                        const updated = [
+                                          ...formData.spare_change,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          spare_change: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
-                        Total Spare Change Price/ጠቅላላ የመለዋወጫ ለውጥ ዋጋ:{" "}
+                        Total Spare Change Price:{" "}
                         {getSpareChangeTotal().toLocaleString()} ETB
                       </div>
                     </div>
+
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 mt-4">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Upload Image / የምስል መጫኛ
@@ -733,11 +857,11 @@ export default function RepairRegistrationForm() {
                         </div>
                       )}
                     </div>
+
                     <div className="mt-6 text-right text-lg font-bold border-t pt-4  text-dark-700 dark:text-white">
                       Sub Total Estimated Price/ንዑስ ጠቅላላ የተገመተው ዋጋ:{" "}
                       {getGrandTotal().toLocaleString()} ETB
                     </div>
-
                     <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Received By /የተቀባይ ስም
@@ -757,13 +881,45 @@ export default function RepairRegistrationForm() {
                 </div>
               </div>
             </div>
-
-            <button
-              type="submit"
-              className="mt-6 bg-blue-600 hover:bg-blue-700 text-white p-2 w-full hover:shadow-lg focus:shadow-sm rounded transition-all duration-500"
-            >
-              Submit
-            </button>
+            <div className="flex justify-center mt-6">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`inline-flex items-center justify-center gap-2 px-5 py-2 rounded-md text-sm font-medium transition-all duration-300 ${
+                  isSubmitting
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow-md"
+                }`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                      />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </button>
+            </div>
           </form>
         </main>
       </div>

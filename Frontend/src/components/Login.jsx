@@ -4,7 +4,6 @@ import { useStores } from "../contexts/storeContext";
 import { BsEyeSlash, BsEyeSlashFill } from "react-icons/bs";
 import { FaCog } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import customLogo from "../images/motor-775.png"; // Custom logo
 
 const backgrounds = [
   {
@@ -19,7 +18,7 @@ const backgrounds = [
     name: "Orange",
     class: "bg-gradient-to-br from-orange-400 via-yellow-500 to-red-500",
   },
-  { name: "Custom Image", class: "bg-gradient-bg bg-cover bg-center" }, // Default custom image
+  { name: "Custom Image", class: "bg-gradient-bg bg-cover bg-center" },
 ];
 
 const Login = ({ onLogin }) => {
@@ -27,9 +26,10 @@ const Login = ({ onLogin }) => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { showPassword, setShowPassword } = useStores();
+  const { showPassword, setShowPassword, setPermissions, fetchPermissions } =
+    useStores();
   const [bgClass, setBgClass] = useState(
-    localStorage.getItem("loginBg") || backgrounds[3].class // Default = custom image
+    localStorage.getItem("loginBg") || backgrounds[0].class
   );
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
@@ -47,8 +47,24 @@ const Login = ({ onLogin }) => {
       const response = await api.post("/admin/login", { username, password });
 
       if (response.data.token) {
-        localStorage.setItem("adminToken", response.data.token);
-        onLogin(response.data.admin);
+        const { token, admin } = response.data;
+
+        localStorage.setItem("adminToken", token);
+        onLogin(admin);
+
+        let roleId = null;
+        if (admin?.roles && admin.roles.length > 0) {
+          roleId = admin.roles[0]?.pivot?.role_id;
+        }
+
+        if (roleId) {
+          const perms = await fetchPermissions(roleId);
+          localStorage.setItem("permissions", JSON.stringify(perms));
+        } else {
+          console.warn("No role found for this user");
+          setPermissions([]);
+        }
+
         navigate("/dashboard");
       } else {
         setError("Login failed. No token received.");
@@ -66,11 +82,22 @@ const Login = ({ onLogin }) => {
     }
   };
 
+  // Destructure companyData from store
+  const { companyData } = useStores();
+
+  // Default values before companyData arrives
+  const defaultNameEn = "WMS";
+  const defaultNameAm = "";
+
+  // Use company data when available
+  const companyNameEn = companyData?.login_page_name || defaultNameEn;
+  const companyNameAm = companyData?.login_page_name_am || defaultNameAm;
+
   return (
     <div
       className={`h-screen w-full flex flex-col items-center justify-center p-4 transition-all duration-500 ${bgClass}`}
     >
-      {/* Settings Icon (Top Right) */}
+      {/* Settings Icon */}
       <div className="absolute top-4 right-4">
         <button
           onClick={() => setShowSettings(!showSettings)}
@@ -98,18 +125,13 @@ const Login = ({ onLogin }) => {
 
       {/* Login Card */}
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-fadeIn">
-        {/* Logo */}
-        {/* <div className="flex justify-center mb-4">
-          <img src={customLogo} alt="Logo" className="w-16 h-16" />
-        </div> */}
-
-        {/* Titles */}
         <h2 className="text-center text-3xl font-extrabold text-gray-800 mb-1">
-          መክቢብ ዲናሞ
+          {companyNameAm}
         </h2>
         <h2 className="text-center text-2xl font-bold text-gray-700 mb-4">
-          MEKBIB DINAMO
+          {companyNameEn}
         </h2>
+
         <p className="text-center text-gray-600 mb-6 font-semibold">
           Login to your account
         </p>
@@ -202,11 +224,20 @@ const Login = ({ onLogin }) => {
           </button>
         </form>
 
-        {/* Footer */}
-        <p className="text-center text-gray-600 text-sm mt-6 font-semibold">
-          Developed by{" "}
-          <span className="text-blue-500 font-bold">Nile Source Ethiopia</span>
-        </p>
+        {/* Footer Info */}
+        <div className="text-center text-gray-600 text-sm mt-6 font-semibold space-y-1">
+          <p>
+            Developed by{" "}
+            <span className="text-blue-500 font-bold">
+              Nile Source Ethiopia
+            </span>
+          </p>
+          <p>© 2025, NILEGMS. All rights reserved.</p>
+          <p className="text-xs text-gray-500">
+            Software Version <span className="font-bold">2.1</span> — Powered by{" "}
+            <span className="font-bold">NILEGMS</span>
+          </p>
+        </div>
       </div>
     </div>
   );

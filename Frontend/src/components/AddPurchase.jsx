@@ -18,7 +18,7 @@ const AddPurchase = () => {
     paymentStatus: "Pending",
   });
 
-  console.log(purchaseDetails);
+  // console.log(purchaseDetails);
 
   const [items, setItems] = useState([
     {
@@ -179,6 +179,7 @@ const AddPurchase = () => {
                 value={purchaseDetails.purchaseDate}
                 onChange={handlePurchaseDetailsChange}
                 className="w-full p-2 border rounded bg-gray-700 text-white"
+                required
               />
             </div>
             <div>

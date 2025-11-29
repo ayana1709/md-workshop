@@ -328,7 +328,7 @@ export default function EditRepair() {
                       )}
                     </div>
 
-                    <div>
+                    {/* <div>
                       <label className="dark:text-gray-200">
                         Customer Type/ የደንበኛ አይነት
                         <span className="text-red-500">*</span>
@@ -345,7 +345,7 @@ export default function EditRepair() {
                         <option value="Regular">Regular</option>
                         <option value="Contract">Contract</option>
                       </select>
-                    </div>
+                    </div> */}
 
                     <div>
                       <label className="dark:text-gray-200">
@@ -478,7 +478,7 @@ export default function EditRepair() {
 
                   {/* Customer Observations, Spare Change, and Received By - Vertically Aligned */}
                   <div className="flex flex-col gap-4 mt-6">
-                    <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
+                    {/* <div className="p-4 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300">
                       <h3 className="font-semibold mb-2 dark:text-gray-200">
                         Customer Observation /የደንበኛ ምልከታ
                         <span className="text-gray-400 text-sm dark:text-gray-200">
@@ -493,92 +493,95 @@ export default function EditRepair() {
                         className="w-full border border-gray-300 dark:text-white p-2 rounded mb-2 dark:bg-gray-800 placeholder:dark:text-gray-100 min-h-[100px]"
                         rows={5}
                       />
-                    </div>
+                    </div> */}
                     {/* job to be done */}
-                    <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-auto">
+                    {/* Jobs To Be Done */}
+                    <div className="mt-10 border rounded-lg hover:shadow-md hover:border-blue-500 transition-all duration-300 p-4 overflow-x-auto">
                       <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Jobs To Be Done /የሚደረጉ ስራዎች
+                        Jobs To Be Done / የሚደረጉ ስራዎች
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           {" "}
                           (Optional)
                         </span>
                       </h3>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Job Description</th>
-                            <th className="p-2 border text-right">
-                              Estimated Price (ETB)
-                            </th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.job_description.map((job, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`task-${index}`}
-                                  type="text"
-                                  value={job.task}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "task",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder={`Task ${index + 1}`}
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={job.price}
-                                  onChange={(e) =>
-                                    handleJobDescriptionChange(
-                                      index,
-                                      "price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleJobDescriptionKeyDown(e, index)
-                                  }
-                                  placeholder="0.00"
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.job_description.length > 1) {
-                                      const updated = [
-                                        ...formData.job_description,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        job_description: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                      <div className="w-full overflow-x-auto">
+                        <table className="w-full text-sm border min-w-[500px]">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-2 border">Job Description</th>
+                              <th className="p-2 border text-right">
+                                Estimated Price (ETB)
+                              </th>
+                              <th className="p-2 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.job_description.map((job, index) => (
+                              <tr key={index} className="border-b">
+                                <td className="p-2 border">
+                                  <input
+                                    id={`task-${index}`}
+                                    type="text"
+                                    value={job.task}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "task",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder={`Task ${index + 1}`}
+                                    className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={job.price}
+                                    onChange={(e) =>
+                                      handleJobDescriptionChange(
+                                        index,
+                                        "price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleJobDescriptionKeyDown(e, index)
+                                    }
+                                    placeholder="0.00"
+                                    className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.job_description.length > 1) {
+                                        const updated = [
+                                          ...formData.job_description,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          job_description: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
                         Total Estimated Price/ጠቅላላ የተገመተው ዋጋ:{" "}
@@ -586,134 +589,136 @@ export default function EditRepair() {
                       </div>
                     </div>
 
-                    {/* spare chage  */}
-                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-auto">
+                    {/* Spare Change */}
+                    <div className="mt-10 p-4 border border-black rounded-lg bg-white dark:bg-black text-gray-700 dark:text-white overflow-x-auto">
                       <h3 className="text-left font-semibold mb-4 dark:text-gray-200 text-lg">
-                        Spare Change /መለዋወጫ ለውጥ{" "}
+                        Spare Change / መለዋወጫ ለውጥ{" "}
                         <span className="text-gray-400 text-sm dark:text-gray-200">
                           (Optional)
                         </span>
                       </h3>
 
-                      <table className="w-full text-sm border">
-                        <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
-                          <tr>
-                            <th className="p-2 border">Item Name</th>
-                            <th className="p-2 border">Part Number</th>
-                            <th className="p-2 border text-center">Qty</th>
-                            <th className="p-2 border text-center">
-                              Unit Price
-                            </th>
-                            <th className="p-2 border text-right">Total</th>
-                            <th className="p-2 border text-center">X</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {formData.spare_change.map((item, index) => (
-                            <tr key={index} className="border-b">
-                              <td className="p-2 border">
-                                <input
-                                  id={`spare-item-${index}`}
-                                  type="text"
-                                  value={item.item}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "item",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border">
-                                <input
-                                  type="text"
-                                  value={item.part_number || ""}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "part_number",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="Part #"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.qty}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "qty",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={item.unit_price}
-                                  onChange={(e) =>
-                                    handleSpareChangeChange(
-                                      index,
-                                      "unit_price",
-                                      e.target.value
-                                    )
-                                  }
-                                  onKeyDown={(e) =>
-                                    handleSpareChangeKeyDown(e, index)
-                                  }
-                                  className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                  placeholder="0"
-                                />
-                              </td>
-                              <td className="p-2 border text-right">
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={item.total_price.toFixed(2)}
-                                  className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
-                                />
-                              </td>
-                              <td className="p-2 border text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (formData.spare_change.length > 1) {
-                                      const updated = [
-                                        ...formData.spare_change,
-                                      ];
-                                      updated.splice(index, 1);
-                                      setFormData({
-                                        ...formData,
-                                        spare_change: updated,
-                                      });
-                                    }
-                                  }}
-                                  className="text-red-500 font-bold"
-                                >
-                                  ×
-                                </button>
-                              </td>
+                      <div className="w-full overflow-x-auto">
+                        <table className="w-full text-sm border min-w-[600px]">
+                          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                            <tr>
+                              <th className="p-2 border">Item Name</th>
+                              <th className="p-2 border">Part Number</th>
+                              <th className="p-2 border text-center">Qty</th>
+                              <th className="p-2 border text-center">
+                                Unit Price
+                              </th>
+                              <th className="p-2 border text-right">Total</th>
+                              <th className="p-2 border text-center">X</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {formData.spare_change.map((item, index) => (
+                              <tr key={index} className="border-b">
+                                <td className="p-2 border">
+                                  <input
+                                    id={`spare-item-${index}`}
+                                    type="text"
+                                    value={item.item}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "item",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border">
+                                  <input
+                                    type="text"
+                                    value={item.part_number || ""}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "part_number",
+                                        e.target.value
+                                      )
+                                    }
+                                    className="w-full bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                    placeholder="Part #"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={item.qty}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "qty",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                    placeholder="0"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={item.unit_price}
+                                    onChange={(e) =>
+                                      handleSpareChangeChange(
+                                        index,
+                                        "unit_price",
+                                        e.target.value
+                                      )
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleSpareChangeKeyDown(e, index)
+                                    }
+                                    className="w-full text-center bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                    placeholder="0"
+                                  />
+                                </td>
+                                <td className="p-2 border text-right">
+                                  <input
+                                    type="text"
+                                    readOnly
+                                    value={item.total_price.toFixed(2)}
+                                    className="w-full text-right bg-transparent dark:text-white dark:bg-gray-800 focus:outline-none"
+                                  />
+                                </td>
+                                <td className="p-2 border text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (formData.spare_change.length > 1) {
+                                        const updated = [
+                                          ...formData.spare_change,
+                                        ];
+                                        updated.splice(index, 1);
+                                        setFormData({
+                                          ...formData,
+                                          spare_change: updated,
+                                        });
+                                      }
+                                    }}
+                                    className="text-red-500 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
 
                       <div className="mt-4 text-right font-semibold text-blue-700 dark:text-blue-300">
                         Total Spare Change Price/ጠቅላላ የመለዋወጫ ለውጥ ዋጋ:{" "}

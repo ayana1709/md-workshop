@@ -32,7 +32,6 @@ public function index()
 
     
     
-   
 
 
 
@@ -50,16 +49,14 @@ public function store(Request $request)
 
     $validated = validator($payload, [
         'customer_name' => 'required|string|max:255',
-        'customer_type' => 'required|string|max:255',
         'mobile' => 'required|string|max:20',
         'types_of_jobs' => 'nullable|string',
         'received_date' => 'required|date',
         'estimated_date' => 'nullable|string',
         'promise_date' => 'nullable|date',
         'priority' => 'required|string',
-        'product_name' => 'nullable|string|max:255', // ✅ added
-        'serial_code' => 'nullable|string|max:255',  // ✅ added
-        'customer_observation' => 'nullable|array',
+        'product_name' => 'nullable|string|max:255',
+        'serial_code' => 'nullable|string|max:255',
         'spare_change' => 'nullable|array',
         'job_description' => 'nullable|array',
         'received_by' => 'nullable|string',
@@ -74,39 +71,36 @@ public function store(Request $request)
             $nextJobId = str_pad(((int)$nextJobId) + 1, 4, '0', STR_PAD_LEFT);
         }
 
-        // Handle image upload (single image)
-       $imagePath = null;
-if ($request->hasFile('image')) {
-    $file = $request->file('image');
-    $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-    
-    // Store file in storage/app/public/repair_images
-    $file->storeAs('public/repair_images', $filename);
-    
-    // Save only relative path for access from /storage
-    $imagePath = 'repair_images/' . $filename;
-}
+        // Handle image upload (single image) or fallback to default
+        $imagePath = 'repair_images/default.jpg'; // 👈 put a default.png inside storage/app/public/repair_images
 
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Store file in storage/app/public/repair_images
+            $file->storeAs('public/repair_images', $filename);
+
+            // Save only relative path for access from /storage
+            $imagePath = 'repair_images/' . $filename;
+        }
 
         // Create repair registration
         $repair = new RepairRegistration();
         $repair->job_id = $nextJobId;
         $repair->customer_name = $payload['customer_name'];
-        $repair->customer_type = $payload['customer_type'];
         $repair->mobile = $payload['mobile'];
         $repair->types_of_jobs = $payload['types_of_jobs'] ?? null;
         $repair->received_date = $payload['received_date'];
         $repair->estimated_date = $payload['estimated_date'] ?? null;
         $repair->promise_date = $payload['promise_date'] ?? null;
         $repair->priority = $payload['priority'];
-        $repair->product_name = $payload['product_name'] ?? null; // ✅ added
-        $repair->serial_code = $payload['serial_code'] ?? null;   // ✅ added
-        $repair->customer_observation = $payload['customer_observation'] ?? null;
+        $repair->product_name = $payload['product_name'] ?? null;
+        $repair->serial_code = $payload['serial_code'] ?? null;
         $repair->spare_change = $payload['spare_change'] ?? null;
         $repair->job_description = $payload['job_description'] ?? null;
         $repair->received_by = $payload['received_by'] ?? null;
         $repair->image = $imagePath;
-        
 
         $repair->save();
 
@@ -114,6 +108,7 @@ if ($request->hasFile('image')) {
             'message' => 'Repair created successfully',
             'job_id' => $repair->job_id
         ], 201);
+
     } catch (\Exception $e) {
         return response()->json([
             'message' => 'Error storing repair',
@@ -121,6 +116,7 @@ if ($request->hasFile('image')) {
         ], 500);
     }
 }
+
 
     
 public function update(Request $request, $id)
@@ -142,7 +138,7 @@ public function update(Request $request, $id)
     $validated = validator($payload, [
         'job_id' => 'required|string|unique:repair_registrations,job_id,' . $repair->id,
         'customer_name' => 'required|string|max:255',
-        'customer_type' => 'required|string|max:255',
+        // 'customer_type' => 'required|string|max:255',
         'mobile' => 'required|string|max:20',
         'types_of_jobs' => 'nullable|string',
         'received_date' => 'required|date',
@@ -178,6 +174,171 @@ public function update(Request $request, $id)
     }
 }
 
+private function parseDate($value)
+{
+    if (empty($value)) return null;
+
+    // Excel numeric date
+    if (is_numeric($value)) {
+        try {
+            return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value)
+                ->format('Y-m-d H:i:s');
+        } catch (\Exception $e) {}
+    }
+
+    // Many formats
+    $formats = [
+        'Y-m-d','m/d/Y','d/m/Y','m-d-Y','d-m-Y',
+        'M d, Y','d M Y','F d, Y','d F Y','m/d/y','d/m/y',
+    ];
+
+    foreach ($formats as $format) {
+        $d = \DateTime::createFromFormat($format, trim($value));
+        if ($d && $d->format($format) === trim($value)) {
+            return $d->format('Y-m-d H:i:s');
+        }
+    }
+
+    // fallback
+    try {
+        return date('Y-m-d H:i:s', strtotime($value));
+    } catch (\Exception $e) { return null; }
+}
+
+
+public function importExcel(Request $request)
+{
+    if (!$request->hasFile('file')) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No file uploaded.'
+        ], 400);
+    }
+
+    try {
+        $file = $request->file('file');
+        $path = $file->getRealPath();
+
+        $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($path)
+            ->getActiveSheet()
+            ->toArray(null, true, true, true);
+
+        if (count($sheet) < 2) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Excel file is empty.'
+            ], 400);
+        }
+
+        // Read column headers
+        $headers = [];
+        foreach ($sheet[1] as $col => $value) {
+            $headers[strtolower(trim($value))] = $col;
+        }
+
+        // Column mapping
+        $map = [
+            'customer name' => 'customer_name',
+            'mobile' => 'mobile',
+            'job type' => 'types_of_jobs',
+            'product' => 'product_name',
+            'serial code' => 'serial_code',
+            'duration' => 'estimated_date',
+            'start date' => 'received_date',
+            'end date' => 'promise_date',
+            'received by' => 'received_by',
+            'status' => 'priority'
+        ];
+
+        $inserted = 0;
+
+        foreach ($sheet as $index => $row) {
+            if ($index == 1) continue;
+
+            $data = [];
+
+            foreach ($map as $excelName => $dbField) {
+                $data[$dbField] = isset($headers[$excelName])
+                    ? ($row[$headers[$excelName]] ?? null)
+                    : null;
+            }
+
+            if (empty($data['customer_name']) && empty($data['mobile'])) {
+                continue;
+            }
+
+            // Auto Date Conversion
+            $received = $this->parseDate($data['received_date']) ?? now();
+            $promise  = $this->parseDate($data['promise_date']);
+
+            // Estimate days
+            if (is_numeric($data['estimated_date'])) {
+                $data['estimated_date'] = (int)$data['estimated_date'];
+            } else {
+                if ($received && $promise) {
+                    $start = new \DateTime($received);
+                    $end = new \DateTime($promise);
+                    $data['estimated_date'] = $start->diff($end)->days;
+                } else {
+                    $data['estimated_date'] = 0;
+                }
+            }
+
+            $data['received_date'] = $received;
+            $data['promise_date'] = $promise;
+
+            // Default values same with store()
+            $data['image'] = 'repair_images/default.jpg';
+            $data['status'] = 'not started';
+
+            // Default array format (NOT JSON string)
+            $data['spare_change'] = [
+                [
+                    "item" => "1. ",
+                    "part_number" => "",
+                    "qty" => "",
+                    "unit_price" => "",
+                    "total_price" => 0,
+                ]
+            ];
+
+            $data['job_description'] = [
+                [
+                    "task" => "1. ",
+                    "price" => "",
+                ]
+            ];
+
+            // Generate Sequential Job ID
+            $lastJob = RepairRegistration::latest('job_id')->first();
+            $nextJobId = $lastJob ? str_pad(((int)$lastJob->job_id) + 1, 4, '0', STR_PAD_LEFT) : '0001';
+            while (RepairRegistration::where('job_id', $nextJobId)->exists()) {
+                $nextJobId = str_pad(((int)$nextJobId) + 1, 4, '0', STR_PAD_LEFT);
+            }
+
+            $data['job_id'] = $nextJobId;
+
+            RepairRegistration::create($data);
+
+            $inserted++;
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'count' => $inserted,
+            'message' => "Successfully imported $inserted repairs."
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Import failed',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 
 
 
@@ -208,7 +369,6 @@ public function show($id)
         'id' => $repair->id,
         'job_id' => $repair->job_id,
         'customer_name' => $repair->customer_name,
-        'customer_type' => $repair->customer_type,
         'mobile' => $repair->mobile,
         'types_of_jobs' => $repair->types_of_jobs,
         'product_name' => $repair->product_name,
@@ -269,12 +429,17 @@ public function getVehiclesByRepairId($id)
 public function totalRepairs()
 {
     try {
-        $count = RepairRegistration::count();
-        return response()->json(['total_repairs' => $count]);
+        // Count all repair records
+        $totalRepairs = RepairRegistration::count();
+
+        // return only the number
+        return response()->json($totalRepairs);
     } catch (\Exception $e) {
-        return response()->json(['error' => 'Error fetching total repairs', 'message' => $e->getMessage()], 500);
+        return response()->json(0, 500); // fallback: 0 if error
     }
 }
+
+
 
 
 
@@ -327,24 +492,34 @@ public function updatestat(Request $request, $id)
 
     return response()->json(['message' => 'Status updated successfully.']);
 }
-public function getByJobId($jobId)
+public function getByJobId($jobId) 
 {
-    $repair = RepairRegistration::with('vehicles')
-        ->where('job_id', $jobId)
-        ->first();
+    // Fetch using job_id instead of primary key id
+    $repair = RepairRegistration::where('job_id', $jobId)->first();
 
     if (!$repair) {
         return response()->json(['message' => 'Repair not found.'], 404);
     }
 
     return response()->json([
-        'job_id' => $repair->job_id,
-        'plate_no' => optional($repair->vehicles->first())->plate_no,
+        'job_id'        => $repair->job_id,
+        'customer_name' => $repair->customer_name,
+        'mobile'        => $repair->mobile,
+        'product_name'  => $repair->product_name,
+        'serial_code'   => $repair->serial_code,
+        'types_of_jobs' => $repair->types_of_jobs,
+        'priority'      => $repair->priority,
         'received_date' => $repair->received_date,
-        'promise_date' => $repair->promise_date,
-        'status' => $repair->status,
+        'promise_date'  => $repair->promise_date,
+        'status'        => $repair->status ?? 'Pending',
+        
+        // ✅ Add image with default fallback
+        'image'         => $repair->image 
+            ? asset('storage/' . $repair->image) 
+            : asset('storage/repair_images/default.png'),
     ]);
 }
+
 
 
 

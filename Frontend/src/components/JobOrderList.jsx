@@ -14,6 +14,8 @@ import PrintJobOrder from "./PrintJobOrder";
 import DropdownButton from "./DropdownButton";
 import ButtonRepairOperation from "./ButtonRepairOperation";
 import { RiDeleteBin6Line } from "react-icons/ri";
+import DescriptionModal from "./DescriptionModal";
+import StatusCell from "./StatusCell";
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,8 +24,13 @@ const JobOrderList = () => {
   const [endDate, setEndDate] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [imageModal, setImageModal] = useState({ open: false, src: null });
-
-  console.log(selectedRows);
+  // const [dropdownDirection, setDropdownDirection] = React.useState("down");
+  const [dropdownOpen, setDropdownOpen] = React.useState(null); // id or null
+  const [dropdownDirection, setDropdownDirection] = React.useState("down"); // "up" | "down"
+  const btnRefs = React.useRef({}); // id -> button element
+  const menuRefs = React.useRef({}); // id -> menu element
+  const [popupImage, setPopupImage] = useState(null);
+  // console.log(selectedRows);
 
   const {
     setIsModalOpen,
@@ -33,13 +40,13 @@ const JobOrderList = () => {
     setRepairs,
     printData,
     setPrintData,
-    dropdownOpen,
-    setDropdownOpen,
+    // dropdownOpen,
+    // setDropdownOpen,
     handleDelete,
     isStatusModalOpen,
     setIsStatusModalOpen,
   } = useStores();
-  console.log(dropdownOpen);
+  // console.log(dropdownOpen);
 
   const [showPrintModal, setShowPrintModal] = useState(false);
 
@@ -78,7 +85,7 @@ const JobOrderList = () => {
           ? response.data.data
           : [];
         // Sort in ascending order by `id`
-        repairs.sort((a, b) => a.id - b.id);
+        repairs.sort((a, b) => b.id - a.id);
         setRepairs(repairs);
       } catch (error) {
         console.error("Error fetching repair registrations:", error);
@@ -87,10 +94,6 @@ const JobOrderList = () => {
     };
     fetchRepairs();
   }, [selectedRows]);
-
-  const toggleDropdown = (id) => {
-    setDropdownOpen(dropdownOpen === id ? null : id);
-  };
 
   const handleFilter = () => {
     let filteredRepairs = repairs;
@@ -161,6 +164,7 @@ const JobOrderList = () => {
         : [...prevSelected, id]
     );
   };
+  const placeholderImage = "/images/defa.jpg";
 
   // Toggle selection of all rows
   const toggleSelectAll = () => {
@@ -196,6 +200,97 @@ const JobOrderList = () => {
     pending: "bg-orange-500 text-white",
     completed: "bg-green-500 text-white",
   };
+
+  // at the top of JobOrderList component
+
+  const toggleDropdown = (id, e) => {
+    if (dropdownOpen === id) {
+      setDropdownOpen(null);
+      return;
+    }
+    const btn = btnRefs.current[id] ?? e?.currentTarget;
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const estimatedMenuHeight = 280; // fallback before we can measure
+      setDropdownDirection(
+        spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow
+          ? "up"
+          : "down"
+      );
+    }
+    setDropdownOpen(id);
+  };
+
+  // Re-evaluate once the menu is actually mounted (accurate height)
+  React.useLayoutEffect(() => {
+    if (!dropdownOpen) return;
+    const btn = btnRefs.current[dropdownOpen];
+    const menu = menuRefs.current[dropdownOpen];
+    if (!btn || !menu) return;
+
+    const menuHeight = menu.offsetHeight;
+
+    // Mobile breakpoint (sm: 640px)
+    if (window.innerWidth < 640) {
+      setDropdownDirection("down"); // always down on mobile
+      return;
+    }
+
+    const btnRect = btn.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - btnRect.bottom;
+    const spaceAbove = btnRect.top;
+
+    const dir =
+      spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
+    setDropdownDirection(dir);
+  }, [dropdownOpen]);
+
+  // Close on outside click (no change needed)
+  React.useEffect(() => {
+    const onDown = (e) => {
+      if (!dropdownOpen) return;
+      const btn = btnRefs.current[dropdownOpen];
+      const menu = menuRefs.current[dropdownOpen];
+      if (btn?.contains(e.target) || menu?.contains(e.target)) return;
+      setDropdownOpen(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [dropdownOpen]);
+
+  // Recompute on scroll/resize
+  React.useEffect(() => {
+    const recompute = () => {
+      if (!dropdownOpen) return;
+      const btn = btnRefs.current[dropdownOpen];
+      const menu = menuRefs.current[dropdownOpen];
+      if (!btn) return;
+
+      // Always down on mobile
+      if (window.innerWidth < 640) {
+        setDropdownDirection("down");
+        return;
+      }
+
+      const rect = btn.getBoundingClientRect();
+      const menuHeight = menu?.offsetHeight ?? 280;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      const dir =
+        spaceBelow < menuHeight && spaceAbove > spaceBelow ? "up" : "down";
+      setDropdownDirection(dir);
+    };
+
+    window.addEventListener("resize", recompute);
+    window.addEventListener("scroll", recompute, true);
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.removeEventListener("scroll", recompute, true);
+    };
+  }, [dropdownOpen]);
 
   return (
     <div className="relative z-0 p-6 bg-white dark:bg-gray-700 shadow-lg rounded-lg dark:text-white">
@@ -308,6 +403,12 @@ const JobOrderList = () => {
                   className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-900"
                 />
               </th>
+
+              {/* New Image Column */}
+              <th className="border border-table-border px-2 py-3 w-[60px] text-center">
+                Image
+              </th>
+
               <th className="border border-table-border px-2 py-3 w-[70px]">
                 Job ID
               </th>
@@ -343,10 +444,11 @@ const JobOrderList = () => {
               </th>
             </tr>
           </thead>
+
           <tbody>
             {displayedRepairs.length === 0 ? (
               <tr>
-                <td colSpan="12" className="text-center py-4 text-white">
+                <td colSpan="13" className="text-center py-4 text-white">
                   No data available
                 </td>
               </tr>
@@ -364,46 +466,70 @@ const JobOrderList = () => {
                       className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-400"
                     />
                   </td>
-
+                  <td className="border border-table-border px-2 py-3 text-center">
+                    <img
+                      src={
+                        repair.image &&
+                        repair.image !== "repair_images/default.jpg"
+                          ? `${import.meta.env.VITE_API_URL}/storage/${
+                              repair.image
+                            }`
+                          : placeholderImage
+                      }
+                      alt="repair"
+                      className="w-10 h-10 object-cover rounded-md cursor-pointer mx-auto"
+                      onClick={() =>
+                        setPopupImage(
+                          repair.image &&
+                            repair.image !== "repair_images/default.jpg"
+                            ? `${import.meta.env.VITE_API_URL}/storage/${
+                                repair.image
+                              }`
+                            : placeholderImage
+                        )
+                      }
+                    />
+                  </td>
+                  {/* Job ID */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.job_id?.toString().padStart(4, "0")}
                   </td>
-
+                  {/* Customer */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.customer_name}
                   >
                     {repair.customer_name}
                   </td>
-
+                  {/* Mobile */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[120px]"
                     title={repair.mobile}
                   >
                     {repair.mobile}
                   </td>
-
+                  {/* Job Type */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.types_of_jobs}
                   >
                     {repair.types_of_jobs || "-"}
                   </td>
-
+                  {/* Product */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.product_name}
                   >
                     {repair.product_name || "-"}
                   </td>
-
+                  {/* Serial Code */}
                   <td
                     className="border border-table-border px-2 py-3 text-sm truncate max-w-[130px]"
                     title={repair.serial_code}
                   >
                     {repair.serial_code || "-"}
                   </td>
-
+                  {/* Duration */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.estimated_date
                       ? repair.estimated_date > 30
@@ -411,67 +537,90 @@ const JobOrderList = () => {
                         : `${repair.estimated_date} Days`
                       : "-"}
                   </td>
-
+                  {/* Start Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.received_date}
                   </td>
-
+                  {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {repair.promise_date || "-"}
                   </td>
-
+                  {/* Status */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap ${
-                        statusStyles[repair.status] || "bg-gray-200 text-black"
-                      }`}
-                    >
-                      {repair.status}
-                    </span>
+                    <StatusCell repair={repair} />
                   </td>
+                  {/* Actions */}
+                  <td className="border border-table-border px-2 py-3 text-sm text-center relative">
+                    <div className="relative inline-block w-full">
+                      <button
+                        ref={(el) => (btnRefs.current[repair.id] = el)}
+                        onClick={(e) => toggleDropdown(repair.id, e)}
+                        className="bg-blue-700 text-white text-xs px-2 py-1 rounded-md flex flex-wrap items-center justify-center w-full sm:w-auto"
+                      >
+                        Action
+                        <FiChevronDown className="ml-1" />
+                      </button>
 
-                  <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    <button
-                      onClick={() => setDropdownOpen(repair.id)}
-                      className="bg-blue-700 text-white text-xs px-2 py-1 rounded-sm flex items-center justify-center whitespace-nowrap w-full"
-                    >
-                      Action <FiChevronDown className="ml-1" />
-                    </button>
-                    {dropdownOpen === repair.id && (
-                      <DropdownButton
-                        repair={repair}
-                        id={repair.id}
-                        type="repair"
-                        handlePrint={handlePrint}
-                        handleDelete={handleDelete}
-                        handlePrintsummary={() => handlePrintsummary(repair.id)}
-                      />
-                    )}
+                      {dropdownOpen === repair.id && (
+                        <div
+                          ref={(el) => (menuRefs.current[repair.id] = el)}
+                          className={`absolute bg-white border rounded-md shadow-lg z-50
+                          ${
+                            dropdownDirection === "down"
+                              ? "top-full mt-1"
+                              : "bottom-full mb-1"
+                          }
+                          right-0 sm:left-auto`}
+                          style={{
+                            minWidth: "8rem",
+                            maxWidth: "90vw",
+                            maxHeight: "250px",
+                            overflowY: "auto",
+                          }}
+                        >
+                          <DropdownButton
+                            id={repair.id}
+                            job_id={repair.job_id}
+                            type="repair"
+                            handlePrint={handlePrint}
+                            handleDelete={handleDelete}
+                            handlePrintsummary={() =>
+                              handlePrintsummary(repair.id)
+                            }
+                            onClose={() => setDropdownOpen(null)}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
-      </div>
 
-      {imageModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
-          <div className="relative max-w-3xl w-full mx-4">
-            <img
-              src={imageModal.src}
-              alt="Full View"
-              className="w-full h-auto object-contain rounded-md"
-            />
-            <button
-              onClick={() => setImageModal({ open: false, src: null })}
-              className="absolute top-2 right-2 bg-white text-black px-3 py-1 rounded shadow-md"
-            >
-              Close
-            </button>
+        {/* Image Popup Modal */}
+        {popupImage && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+            onClick={() => setPopupImage(null)}
+          >
+            <div className="relative">
+              <img
+                src={popupImage}
+                alt="popup"
+                className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-lg"
+              />
+              <button
+                onClick={() => setPopupImage(null)}
+                className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-md"
+              >
+                Close
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="flex justify-between items-center mt-4">
         <button
@@ -502,6 +651,23 @@ const JobOrderList = () => {
           Next
         </button>
       </div>
+      {imageModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm">
+          <div className="relative max-w-3xl w-full mx-4">
+            <img
+              src={imageModal.src}
+              alt="Full View"
+              className="w-full h-auto object-contain rounded-md"
+            />
+            <button
+              onClick={() => setImageModal({ open: false, src: null })}
+              className="absolute top-2 right-2 bg-white text-black px-3 py-1 rounded shadow-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

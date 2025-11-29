@@ -11,7 +11,6 @@ return new class extends Migration {
         $table->string('item_name');
         $table->string('part_number')->nullable();
         $table->string('brand')->nullable();
-        $table->string('model')->nullable();
         $table->integer('quantity')->default(0);
         $table->string('unit')->nullable();
         $table->decimal('purchase_price', 15, 2)->default(0);
@@ -20,6 +19,10 @@ return new class extends Migration {
         $table->decimal('maximum_price', 15, 2)->default(0);
         $table->integer('minimum_quantity')->default(0);
         $table->integer('low_quantity')->default(0);
+        
+        $table->string('shelf_number')->nullable();
+        
+        $table->string('type')->nullable();
         $table->string('manufacturer')->nullable();
         $table->date('manufacturing_date')->nullable();
         $table->decimal('unit_price', 15, 2)->default(0);

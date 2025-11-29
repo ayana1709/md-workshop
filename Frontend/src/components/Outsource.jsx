@@ -41,7 +41,14 @@ const OutSource = () => {
     );
   };
 
+  const [isAddingRow, setIsAddingRow] = useState(false);
+
   const addRow = async (jobCardNo) => {
+    if (isAddingRow) {
+      Swal.fire("Please wait!", "Still adding the previous row...", "warning");
+      return;
+    }
+
     // ✅ Prevent adding if last row is unfilled
     if (rows.length > 0 && isOutsourceRowEmpty(rows[rows.length - 1])) {
       Swal.fire(
@@ -51,6 +58,8 @@ const OutSource = () => {
       );
       return;
     }
+
+    setIsAddingRow(true); // 🚀 lock
 
     try {
       const response = await api.get(`/outsource?job_card_no=${jobCardNo}`);
@@ -81,7 +90,9 @@ const OutSource = () => {
       setRows((prevRows) => [...prevRows, newRow]);
     } catch (error) {
       console.error("Error fetching work details:", error);
-      Swal.fire("Error!", "Failed to fetch work order details.", "error");
+      Swal.fire("Error!", "Failed to fetch outsource details.", "error");
+    } finally {
+      setIsAddingRow(false); // ✅ unlock
     }
   };
 
@@ -305,34 +316,40 @@ const OutSource = () => {
           {/* Job Card No */}
 
           <button
-            onClick={addRow}
-            className="mt-4 mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 "
+            onClick={() => addRow(id)}
+            disabled={isAddingRow}
+            className={`mt-4 mb-4 px-4 py-2 rounded text-white ${
+              isAddingRow
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
           >
-            + Add Outsource
+            {isAddingRow ? "Adding..." : "+ Add Outsource"}
           </button>
-          <div className="overflow-x-auto">
-            <table className="table-fixed min-w-full table-auto w-full border-collapse border border-gray-800 overflow-x-auto">
-              <thead className="bg-gray-800 text-white text-left text-sm">
+
+          <div className="w-full overflow-x-auto">
+            <table className="min-w-full border border-gray-300 text-sm">
+              <thead className="bg-gray-800 text-white">
                 <tr>
-                  <th className="border-2 border-gray-300 p-2 w-[40px]">#</th>
-                  <th className="border-2 border-gray-300 p-2 w-[140px]">
+                  <th className="border border-gray-300 p-2 w-12 text-center">
+                    #
+                  </th>
+                  <th className="border border-gray-300 p-2 min-w-[200px]">
                     Description
                   </th>
-
-                  <th className="border-2 border-gray-300 p-2 w-[70px]">
+                  <th className="border border-gray-300 p-2 min-w-[140px]">
                     Time In
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
+                  <th className="border border-gray-300 p-2 min-w-[140px]">
                     Time Out
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px]">
+                  <th className="border border-gray-300 p-2 min-w-[100px]">
                     Type
                   </th>
-                  <th className="border-2 border-gray-300 p-2 w-[80px]">
+                  <th className="border border-gray-300 p-2 min-w-[120px]">
                     Total Cost
                   </th>
-
-                  <th className="border-2 border-gray-300 p-2 w-[100px]">
+                  <th className="border border-gray-300 p-2 min-w-[120px]">
                     Actions
                   </th>
                 </tr>
@@ -350,11 +367,13 @@ const OutSource = () => {
                       key={`${row.id}-${index}`}
                       className="border-t border-gray-300 hover:bg-gray-50"
                     >
-                      <td className="border-2 border-gray-300 p-2 text-center">
+                      {/* Index */}
+                      <td className="border border-gray-300 p-2 text-center">
                         {index + 1}
                       </td>
-                      {/* Description*/}
-                      <td className="border-2 border-gray-300 p-2">
+
+                      {/* Description */}
+                      <td className="border border-gray-300 p-2">
                         {isFetchedData && !isEditing ? (
                           row.description
                         ) : (
@@ -378,7 +397,7 @@ const OutSource = () => {
                       </td>
 
                       {/* Time In */}
-                      <td className="border-2 border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2">
                         {isFetchedData && !isEditing ? (
                           row.modal
                         ) : (
@@ -395,8 +414,8 @@ const OutSource = () => {
                         )}
                       </td>
 
-                      {/*Time Out  */}
-                      <td className="border-2 border-gray-300 p-2">
+                      {/* Time Out */}
+                      <td className="border border-gray-300 p-2">
                         {isFetchedData && !isEditing ? (
                           row.brand
                         ) : (
@@ -412,12 +431,14 @@ const OutSource = () => {
                           />
                         )}
                       </td>
+
                       {/* Type */}
-                      <td className="border-2 border-gray-300 p-2">
+                      <td className="border border-gray-300 p-2">
                         {isFetchedData && !isEditing ? (
                           row.partnumber
                         ) : (
                           <input
+                            type="text"
                             value={
                               isEditing
                                 ? editValues.partnumber
@@ -426,18 +447,18 @@ const OutSource = () => {
                             onChange={(e) =>
                               handleChange(row.id, "partnumber", e.target.value)
                             }
-                            type="text"
                             className="w-full border rounded px-2 py-1"
                           />
                         )}
                       </td>
 
-                      {/* Total Cost   */}
-                      <td className="border-2 border-gray-300 p-2">
+                      {/* Total Cost */}
+                      <td className="border border-gray-300 p-2">
                         {isFetchedData && !isEditing ? (
                           row.requestquantity
                         ) : (
                           <input
+                            type="number"
                             value={
                               isEditing
                                 ? editValues.requestquantity
@@ -450,34 +471,32 @@ const OutSource = () => {
                                 e.target.value
                               )
                             }
-                            type="number"
-                            className=" no-spinner w-full border rounded px-2 py-1"
+                            className="w-full border rounded px-2 py-1 no-spinner"
                           />
                         )}
                       </td>
 
-                      {/* Actions - Dropdown Menu */}
-                      <td className="border-2 border-gray-300 p-2 text-left relative">
+                      {/* Actions */}
+                      <td className="border border-gray-300 p-2 relative">
                         <button
                           onClick={() =>
                             setDropdownOpen(
                               dropdownOpen === index ? null : index
                             )
                           }
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded flex items-center space-x-1 relative"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded flex items-center space-x-1"
                         >
                           Action <FiChevronDown size={18} />
                         </button>
 
                         {dropdownOpen === index && (
-                          <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-300 rounded shadow-lg z-10">
+                          <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-300 rounded shadow-lg z-10">
                             <button
                               onClick={() => handleView(row)}
                               className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 w-full"
                             >
                               <FiEye className="mr-2" /> View
                             </button>
-
                             {editingRow === row.id ? (
                               <button
                                 onClick={handleSave}

@@ -36,7 +36,7 @@ function WeeklyChecklist() {
 
   useEffect(() => {
     const fetchWeeklyData = async () => {
-      setLoading(true);
+      // setLoading(true);
       const startOfWeek = currentWeek.clone().startOf("isoWeek");
       const endOfWeek = currentWeek.clone().endOf("isoWeek");
 
@@ -56,8 +56,8 @@ function WeeklyChecklist() {
               jobId,
               days: {},
               // Default placeholders (to be overridden)
-              testDrive: entry.test_drive ?? false,
-              driverStatus: "pending",
+              // testDrive: entry.test_drive ?? false,
+              // driverStatus: "pending",
               checkedBy: "pending",
               approvedBy: "pending",
               receivedDate: "pending",
@@ -81,7 +81,7 @@ function WeeklyChecklist() {
         Object.keys(grouped).forEach((jobId) => {
           const delivery = deliveryMap[jobId];
           if (delivery) {
-            grouped[jobId].driverStatus = delivery.driver_status || "pending";
+            // grouped[jobId].driverStatus = delivery.driver_status || "pending";
             grouped[jobId].checkedBy = delivery.checked_by || "pending";
             grouped[jobId].approvedBy = delivery.approved_by || "pending";
             grouped[jobId].receivedDate = delivery.received_date || "pending";
@@ -97,7 +97,7 @@ function WeeklyChecklist() {
         ]);
 
         const repairs = repairRes.data;
-        const testDrives = testRes.data;
+        // const testDrives = testRes.data;
 
         Object.keys(grouped).forEach((jobId) => {
           const repair = repairs[jobId] || {};
@@ -105,11 +105,11 @@ function WeeklyChecklist() {
 
           grouped[jobId] = {
             ...grouped[jobId],
-            plateNum: repair.plate_no || "pending",
+            // plateNum: repair.plate_no || "pending",
             startDate: repair.start_date || "pending",
             endDate: repair.end_date || "pending",
             status: repair.status || "Pending",
-            testDriveStatus: testDrive.technician_final_approval || "Pending",
+            // testDriveStatus: testDrive.technician_final_approval || "Pending",
           };
         });
 
@@ -147,7 +147,7 @@ function WeeklyChecklist() {
   const exportToExcel = (data) => {
     const worksheetData = data.map((entry) => ({
       "Job ID": entry.jobId,
-      "Plate Num": entry.plateNum,
+      // "Plate Num": entry.plateNum,
       "Start Date": entry.startDate,
       "End Date": entry.endDate,
       Mon: entry.days["Mon"],
@@ -157,8 +157,8 @@ function WeeklyChecklist() {
       Fri: entry.days["Fri"],
       Sat: entry.days["Sat"],
       Status: entry.status,
-      "Test Drive": entry.testDrive ? "✅" : "❌",
-      "Driver Status": entry.driverStatus,
+      // "Test Drive": entry.testDrive ? "✅" : "❌",
+      // "Driver Status": entry.driverStatus,
       "Checked By": entry.checkedBy,
       "Approved By": entry.approvedBy,
       "Received Date": entry.receivedDate,
@@ -255,7 +255,7 @@ function WeeklyChecklist() {
 
   const UpdateModal = ({ isOpen, onClose, entry, onSave }) => {
     const [form, setForm] = useState({
-      driverStatus: entry?.driverStatus || "",
+      // driverStatus: entry?.driverStatus || "",
       checkedBy: entry?.checkedBy || "",
       approvedBy: entry?.approvedBy || "",
       receivedDate: entry?.receivedDate || "",
@@ -264,7 +264,7 @@ function WeeklyChecklist() {
     useEffect(() => {
       if (entry) {
         setForm({
-          driverStatus: entry.driverStatus || "",
+          // driverStatus: entry.driverStatus || "",
           checkedBy: entry.checkedBy || "",
           approvedBy: entry.approvedBy || "",
           receivedDate: entry.receivedDate || "",
@@ -507,9 +507,9 @@ function WeeklyChecklist() {
                     <th rowSpan="2" className="border px-3 py-2">
                       Job ID
                     </th>
-                    <th rowSpan="2" className="border px-3 py-2">
+                    {/* <th rowSpan="2" className="border px-3 py-2">
                       Plate Num
-                    </th>
+                    </th> */}
                     <th rowSpan="2" className="border px-3 py-2">
                       Start Date
                     </th>
@@ -569,7 +569,7 @@ function WeeklyChecklist() {
                         className="hover:bg-gray-100 dark:hover:bg-gray-600"
                       >
                         <td className="border px-2 py-2">{entry.jobId}</td>
-                        <td className="border px-2 py-2">{entry.plateNum}</td>
+                        {/* <td className="border px-2 py-2">{entry.plateNum}</td> */}
                         <td className="border px-2 py-2">{entry.startDate}</td>
                         <td className="border px-2 py-2">{entry.endDate}</td>
                         {weekdays.map((day) => (

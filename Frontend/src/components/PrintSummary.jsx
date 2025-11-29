@@ -9,7 +9,7 @@ import ServiceReminder from "./ServiceReminder";
 import { useStores } from "@/contexts/storeContext";
 // import { useStores } from "../contexts/storeContext";
 
-function PrintSummary({ jobId: propJobId }) {
+function PrintSummary() {
   const { plateNumber } = useParams();
   const { job_card_no } = useParams();
   // const { jobId } = useParams();
@@ -17,14 +17,16 @@ function PrintSummary({ jobId: propJobId }) {
   const { jobId: routeJobId } = useParams();
 
   // Use the prop if passed, otherwise fallback to route param
-  const jobId = propJobId || routeJobId;
+  const jobId = routeJobId;
+  // console.log("Job Id for Summary : ", jobId);
 
   const [customerInfo, setCustomerInfo] = useState(null);
   const [workDetails, setWorkDetails] = useState([]);
   const [itemsOut, setItemsOut] = useState([]);
-  console.log("items Out", itemsOut);
+  // console.log("items Out", itemsOut);
 
   const [outSource, setOutSource] = useState([]);
+  // console.log("OutSource", outSource);
   const [additionalExpense, setAdditionalExpense] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [includeVAT, setIncludeVAT] = useState(false); // Default: VAT disabled
@@ -34,8 +36,6 @@ function PrintSummary({ jobId: propJobId }) {
   const [includeOutSourceVAT, setIncludeOutSourceVAT] = useState(false);
   const [additionalCost, setAdditionalCost] = useState(0);
   const navigate = useNavigate();
-  const { companyData } = useStores();
-  console.log(companyData);
 
   const [items, setItems] = useState([
     {
@@ -47,6 +47,12 @@ function PrintSummary({ jobId: propJobId }) {
     },
   ]);
 
+  const { companyData } = useStores();
+
+  // Resolve logo path from API or fallback
+  const logoUrl = companyData?.logo
+    ? `${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`
+    : "/logo.png";
   const handleInputChange = (index, e) => {
     const { name, value } = e.target;
     const newItems = [...items];
@@ -86,7 +92,7 @@ function PrintSummary({ jobId: propJobId }) {
         const response = await api.get(`/repairs/${jobId}`);
         setCustomerInfo(response.data || null);
       } catch (error) {
-        console.error("Error fetching customer info:", error);
+        // console.error("Error fetching customer info:", error);
         setCustomerInfo(null);
       }
     };
@@ -119,11 +125,11 @@ function PrintSummary({ jobId: propJobId }) {
   useEffect(() => {
     const fetchItemsOut = async () => {
       try {
-        const response = await api.get(`/outsource?job_card_no=${jobId}`);
-        const fetchedData = response.data?.data || response.data;
+        const response = await api.get(`/outsource/job-card/${jobId}`);
+        const fetchedData = response.data;
 
-        if (Array.isArray(fetchedData)) {
-          setOutSource(fetchedData);
+        if (fetchedData?.outsourcedetails) {
+          setOutSource(fetchedData.outsourcedetails); // ✅ array
         } else {
           console.error("Unexpected API response format:", fetchedData);
           setOutSource([]);
@@ -191,9 +197,13 @@ function PrintSummary({ jobId: propJobId }) {
     return sum + totalPriceForJob;
   }, 0);
 
-  console.log("Total OutSource Cost:", totalOutCost);
+  // console.log("Total OutSource Cost:", totalOutCost);
 
-  console.log(totalOutCost);
+  // console.log(totalOutCost);
+
+  // const totalCost = totalLaborCost + totalPartsCost + totalOutCost;
+  // const vatAmount = includeVAT ? (totalCost + additionalExpense) * 0.15 : 0;
+  // const grandTotal = totalCost + additionalExpense + vatAmount;
 
   // Calculate VAT amounts
   const labourVAT = includeLabourVAT ? totalLaborCost * 0.15 : 0;
@@ -280,139 +290,190 @@ function PrintSummary({ jobId: propJobId }) {
         <div className="fixed top-4 left-[19%] z-[99999999]">
           <BackButton />
         </div>
+        {/* <div className="absolute top-2 right-2"> */}
         <div className="absolute top-2 right-2">
           <button
             onClick={handlePrint}
-            className="bg-blue-600 text-white px-4 mt-2 py-2 rounded-md shadow-md hover:bg-blue-700 focus:outline-none"
+            className="bg-blue-600 text-white px-4 mt-2 py-2 rounded-md shadow-md hover:bg-blue-700 focus:outline-none no-print"
           >
             Print Page 🖨️
           </button>
         </div>
+
         <style>
           {`
   @media print {
-  * {
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box;
-  }
+    .no-print {
+      display: none !important;
+    }
+
+    * {
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box;
+    }
   
-  body {
-    width: 100%;
-  }
+    body {
+      width: 100%;
+    }
 
-  .print-container {
-    width: 100%;
-    transform: scale(1.0); /* Adjust scaling to fit content */
-    overflow: hidden;
-    page-break-inside: avoid;
-  }
+    .print-container {
+      width: 100%;
+      transform: scale(1.0);
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
 
-  th, td {
-    border: 1px solid black;
-    font-size: 16px;
-  }
+    th, td {
+      border: 1px solid black;
+      font-size: 16px;
+    }
 
-  @page {
-    size: A4 portrait;
-    margin: 2; /* Completely removes margin */
+    @page {
+      size: A4 portrait;
+      margin: 2;
+    }
   }
-}
-
-  `}
+`}
         </style>
 
         <main className="grow mt-0">
           <div className="max-w-5xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
             <div className="print-container">
-              {/* <div className="w-full flex gap-20 items-center justify-center">
-                <img src={logo} className="w-[40%]" />
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    ስፒድ ሜተር ትሬዲንግ ፒ ኤል ሲ
-                  </h2>
-                  <h2 className="text-2xl uppercase tracking-wider font-bold text-gray-800 dark:text-white">
-                    speed meter trading plc
-                  </h2>
+              <div className="w-full flex flex-col items-center justify-center p-4">
+                {/* Top Section: Logos and Names */}
+
+                <div className="w-full flex items-center justify-between">
+                  {/* Left Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Left"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Center Company Name */}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
+                      {companyData?.name_am || "የኩባንያ ስም (AM)"}
+                    </h2>
+                    <h2 className="text-lg sm:text-xl uppercase tracking-wider font-semibold text-gray-800 dark:text-white">
+                      {companyData?.name_en || "COMPANY NAME (EN)"}
+                    </h2>
+                  </div>
+
+                  {/* Right Logo */}
+                  <div className="w-20 h-20 flex items-center justify-center">
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo Right"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
                 </div>
-              </div> */}
+
+                {/* Bottom Info Row */}
+                <div className="w-full flex flex-wrap items-center justify-center gap-6 mt-3 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+                  <div>
+                    <span className="font-semibold">TIN:</span>{" "}
+                    {companyData?.tin || "Not Available"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Address:</span>{" "}
+                    {companyData?.address || "Not Provided"}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Mobile:</span>{" "}
+                    {companyData?.phone || "N/A"}
+                  </div>
+                </div>
+              </div>
+
               {/* <p className="text-gray-600 dark:text-white">
                 Plate Number: {plateNumber}
               </p> */}
 
-              <div className="grid grid-cols-3 gap-4 items-start border-b pb-4 mb-6">
-                {/* Left: Logo */}
-                <div className="flex items-start justify-center">
-                  {companyData?.logo && (
-                    <img
-                      src={`${import.meta.env.VITE_API_URL}/storage/${
-                        companyData.logo
-                      }`}
-                      alt="Company Logo"
-                      className="h-24 object-contain"
-                    />
-                  )}
-                </div>
-
-                {/* Center: Company Info */}
-                <div className="space-y-1 text-sm text-gray-800 leading-snug">
-                  <h2 className="text-lg font-bold">{companyData?.name_en}</h2>
-                  <p className="text-sm italic text-gray-600">
-                    {companyData?.tagline}
-                  </p>
-                  <p>
-                    <strong>Address:</strong> {companyData?.address}
-                  </p>
-                  <p>
-                    <strong>Phone:</strong> {companyData?.phone}
-                  </p>
-                  <p>
-                    <strong>Email:</strong> {companyData?.email}
-                  </p>
-                  <p>
-                    <strong>Website:</strong> {companyData?.website}
-                  </p>
-                  <p>
-                    <strong>Established:</strong> {companyData?.established}
-                  </p>
-                </div>
-
-                {/* Right: Business & Job Info */}
-                <div className="text-sm text-right space-y-1 text-gray-800">
-                  <h3 className="text-lg font-bold">Repair Summary</h3>
-                  <p>
-                    <strong>Job ID:</strong> {customerInfo?.job_id}
-                  </p>
-                  <p>
-                    <strong>Received Date:</strong>{" "}
-                    {customerInfo?.received_date}
-                  </p>
-                  <p>
-                    <strong>Business Type:</strong> {companyData?.business_type}
-                  </p>
-                  <p>
-                    <strong>TIN:</strong> {companyData?.tin}
-                  </p>
-                  <p>
-                    <strong>VAT Reg. No:</strong> {companyData?.vat}
-                  </p>
-                </div>
-              </div>
-
               <h2 className="text-2xl font-semibold text-center mb-4 border-b  p-6 ">
-                Print Summary
+                Job Summary
               </h2>
+              {/* Customer & Vehicle Info */}
+              {customerInfo && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
+                    Customer & Vehicle Information
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md">
+                    <ul className="space-y-2">
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">
+                          Customer Name:
+                        </strong>{" "}
+                        {customerInfo.customer_name}
+                      </li>
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">Mobile:</strong>{" "}
+                        {customerInfo.mobile}
+                      </li>
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">
+                          {" "}
+                          Customer Type:
+                        </strong>{" "}
+                        {customerInfo.customer_type}
+                      </li>
+                    </ul>
+                    <ul className="space-y-2">
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">
+                          Received Date:
+                        </strong>{" "}
+                        {customerInfo.received_date
+                          ? new Date(
+                              customerInfo.received_date
+                            ).toLocaleDateString("en-US", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                            })
+                          : ""}
+                      </li>
 
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">
+                          Date Out:
+                        </strong>{" "}
+                        {customerInfo.promise_date
+                          ? new Date(
+                              customerInfo.promise_date
+                            ).toLocaleDateString("en-US", {
+                              month: "2-digit",
+                              day: "2-digit",
+                              year: "numeric",
+                            })
+                          : ""}
+                      </li>
+
+                      <li className="dark:text-gray-200">
+                        <strong className="dark:text-gray-100">
+                          Priority:
+                        </strong>{" "}
+                        {customerInfo.priority}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
               {/* Labour Table */}
               <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mt-6">
                 Labour Cost
               </h3>
-              <div className="flex items-center mt-2">
+              <div className="flex items-center mt-2 no-print">
                 <input
                   type="checkbox"
                   checked={includeLabourVAT}
@@ -491,7 +552,7 @@ function PrintSummary({ jobId: propJobId }) {
               <h3 className="text-lg font-semibold text-gray-800 mt-6 dark:text-gray-200">
                 Spare Change Cost
               </h3>
-              <div className="flex items-center mt-2">
+              <div className="flex items-center mt-2 no-print">
                 <input
                   type="checkbox"
                   checked={includeSpareVAT}
@@ -576,9 +637,9 @@ function PrintSummary({ jobId: propJobId }) {
 
               {/* Out source  table  */}
               <h3 className="text-lg font-semibold text-gray-800 mt-6">
-                Other Service
+                Out Source
               </h3>
-              <div className="flex items-center mt-2">
+              <div className="flex items-center mt-2 no-print">
                 <input
                   type="checkbox"
                   checked={includeOutSourceVAT}
@@ -612,36 +673,30 @@ function PrintSummary({ jobId: propJobId }) {
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="text-gray-700 dark:text-white">
-                        {outSource.map((item, index) => {
-                          const outsourcedDetailsArray =
-                            item.outsourcedetails || [];
 
-                          return outsourcedDetailsArray.map(
-                            (detail, subIndex) => (
-                              <tr
-                                key={`${index}-${subIndex}`}
-                                className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <td className="border border-gray-400 px-4 py-2">
-                                  {index + 1}
-                                </td>
-                                <td className="border border-gray-400 px-4 py-2 whitespace-nowrap">
-                                  {detail.description}
-                                </td>
-                                <td className="border border-gray-400 px-4 py-2 whitespace-nowrap">
-                                  {detail.partnumber}
-                                </td>
-                                <td className="border border-gray-400 px-4 py-2">
-                                  {detail.requestedby}
-                                </td>
-                                <td className="border border-gray-400 px-4 py-2">
-                                  {Number(detail.requestquantity) || 0} ETB
-                                </td>
-                              </tr>
-                            )
-                          );
-                        })}
+                      <tbody className="text-gray-700 dark:text-white">
+                        {outSource.map((detail, index) => (
+                          <tr
+                            key={detail.id || index}
+                            className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <td className="border border-gray-400 px-4 py-2">
+                              {index + 1}
+                            </td>
+                            <td className="border border-gray-400 px-4 py-2 whitespace-nowrap">
+                              {detail.description}
+                            </td>
+                            <td className="border border-gray-400 px-4 py-2 whitespace-nowrap">
+                              {detail.partnumber}
+                            </td>
+                            <td className="border border-gray-400 px-4 py-2">
+                              {detail.requestedby || "-"}
+                            </td>
+                            <td className="border border-gray-400 px-4 py-2">
+                              {Number(detail.requestquantity) || 0} ETB
+                            </td>
+                          </tr>
+                        ))}
 
                         {includeOutSourceVAT && (
                           <tr className="bg-gray-100 dark:bg-gray-800 font-medium">
@@ -662,8 +717,7 @@ function PrintSummary({ jobId: propJobId }) {
                             colSpan="4"
                             className="border border-gray-400 px-4 py-2"
                           >
-                            Total cost Amount for otherserviceTotal cost Amount
-                            for otherservice
+                            Total cost Amount for outsource
                           </td>
                           <td className="border border-gray-400 px-4 py-2">
                             {totalOutSourceWithVAT.toFixed(2)} ETB
@@ -748,6 +802,45 @@ function PrintSummary({ jobId: propJobId }) {
               </div>
             </div>
             {/* <ServiceReminder plateNumber={plateNumber} /> */}
+
+            <div className="w-full border-t-2 border-gray-300 mt-10 pt-6 text-sm text-gray-800 dark:text-gray-200 print:flex print:flex-row print:justify-between">
+              {/* Signature Section */}
+              <div className="flex justify-between w-full gap-8">
+                {/* Left Column - Giver (አስረካቢ) */}
+                <div className="w-1/2 pr-6">
+                  <h3 className="font-bold text-base mb-4 text-gray-700 dark:text-gray-300 uppercase">
+                    Giver / አስረካቢ
+                  </h3>
+                  <p className="mb-3 font-medium">
+                    Full Name / ሙሉ ስም:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
+                  </p>
+                  <p className="mb-3 font-medium">
+                    Signature / ፊርማ:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
+                  </p>
+                  <p className="font-medium">
+                    Date / ቀን:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
+                  </p>
+                </div>
+
+                {/* Right Column - Customer (ተጠቃሚ) */}
+                <div className="w-1/2 pl-6 border-l border-gray-200">
+                  <h3 className="font-bold text-base mb-4 text-gray-700 dark:text-gray-300 uppercase">
+                    Customer / ተጠቃሚ
+                  </h3>
+                  <p className="mb-3 font-medium">
+                    Full Name / ሙሉ ስም:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
+                  </p>
+                  <p className="font-medium">
+                    Signature / ፊርማ:
+                    <span className="ml-2 inline-block border-b border-dashed border-gray-500 w-56"></span>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>

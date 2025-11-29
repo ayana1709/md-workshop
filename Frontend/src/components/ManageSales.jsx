@@ -40,6 +40,8 @@ import { toast } from "react-toastify";
 import Header from "@/partials/Header";
 import Sidebar from "@/partials/Sidebar";
 import { useStores } from "@/contexts/storeContext";
+import { useNavigate } from "react-router-dom";
+
 // import Sidebar from "@/partials/Sidebar";
 // import { useStore } from "@/store";
 
@@ -52,12 +54,17 @@ export default function ManageSales() {
   const [openView, setOpenView] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // const { companyData } = useStores();
   const { companyData } = useStores();
+  const navigate = useNavigate();
 
   const companyInfo = {
     name: companyData?.name_en || "Company Name",
+    nameAm: companyData?.name_am || "የኩባኒያ ስም",
     phone: companyData?.phone || "Phone",
     address: companyData?.address || "Address",
     tin: companyData?.tin ? `TIN: ${companyData.tin}` : "TIN: -",
@@ -77,59 +84,50 @@ export default function ManageSales() {
 
   const columns = [
     { accessorKey: "id", header: "#" },
-    { accessorKey: "sales_date", header: "Sales Date" },
-    { accessorKey: "customer_name", header: "Customer Name / Details" },
-    { accessorKey: "total_amount", header: "Sales Amount" },
-    { accessorKey: "paid_amount", header: "Paid" },
-    { accessorKey: "due_amount", header: "Remaining" },
+    { accessorKey: "ref_num", header: "REF Num" },
+
+    { accessorKey: "sales_date", header: " Date" },
+    { accessorKey: "tin_number", header: "Reaquested By" },
+
+    { accessorKey: "customer_name", header: "To" },
+
+    { accessorKey: "company_name", header: "Reason" },
+
+    { accessorKey: "approved_by", header: "Approved By" },
+
+    { accessorKey: "requested_date", header: "Requested Date" },
+
+    { accessorKey: "location", header: "Location" },
+
     {
-      accessorKey: "payment_status",
-      header: "Payment Status",
+      accessorKey: "status",
+      header: "Status",
       cell: ({ row }) => {
-        const status = row.getValue("payment_status");
+        const status = row.original.status;
 
-        const colorMap = {
-          "Full Payment": "bg-green-100 text-green-800",
-          "Advanced Payment": "bg-orange-100 text-orange-800",
-          "No Payment": "bg-red-100 text-red-800",
+        const colors = {
+          Requested: "bg-yellow-200 text-yellow-800",
+          "Store Out": "bg-blue-200 text-blue-800",
+          Pending: "bg-orange-200 text-orange-800",
+          Approved: "bg-green-200 text-green-800",
         };
-
-        const statusStyle = colorMap[status] || "bg-gray-100 text-gray-800";
 
         return (
           <span
-            className={`px-2 py-1 rounded-full text-sm font-medium ${statusStyle}`}
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[status]}`}
           >
             {status}
           </span>
         );
       },
-    }, // ✅ close column object
-
-    {
-      accessorKey: "payment_type",
-      header: "Banks",
-      cell: ({ row }) => {
-        const bank = row.getValue("payment_type");
-
-        const bankColorMap = {
-          Cash: "bg-blue-100 text-blue-800",
-          Transfer: "bg-purple-100 text-purple-800",
-          Cheque: "bg-yellow-100 text-yellow-800",
-          Credit: "bg-indigo-100 text-indigo-800",
-        };
-
-        const bankStyle = bankColorMap[bank] || "bg-gray-100 text-gray-800";
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-full text-sm font-medium ${bankStyle}`}
-          >
-            {bank}
-          </span>
-        );
-      },
     },
+
+    // { accessorKey: "total_amount", header: "Total Amount" },
+
+    // { accessorKey: "paid_amount", header: "Paid" },
+
+    // { accessorKey: "due_amount", header: "Remaining" },
+
     {
       id: "actions",
       header: "Actions",
@@ -142,138 +140,213 @@ export default function ManageSales() {
             // Perform delete logic here
           }
         };
+        const handlePrintById = async (saleId) => {
+          try {
+            const { data: sale } = await api.get(`/sales/${saleId}`);
+            const { name, nameAm, phone, address, tin, logo } = companyInfo;
 
-        const handlePrint = () => {
-          const printWindow = window.open("", "_blank");
+            const {
+              ref_num,
+              customer_name,
+              sales_date,
+              total_amount,
+              sub_total,
+              discount,
+              vat_rate,
+              paid_amount,
+              due_amount,
+              payment_status,
+              payment_type,
+              remark,
+              location,
+              delivered_by,
+              requested_date,
+              approved_by,
+              status,
+              items,
+            } = sale;
 
-          const { name, phone, address, tin, logo } = companyInfo;
+            const amountInWords = `${parseFloat(total_amount).toFixed(
+              2
+            )} Birr Only`;
 
-          const {
-            customer_name,
-            sales_date,
-            total_amount,
-            paid_amount,
-            due_amount,
-            payment_status,
-            payment_type,
-            remark,
-            id,
-          } = sale;
-
-          const qrData = `Receipt No: ${id} - Customer: ${customer_name}`;
-          const qrCodeURL = `https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(
-            qrData
-          )}`;
-
-          const barcodeURL = `https://barcode.tec-it.com/barcode.ashx?data=${id}&code=Code128&dpi=96`;
-
-          const style = `
-    <style>
-      body {
-        font-family: 'Arial', sans-serif;
-        padding: 20px;
-        font-size: 13px;
-        color: #333;
-      }
-      .header, .footer {
-        text-align: center;
-      }
-      .company-logo {
-        max-height: 60px;
-        margin-bottom: 10px;
-      }
-      .info-table {
-        width: 100%;
-        margin-top: 20px;
-        border-collapse: collapse;
-      }
-      .info-table th,
-      .info-table td {
-        text-align: left;
-        padding: 6px 8px;
-        border-bottom: 1px solid #ccc;
-      }
-      .footer {
-        margin-top: 40px;
-        font-size: 12px;
-      }
-      .footer hr {
-        margin: 10px 0;
-      }
-      .barcode, .qrcode {
-        margin-top: 20px;
-        display: flex;
-        justify-content: center;
-      }
-      .amharic-label {
-        font-family: 'Noto Sans Ethiopic', sans-serif;
-        font-size: 13px;
-        color: #444;
-      }
-    </style>
-  `;
-
-          const content = `
-    <html>
-      <head>
-        <title>Sales Receipt</title>
-        <meta charset="UTF-8" />
-        ${style}
-      </head>
-      <body>
-        <div class="header">
-          ${logo ? `<img src="${logo}" class="company-logo" />` : ""}
-          <h2>${name}</h2>
-          <div class="amharic-label">የንግድ ድርጅት ሪሲት</div>
-          <p>
-            ${address}<br/>
-            ስልክ / Phone: ${phone} <br/>
-            ${tin}
-          </p>
-          <hr />
-          <h3>Sales Receipt / የሽያጭ ደረሰኝ</h3>
-        </div>
-
-        <table class="info-table">
-          <tr><th>Receipt No / የደረሰኝ ቁጥር:</th><td>#${id}</td></tr>
-          <tr><th>Date / ቀን:</th><td>${sales_date}</td></tr>
-          <tr><th>Customer / ደንበኛ:</th><td>${customer_name}</td></tr>
-          <tr><th>Total / ድምር:</th><td>${total_amount} ብር</td></tr>
-          <tr><th>Paid / የተከፈለ:</th><td>${paid_amount} ብር</td></tr>
-          <tr><th>Remaining / ቀሪ:</th><td>${due_amount} ብር</td></tr>
-          <tr><th>Payment Type / የክፍያ መንገድ:</th><td>${
-            payment_type || "-"
-          }</td></tr>
-          <tr><th>Payment Status / የክፍያ ሁኔታ:</th><td>${payment_status}</td></tr>
-          ${remark ? `<tr><th>Remark / ማስታወሻ:</th><td>${remark}</td></tr>` : ""}
-        </table>
-
-        <div class="barcode">
-          <img src="${barcodeURL}" alt="Barcode" />
-        </div>
-
+            const style = `
+      <style>
+        body { font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
+        .invoice-box { width: 100%; position: relative; }
         
+        .title-main { text-align: center; margin-top: 10px; font-weight: bold; line-height: 1.4; }
+        .title-main .am { font-size: 18px; font-weight: bold; }
+        .title-main .en { font-size: 16px; }
 
-        <div class="footer">
-          <hr />
-          <p>እናመሰግናለን / Thank you for your business!</p>
-          <p>Generated on ${new Date().toLocaleString()}</p>
-        </div>
+        /* TABLE STYLES */
+        .info, .items, .summary { width: 100%; border-collapse: collapse; }
+        .info td { padding: 3px 6px; font-size: 12px; }
+        
+        .items th, .items td { border: 1px solid #000; padding: 5px; font-size: 12px; }
+        .items th { background: #f2f2f2; text-align: center; }
+        
+        .summary { width: 40%; float: right; margin-top: 15px; }
+        .summary th, .summary td { border: 1px solid #000; padding: 5px; }
 
-        <script>
-          window.onload = function () {
-            window.print();
-            window.onafterprint = function () {
-              window.close();
+        .footer { margin-top: 40px; font-size: 11px; text-align: center; color: #444; }
+
+        .watermark {
+          position: fixed;
+          inset: 0;
+          display:flex; justify-content:center; align-items:center;
+          z-index:0; pointer-events:none;
+        }
+        .watermark span {
+          transform: rotate(-45deg);
+          font-size: 50px;
+          color: rgba(150, 150, 150, 0.15);
+          font-weight: bold;
+        }
+      </style>
+    `;
+
+            const itemsTable = items
+              .map(
+                (it, idx) => `
+        <tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${it.pivot.item_name}</td>
+          <td>${it.pivot.unit || "-"}</td>
+          <td style="text-align:center">${it.pivot.sale_quantity}</td>
+          <td style="text-align:right">${parseFloat(
+            it.pivot.selling_price
+          ).toFixed(2)}</td>
+          <td style="text-align:right">${(
+            parseFloat(it.pivot.sale_quantity) *
+            parseFloat(it.pivot.selling_price)
+          ).toFixed(2)}</td>
+        </tr>`
+              )
+              .join("");
+
+            const vatAmount = (
+              (parseFloat(sub_total) - parseFloat(discount)) *
+              (parseFloat(vat_rate) / 100)
+            ).toFixed(2);
+
+            const content = `
+      <html>
+        <head>
+          <title>Store Issue Invoice</title>
+          <meta charset="UTF-8"/>
+          ${style}
+        </head>
+        <body>
+          <div class="invoice-box">
+
+            <!-- HEADER -->
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="width:80px;">
+                ${logo ? `<img src="${logo}" style="max-width:100%">` : ""}
+              </div>
+
+              <div style="text-align:center; flex:1;">
+                <h2>${name || "Company Name"}</h2>
+                <h3 style="margin-top:4px;">${nameAm || ""}</h3>
+                <div>${address || ""} | Tel: ${phone || ""}</div>
+                <div><strong>TIN:</strong> ${tin || ""}</div>
+              </div>
+
+              <div style="width:80px;">
+                ${logo ? `<img src="${logo}" style="max-width:100%">` : ""}
+              </div>
+            </div>
+
+            <div class="title-main">
+              <div class="am">የዕቃ ማውጫ ሰነድ</div>
+              <div class="en">Store Issue Invoice</div>
+            </div>
+
+            <hr/>
+
+            <!-- SALE INFO -->
+            <table class="info">
+              <tr>
+                <td>
+                  <strong>Ref No:</strong> ${ref_num} <br/>
+                  <strong>Status:</strong> ${status} <br/>
+                  <strong>Approved By:</strong> ${approved_by || "-"} <br/>
+                  <strong>Delivered By:</strong> ${delivered_by || "-"} <br/>
+                </td>
+                <td>
+                  <strong>Customer:</strong> ${customer_name} <br/>
+                  <strong>Sales Date:</strong> ${sales_date} <br/>
+                  <strong>Requested Date:</strong> ${requested_date} <br/>
+                  <strong>Location:</strong> ${location || "-"} <br/>
+                </td>
+              </tr>
+            </table>
+
+            <!-- ITEMS -->
+            <table class="items">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item</th>
+                  <th>Unit</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>${itemsTable}</tbody>
+            </table>
+
+            <!-- SUMMARY -->
+            <table class="summary">
+              <tr><th>Sub Total</th><td style="text-align:right">${sub_total}</td></tr>
+              <tr><th>Discount</th><td style="text-align:right">${discount}</td></tr>
+              <tr><th>VAT (${vat_rate}%)</th><td style="text-align:right">${vatAmount}</td></tr>
+            </table>
+
+            <div style="clear:both;"></div>
+
+            <div><strong>Amount in Words:</strong> ${amountInWords}</div>
+
+            <!-- SIGNATURES -->
+            <table width="100%" style="margin-top:30px;">
+              <tr>
+                <td>Requested Signature: ____________________</td>
+                <td>Approver Signature: ____________________</td>
+              </tr>
+            </table>
+
+            <!-- FOOTER -->
+            <div class="footer">
+              <hr/>
+              <p><strong>Thank you!</strong></p>
+              <p>Generated on ${new Date().toLocaleString()}</p>
+            </div>
+          </div>
+
+          <!-- WATERMARK -->
+          <div class="watermark">
+            <span>STORE ISSUE</span>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = () => window.close();
             };
-          };
-        </script>
-      </body>
-    </html>
-  `;
+          </script>
+        </body>
+      </html>
+    `;
 
-          printWindow.document.write(content);
-          printWindow.document.close();
+            const printWindow = window.open("", "_blank");
+            printWindow.document.write(content);
+            printWindow.document.close();
+          } catch (error) {
+            console.error("Print error:", error);
+            toast.error("Failed to print");
+          }
         };
 
         return (
@@ -301,20 +374,19 @@ export default function ManageSales() {
               <Button
                 variant="ghost"
                 className="w-full justify-start"
-                onClick={() => {
-                  setSelectedSale(sale);
-                  setOpenEdit(true);
-                }}
+                onClick={() => navigate(`/sales/edit/${sale.id}`)}
               >
                 Edit
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start"
-                onClick={handlePrint}
+                onClick={() => handlePrintById(sale.id)}
               >
-                Print
+                Print Attachemnt
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600 hover:text-red-700"
@@ -378,15 +450,34 @@ export default function ManageSales() {
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="p-4 space-y-4 bg-white p-6 rounded-md">
           {/* Controls */}
-          <div className="flex justify-between items-center flex-wrap gap-4">
-            <Input
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-[300px]"
-            />
+          {/* Controls */}
+          {/* Controls */}
+          <div className="bg-gray-50 p-4 rounded-lg border shadow-sm flex flex-wrap items-end justify-between gap-4">
+            {/* Left-side filters */}
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Search */}
 
-            <div className="flex gap-2 flex-wrap">
+              {/* Status Dropdown
+              <div className="flex flex-col">
+                <label className="text-xs font-medium text-gray-600 mb-1">
+                  Status
+                </label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border px-3 py-2 rounded-md bg-white focus:ring focus:ring-blue-200 w-40"
+                >
+                  <option value="">All</option>
+                  <option value="Requested">Requested</option>
+                  <option value="Store Out">Store Out</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                </select>
+              </div> */}
+            </div>
+
+            {/* Right-side buttons */}
+            <div className="flex flex-wrap gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-1">
@@ -462,237 +553,156 @@ export default function ManageSales() {
               </tbody>
             </table>
           </div>
+
           <Dialog open={openView} onOpenChange={setOpenView}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-2xl p-6">
               <DialogHeader>
-                <DialogTitle>Sale Details</DialogTitle>
+                <DialogTitle className="text-xl font-bold">
+                  Sale Details
+                </DialogTitle>
                 <DialogDescription>
-                  Information about the selected sale.
+                  Complete information about the selected sale.
                 </DialogDescription>
               </DialogHeader>
 
               {selectedSale && (
-                <div className="space-y-2 text-sm">
+                <div className="space-y-6">
+                  {/* Basic Info */}
                   <div>
-                    <strong>ID:</strong> {selectedSale.id}
-                  </div>
-                  <div>
-                    <strong>Sales Date:</strong> {selectedSale.sales_date}
-                  </div>
-                  <div>
-                    <strong>Customer Name:</strong>{" "}
-                    {selectedSale.customer_name || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Phone Number:</strong>{" "}
-                    {selectedSale.phone_number || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Total Amount:</strong> {selectedSale.total_amount}
-                  </div>
-                  <div>
-                    <strong>Paid Amount:</strong> {selectedSale.paid_amount}
-                  </div>
-                  <div>
-                    <strong>Due Amount:</strong> {selectedSale.due_amount}
-                  </div>
-                  <div>
-                    <strong>Payment Status:</strong>{" "}
-                    {selectedSale.payment_status}
-                  </div>
-                  <div>
-                    <strong>Payment Type:</strong> {selectedSale.payment_type}
-                  </div>
-                  <div>
-                    <strong>Vat:</strong> {selectedSale.vat_rate}
-                  </div>
-                  <div>
-                    <strong>Tin Number:</strong> {selectedSale.tin_number}
-                  </div>
-                  <div>
-                    <strong>From</strong> {selectedSale.stock || "stock"}
-                  </div>
-                  <div>
-                    <strong>Remark:</strong> {selectedSale.remark}
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={openEdit} onOpenChange={setOpenEdit}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit Sale</DialogTitle>
-                <DialogDescription>
-                  Update the sales information.
-                </DialogDescription>
-              </DialogHeader>
-
-              {selectedSale && (
-                <form
-                  className="space-y-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-
-                    const payload = {
-                      ...selectedSale,
-                      items: selectedSale.items.map((item) => ({
-                        part_number: item.part_number,
-                        description: item.pivot.description || "",
-                        brand: item.pivot.brand || "",
-                        unit: item.pivot.unit || "",
-                        unit_price: item.pivot.unit_price,
-                        sale_quantity: item.pivot.sale_quantity,
-                      })),
-                    };
-
-                    api
-                      .put(`/sales/${selectedSale.id}`, payload)
-                      .then((res) => {
-                        toast.success("Sale updated successfully");
-                        setOpenEdit(false);
-                      })
-                      .catch((err) => {
-                        toast.error("Failed to update sale");
-                        console.error(err);
-                      });
-                  }}
-                >
-                  <div>
-                    <label className="text-sm font-medium">Customer Name</label>
-                    <Input
-                      value={selectedSale.customer_name}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          customer_name: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Company Name</label>
-                    <Input
-                      value={selectedSale.company_name}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          company_name: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Tin Number</label>
-                    <Input
-                      value={selectedSale.tin_number}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          tin_number: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Vat Rate</label>
-                    <Input
-                      value={selectedSale.vat_rate}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          vat_rate: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Sub Total</label>
-                    <Input
-                      value={selectedSale.sub_total}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          sub_total: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Total Amount</label>
-                    <Input
-                      value={selectedSale.total_amount}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          total_amount: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium">Paid Amount</label>
-                    <Input
-                      value={selectedSale.paid_amount}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          paid_amount: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Due Amount</label>
-                    <Input
-                      value={selectedSale.due_amount}
-                      onChange={(e) =>
-                        setSelectedSale({
-                          ...selectedSale,
-                          due_amount: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  {selectedSale.items.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col gap-2 border p-4 rounded-lg"
-                    >
-                      <p className="font-medium text-gray-700">
-                        Item {index + 1}
-                      </p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="text-sm font-medium">
-                            Sale Quantity
-                          </label>
-                          <Input
-                            type="number"
-                            value={item.pivot.sale_quantity}
-                            onChange={(e) => {
-                              const items = [...selectedSale.items];
-                              items[index].pivot.sale_quantity = parseInt(
-                                e.target.value
-                              );
-                              setSelectedSale({ ...selectedSale, items });
-                            }}
-                          />
-                        </div>
+                    <h3 className="text-lg font-semibold border-b pb-1">
+                      Basic Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                      <div>
+                        <strong>Ref Number:</strong> {selectedSale.ref_num}
+                      </div>
+                      <div>
+                        <strong>Sale ID:</strong> {selectedSale.id}
+                      </div>
+                      <div>
+                        <strong>Sales Date:</strong> {selectedSale.sales_date}
+                      </div>
+                      <div>
+                        <strong>Requested Date:</strong>{" "}
+                        {selectedSale.requested_date}
+                      </div>
+                      <div>
+                        <strong>Status:</strong> {selectedSale.status}
+                      </div>
+                      <div>
+                        <strong>Approved By:</strong>{" "}
+                        {selectedSale.approved_by || "N/A"}
                       </div>
                     </div>
-                  ))}
+                  </div>
 
-                  <Button type="submit" className="w-full">
-                    Save Changes
-                  </Button>
-                </form>
+                  {/* Customer Info */}
+                  <div>
+                    <h3 className="text-lg font-semibold border-b pb-1">
+                      Customer Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                      <div>
+                        <strong>Customer Name:</strong>{" "}
+                        {selectedSale.customer_name}
+                      </div>
+                      <div>
+                        <strong>Company:</strong>{" "}
+                        {selectedSale.company_name || "N/A"}
+                      </div>
+                      <div>
+                        <strong>TIN Number:</strong>{" "}
+                        {selectedSale.tin_number || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Contact:</strong>{" "}
+                        {selectedSale.phone || selectedSale.mobile || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Email:</strong> {selectedSale.email || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Address:</strong>{" "}
+                        {selectedSale.address || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delivery Info */}
+                  <div>
+                    <h3 className="text-lg font-semibold border-b pb-1">
+                      Delivery Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
+                      <div>
+                        <strong>Delivered By:</strong>{" "}
+                        {selectedSale.delivered_by || "N/A"}
+                      </div>
+                      <div>
+                        <strong>Location:</strong>{" "}
+                        {selectedSale.location || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Remark */}
+                  <div>
+                    <h3 className="text-lg font-semibold border-b pb-1">
+                      Remark
+                    </h3>
+                    <p className="text-sm mt-2 bg-gray-50 p-3 rounded border">
+                      {selectedSale.remark || "No remark"}
+                    </p>
+                  </div>
+
+                  {/* Items Table */}
+                  <div>
+                    <h3 className="text-lg font-semibold border-b pb-1">
+                      Items List
+                    </h3>
+                    <div className="overflow-auto border rounded mt-3">
+                      <table className="min-w-full text-sm">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="p-2 border">#</th>
+                            <th className="p-2 border">Item Name</th>
+                            <th className="p-2 border">Unit</th>
+                            <th className="p-2 border">Qty</th>
+                            <th className="p-2 border">Price</th>
+                            <th className="p-2 border">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedSale.items?.map((item, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="border p-2 text-center">
+                                {index + 1}
+                              </td>
+                              <td className="border p-2">
+                                {item.pivot.item_name}
+                              </td>
+                              <td className="border p-2 text-center">
+                                {item.pivot.unit}
+                              </td>
+                              <td className="border p-2 text-center">
+                                {item.pivot.sale_quantity}
+                              </td>
+                              <td className="border p-2 text-right">
+                                {item.pivot.selling_price}
+                              </td>
+                              <td className="border p-2 text-right">
+                                {(
+                                  item.pivot.sale_quantity *
+                                  item.pivot.selling_price
+                                ).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               )}
             </DialogContent>
           </Dialog>

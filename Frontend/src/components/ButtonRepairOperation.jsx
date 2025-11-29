@@ -4,6 +4,8 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { useStores } from "@/contexts/storeContext";
+import api from "@/api";
+import { toast } from "react-hot-toast";
 
 function ButtonRepairOperation({
   tableData,
@@ -25,6 +27,21 @@ function ButtonRepairOperation({
       ? `${import.meta.env.VITE_API_URL}/storage/${companyData.logo}`
       : "", // fallback image if needed
   };
+
+  const [logoBase64, setLogoBase64] = useState(null);
+
+  useEffect(() => {
+    if (!companyInfo.logo) return;
+
+    fetch(companyInfo.logo)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const reader = new FileReader();
+        reader.onloadend = () => setLogoBase64(reader.result);
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => setLogoBase64(null));
+  }, [companyInfo.logo]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -74,9 +91,7 @@ function ButtonRepairOperation({
     doc.setFontSize(12);
     doc.text(title, 14, 70);
 
-    const tableHeaders = [...headers, "Plate Number", "Condition"].map(
-      (key) => headerMappings[key] || key
-    );
+    const tableHeaders = [...headers].map((key) => headerMappings[key] || key);
 
     const tableBody = tableData.map((row) =>
       headers
@@ -121,7 +136,6 @@ function ButtonRepairOperation({
       pageHeight - 20,
       { align: "center" }
     );
-
     doc.save(`${title}.pdf`);
   };
 
@@ -141,21 +155,15 @@ function ButtonRepairOperation({
     const worksheet = XLSX.utils.json_to_sheet(
       data.map((row) => ({
         "Customer Name": row.customer_name || "N/A",
-        "Customer Type": row.customer_type || "N/A",
         Mobile: row.mobile || "N/A",
-        "Created At": row.created_at || "N/A",
-        "Estimated Date": row.estimated_date || "N/A",
-        "Job Description": formatArray(row.job_description),
-        "Customer Observation": formatArray(row.customer_observation),
-        Priority: row.priority || "N/A",
-        "Promise Date": row.promise_date || "N/A",
+        "Job Type": row.types_of_jobs || "N/A",
+        Product: row.product_name || "N/A",
+        "Serial Code ": row.serial_code || "N/A",
+        Duration: row.estimated_date || "N/A",
+        "Start Date": row.received_date || "N/A",
+        "End Date": row.promise_date || "N/A",
         "Received By": row.received_by || "N/A",
-        "Received Date": row.received_date || "N/A",
-        // "Repair Category": formatArray(row.repair_category),
-        // "Selected Items": formatArray(row.selected_items),
-        "Spare Change": formatArray(row.spare_change),
-        // Vehicles: formatVehicles(row.vehicles),
-        "Updated At": row.updated_at || "N/A",
+        Status: row.status || "N/A",
       }))
     );
 
@@ -178,6 +186,34 @@ function ButtonRepairOperation({
       }
     }
     return Array.isArray(data) ? data.join(", ") : data;
+  };
+  const handleImportExcel = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await api.post(`repair/import`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data.status === "success") {
+        toast.success("Import successful!");
+        window.location.reload(); // optional
+      } else {
+        toast.error("Import failed: " + (res.data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Import Error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Error uploading file. Please check your Excel format."
+      );
+    }
   };
 
   const formatVehicles = (vehicles) =>
@@ -262,9 +298,46 @@ function ButtonRepairOperation({
     `);
     win.document.close();
   };
+  const downloadTemplate = () => {
+    const sample = [
+      {
+        "Customer Name": "",
+        Mobile: "",
+        "Job Type": "",
+        Product: "",
+        "Serial Code": "",
+        Duration: "",
+        "Start Date": "",
+        "End Date": "",
+        "Received By": "",
+        Status: "",
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sample);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+    XLSX.writeFile(wb, "Repair_Import_Template.xlsx");
+  };
 
   return (
     <div className="phone:ml-6 tablet:ml-0 flex items-center gap-2">
+      <button
+        onClick={() => document.getElementById("importExcel").click()}
+        className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition"
+      >
+        Import
+      </button>
+
+      <input
+        id="importExcel"
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleImportExcel}
+      />
+
       <button
         onClick={handleExport}
         className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"
@@ -282,6 +355,19 @@ function ButtonRepairOperation({
         className="bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600 transition"
       >
         Print
+      </button>
+      <button
+        onClick={downloadTemplate}
+        className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600 transition"
+      >
+        Template
+      </button>
+
+      <button
+        onClick={() => navigate("/step-1")}
+        className="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition"
+      >
+        Create New Job
       </button>
     </div>
   );

@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 
 import "./css/style.css";
 import "./charts/ChartjsConfig";
+import { Toaster } from "react-hot-toast";
 
 // Import pages
 import Dashboard from "./pages/Dashboard";
@@ -56,7 +57,7 @@ import EditInspection from "./components/EditInspection";
 import ViewInspection from "./components/ViewInspection";
 import EditWheel from "./components/EditWheel";
 import ViewWheel from "./components/ViewWheel";
-import { StoreProvider } from "./contexts/storeContext";
+import { StoreProvider, useStores } from "./contexts/storeContext";
 import WorkOrderView from "./components/WorkOrderView";
 import WorkOrderEdit from "./components/WorkOrderEdit";
 import UpdateStore from "./components/UpdateStore";
@@ -85,9 +86,11 @@ import PostDriveTest from "./components/DriverTest/PostDriveTest";
 // Import other components...
 
 function ProtectedRoute({ children }) {
-  const admin = localStorage.getItem("adminToken"); // Check if token exists
+  const { admin } = useStores();
+
   return admin ? children : <Navigate to="/" />;
 }
+
 // import RequestSpareInspection from "./components/RequestSpareInspection";
 // import AddToWorkOrderWheel from "./components/AddToWorkOrderWheel";
 // import RequestSpareWheel from "./components/RequestSpareWheel";
@@ -121,21 +124,38 @@ import FinalPrintAttchemnt from "./components/payment/FinalPrintAttchemnt";
 import WeeklyChecklist from "./components/WeeklyChecklist";
 import AddPayment from "./components/payment/AddPayment";
 import ProformaForm from "./components/Proforma/ProformaForm";
-import ManageProforma from "./components/Proforma/ManageProforma";
+// import ManageProforma from "./components/Proforma/ManageProforma/ManageProforma";
 import CompanySettings from "./components/CompanySettings";
 import NewAddSalesPage from "./components/NewAddSalesPage";
 import CreatePurchaseOrder from "./components/CreatePurchaseOrder";
-import ProformaPrint from "./components/Proforma/ProformaPrint";
-// import Outsource from "./components/Outsource";
-// import PrintInspection from "./components/PrintInspection";
-// import PrintWheel from "./components/PrintWheel";
+// import ProformaPrint from "./components/Proforma/ProformaPrint";
+import DescriptionModal from "./components/DescriptionModal";
+import DescriptionPage from "./components/DescriptionModal";
+import ExpenseEntry from "./components/Expense/ExpenseEntry";
+import IncomePage from "./components/IncomePage";
+import ExpenseList from "./components/Expense/ExpenseList";
+import ViewExpense from "./components/Expense/ViewExpense";
+import EditExpense from "./components/Expense/EditExpense";
+import Roles from "./components/Role/Roles";
+import CreateRole from "./components/Role/CreateRole";
+import Users from "./components/Role/Users";
+import CreateUser from "./components/Role/CreateUser";
+import CreatePermission from "./components/Role/CreatePermission";
+import EditPermission from "./components/Role/EditPermission";
+import Permissions from "./components/Role/Permissions";
+import EditUser from "./components/Role/EditUser";
+import FormalProforma from "./components/Proforma/FormalProforma";
+import ManageProforma from "./components/Proforma/ManageProforma/ManageProforma";
+import FormalPayment from "./components/payment/FormalPayment";
+import ProformaPrint from "./components/Proforma/ManageProforma/modals/ProformaPrint";
+import EditSalesPage from "./components/EditSalesPage";
 
 function App() {
   const location = useLocation();
   // const [admin, setAdmin] = useState(
   //   localStorage.getItem("adminToken") || null
   // );
-  const [admin, setAdmin] = useState(null);
+  const { admin, setAdmin } = useStores();
 
   useEffect(() => {
     document.querySelector("html").style.scrollBehavior = "auto";
@@ -144,8 +164,10 @@ function App() {
   }, [location.pathname]);
 
   return (
-    <StoreProvider>
-      <ToastContainer />
+    <>
+      {/* <ToastContainer /> */}
+
+      <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         <Route
           path="/"
@@ -250,6 +272,8 @@ function App() {
         <Route path="/view-bolo/:id" element={<ViewBolo />} />
         <Route path="/request-spare/:id" element={<RequestSpare />} />
         {/* inspection Action  */}
+        <Route path="/setting" element={<CompanySettings />} />
+
         <Route path="/edit-inspection/:id" element={<EditInspection />} />
         <Route path="/view-inspection/:id" element={<ViewInspection />} />
         <Route path="/request-spare/:id" element={<RequestSpare />} />
@@ -272,6 +296,8 @@ function App() {
         <Route path="sales" element={<ManageSales />} />
         <Route path="add-too-sale" element={<NewAddSalesPage />} />
         <Route path="create-order" element={<CreatePurchaseOrder />} />
+        <Route path="/sales/edit/:id" element={<EditSalesPage />} />
+
         <Route path="purchase" element={<Purchases />} />
 
         {/* Incoming Request  */}
@@ -317,21 +343,38 @@ function App() {
         <Route path="/service-reminder/:id" element={<ServiceReminderForm />} />
         <Route path="/service-reminders/:id" element={<ServiceReminder />} />
         <Route path="/post-drive-results/:id" element={<TestDriveResult />} />
+
         <Route path="/all-payments" element={<AllPaymentsTable />} />
         <Route path="/payments/:id" element={<PaymentDetail />} />
-        <Route path="/payments/edit/:job_id" element={<EditPaymentForm />} />
+        <Route path="/payments/edit/:id" element={<EditPaymentForm />} />
         <Route
           path="/payments/attachment/:jobId"
           element={<FinalPrintAttchemnt />}
         />
-        <Route path="/weekly-checklist" element={<WeeklyChecklist />} />
         <Route path="/add-payment" element={<AddPayment />} />
+        <Route path="/formalpayment" element={<FormalPayment />} />
         <Route path="/proforma" element={<ProformaForm />} />
         <Route path="/manage-proforma" element={<ManageProforma />} />
-        <Route path="/setting" element={<CompanySettings />} />
         <Route path="/proforma-print/:id" element={<ProformaPrint />} />
+        <Route path="/proformas/create" element={<FormalProforma />} />
+
+        <Route path="/weekly-checklist" element={<WeeklyChecklist />} />
+        <Route path="/description/:id" element={<DescriptionPage />} />
+        <Route path="/income" element={<IncomePage />} />
+        <Route path="/new-expense" element={<ExpenseEntry />} />
+        <Route path="/expense" element={<ExpenseList />} />
+        <Route path="/expenses/:id" element={<ViewExpense />} />
+        <Route path="/expenses/:id/edit" element={<EditExpense />} />
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/create-role" element={<CreateRole />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/create-users" element={<CreateUser />} />
+        <Route path="/create-permission" element={<CreatePermission />} />
+        <Route path="/edit-permission/:roleId" element={<EditPermission />} />
+        <Route path="/permission" element={<Permissions />} />
+        <Route path="/edit-user/:id" element={<EditUser />} />
       </Routes>
-    </StoreProvider>
+    </>
   );
 }
 

@@ -30,6 +30,7 @@ const AddToWorkOrder = () => {
   const [editingRow, setEditingRow] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [workDetails, setWorkDetails] = useState([]);
+  const [isAddingRow, setIsAddingRow] = useState(false);
 
   const [rows, setRows] = useState(() => {
     const savedRows = localStorage.getItem("rows");
@@ -53,6 +54,11 @@ const AddToWorkOrder = () => {
   };
 
   const addRow = async (jobCardNo) => {
+    if (isAddingRow) {
+      Swal.fire("Please wait!", "Still adding the previous row...", "warning");
+      return;
+    }
+
     if (rows.length > 0 && isRowEmpty(rows[rows.length - 1])) {
       Swal.fire(
         "Warning!",
@@ -61,6 +67,8 @@ const AddToWorkOrder = () => {
       );
       return;
     }
+
+    setIsAddingRow(true); // 🚀 lock the button
 
     try {
       const response = await api.get(`/work-orders?job_card_no=${jobCardNo}`);
@@ -87,13 +95,15 @@ const AddToWorkOrder = () => {
         TimeOut: "",
         Remark: "",
         status: rows.length === 0 ? "Pending" : "",
-        progress: 0, // 🔥 NEW FIELD
+        progress: 0,
       };
 
       setRows((prevRows) => [...prevRows, newRow]);
     } catch (error) {
       console.error("Error fetching work details:", error);
       Swal.fire("Error!", "Failed to fetch work order details.", "error");
+    } finally {
+      setIsAddingRow(false); // ✅ unlock the button
     }
   };
 
@@ -452,16 +462,21 @@ const AddToWorkOrder = () => {
 
               <div className="border rounded-md border-blue-500 py-6 px-6 overflow-hidden">
                 {/* Job Card No */}
-
                 <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-4">
                   {/* ➕ Add WorkOrder Button */}
                   {/* 🔄 Average Progress Display */}
                   {/* <div className="flex items-center gap-4"> */}
+
                   <button
-                    onClick={() => addRow(id)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    onClick={addRow}
+                    disabled={isAddingRow}
+                    className={`px-4 py-2 rounded text-white ${
+                      isAddingRow
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                   >
-                    + Add New WorkOrder
+                    {isAddingRow ? "Adding..." : "+ Add New WorkOrder"}
                   </button>
 
                   <div className="flex items-center gap-2">
@@ -501,10 +516,9 @@ const AddToWorkOrder = () => {
                     )}
                   </div>
                 </div>
-
-                <div className="overflow-x-auto rounded-md border border-gray-300 shadow-sm">
-                  <table className="min-w-full table-auto border-collapse text-sm">
-                    <thead className="bg-gray-800 text-white">
+                <div className="overflow-x-auto scroll-smooth rounded-md border border-gray-300 shadow-sm px-2 sm:px-4">
+                  <table className="min-w-[700px] w-full max-w-screen-lg mx-auto table-auto border-collapse text-sm">
+                    <thead className="bg-gray-800 text-white sticky top-0 z-10">
                       <tr>
                         {[
                           "#",
@@ -521,10 +535,10 @@ const AddToWorkOrder = () => {
                         ].map((header, i) => (
                           <th
                             key={i}
-                            className="border-2 border-gray-400 px-3 py-2 font-medium text-center"
+                            className="border-2 border-gray-400 px-2 sm:px-3 py-2 font-medium text-center min-w-[120px] text-[11px] sm:text-xs md:text-sm"
                           >
                             {header === "Time In / Out" ? (
-                              <div className="flex flex-col text-xs">
+                              <div className="flex flex-col text-[10px] sm:text-xs">
                                 <span className="border-b border-gray-500 pb-0.5">
                                   Time In
                                 </span>
@@ -926,7 +940,6 @@ const AddToWorkOrder = () => {
                     </div>
                   </div>
                 )}
-
                 {error && (
                   <div className="text-red-500 text-sm mb-4">{error}</div>
                 )}

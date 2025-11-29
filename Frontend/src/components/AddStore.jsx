@@ -42,7 +42,7 @@ export default function AddStore() {
 
   const [loading, setLoading] = useState(false);
 
-  const placeholderImage = "../../public/images/default.jpg";
+  const placeholderImage = "/images/default.jpg";
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(placeholderImage);
 
@@ -75,8 +75,9 @@ export default function AddStore() {
       maximum_price: "",
       location: "",
       brand: "",
-      model: "",
       manufacturer: "",
+      shelf_number: "",
+      type: "",
       manufacturing_date: new Date().toISOString().split("T")[0],
       condition: "New",
     },
@@ -92,11 +93,68 @@ export default function AddStore() {
     setValue("total_price", total);
   }, [watchedUnitPrice, watchedQuantity, setValue]);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+
+    // Convert image to compressed blob
+    const compressImage = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxSize = 600; // max width/height
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxSize) {
+                height *= maxSize / width;
+                width = maxSize;
+              }
+            } else {
+              if (height > maxSize) {
+                width *= maxSize / height;
+                height = maxSize;
+              }
+            }
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) return reject(new Error("Compression failed"));
+                const compressedFile = new File([blob], file.name, {
+                  type: "image/jpeg",
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              },
+              "image/jpeg",
+              0.7
+            );
+          };
+          img.onerror = reject;
+          img.src = event.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const compressedFile = await compressImage(file);
+      setImageFile(compressedFile);
+      setImagePreview(URL.createObjectURL(compressedFile));
+    } catch (err) {
+      console.error("Image compression failed", err);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
   };
 
   // assume your store has setItems or similar
@@ -116,7 +174,7 @@ export default function AddStore() {
       if (imageFile) {
         fd.append("image", imageFile);
       } else {
-        const defaultImagePath = "../../public/images/default.jpg"; // public folder path
+        const defaultImagePath = "/images/default.jpg"; // public folder path
         const response = await fetch(defaultImagePath);
         const blob = await response.blob();
         fd.append("image", blob, "default.jpg");
@@ -135,6 +193,7 @@ export default function AddStore() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     setValue("manufacturing_date", new Date().toISOString().split("T")[0]);
   }, [setValue]);
@@ -324,15 +383,9 @@ export default function AddStore() {
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
-                      {...register("selling_price", {
-                        required: "Selling price required",
-                      })}
+                      {...register("selling_price", {})}
                       placeholder="0.00"
-                      className={`flex-1 no-spinner ${
-                        errors.selling_price
-                          ? "border-red-500"
-                          : "border-gray-700"
-                      }`}
+                      className="flex-1 no-spinner"
                     />
                     <Button
                       type="button"
@@ -437,6 +490,16 @@ export default function AddStore() {
                     className="border-gray-700"
                   />
                 </div>
+                <div>
+                  <Label className="mb-1 font-bold flex items-center gap-2">
+                    Shelf
+                  </Label>
+                  <Input
+                    {...register("shelf_number")}
+                    placeholder="Shelf Number"
+                    className="border-gray-700"
+                  />
+                </div>
 
                 {/* Other collapsible */}
                 <div>
@@ -460,16 +523,46 @@ export default function AddStore() {
                         transition={{ duration: 0.22 }}
                         className="mt-3 space-y-2"
                       >
-                        <Input
-                          {...register("model")}
-                          placeholder="Model"
-                          className="border-gray-700"
-                        />
+                        <div>
+                          <Label className="mb-1 font-bold flex items-center gap-2">
+                            Condition
+                          </Label>
+                          <Select
+                            onValueChange={(value) =>
+                              setValue("condition", value)
+                            } // set form value
+                            defaultValue={watch("condition") || "New"} // default to 'pcs' if no value
+                          >
+                            <SelectTrigger className="border border-gray-700">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="New">new</SelectItem>
+                              <SelectItem value="Used">used</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label className="mb-1 font-bold flex items-center gap-2">
+                            Type
+                          </Label>
+                          <Input
+                            {...register("type")}
+                            placeholder="Type.."
+                            className="border-gray-700"
+                          />
+                        </div>
                         <Input
                           {...register("manufacturer")}
                           placeholder="Manufacturer"
                           className="border-gray-700"
                         />
+                        {/* <Input
+                          {...register("model")}
+                          placeholder="Model"
+                          className="border-gray-700"
+                        /> */}
                         <Input
                           type="date"
                           {...register("manufacturing_date")}
@@ -484,7 +577,7 @@ export default function AddStore() {
 
               <CardFooter className="flex justify-center p-4">
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Submitting..." : "Submit"}
+                  {loading ? "Saving..." : "Save"}
                 </Button>
               </CardFooter>
             </form>

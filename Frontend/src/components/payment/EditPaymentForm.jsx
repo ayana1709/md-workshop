@@ -1,287 +1,220 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import api from "@/api";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Swal from "sweetalert2";
 import Sidebar from "@/partials/Sidebar";
 import Header from "@/partials/Header";
+import EditCustomerInfo from "./EditCustomerInfo";
+import EditCostTables from "./EditCostTables";
+import EditPaymentInfo from "./EditPaymentInfo";
+import api from "@/api";
 import BackButton from "../BackButton";
-import Swal from "sweetalert2";
 
 function EditPaymentForm() {
-  const { job_id } = useParams(); // now using job_id from route
+  const { id } = useParams(); // fetch payment by ID (not jobId)
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [errors, setErrors] = useState({});
-  console.log(job_id);
-  const [formData, setFormData] = useState({
-    job_id: "",
-    customer_name: "",
-    plate_number: "",
-    payment_method: "Cash",
-    payment_status: "Full Payment",
-    paid_amount: "",
-    remaining_amount: "",
-    ref_no: "",
-    payment_date: "",
-    paid_by: "",
-    approved_by: "",
-    reason: "",
-    remark: "",
-  });
+  const [customer, setCustomer] = useState({});
+  const [costs, setCosts] = useState({});
+  const [payment, setPayment] = useState({});
+  const [loading, setLoading] = useState(true);
 
+  // Fetch payment by ID
   useEffect(() => {
-    const fetchPayment = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get(`/payments/by-job/${job_id}`);
-        setFormData(res.data);
+        const res = await api.get(`/payments/job/${id}`); // ✅ fetch by id
+        const data = res.data;
+
+        console.log("✅ Full fetched data:", data);
+
+        // 👤 Customer info (updated structure)
+        const customerData = {
+          date: data.date || "",
+          reference: data.reference || "",
+          fs: data.fs || "",
+          name: data.name || "",
+          mobile: data.mobile || "",
+          tin: data.tin || "",
+          vat: data.vat || "",
+        };
+        setCustomer(customerData);
+        console.log("👤 Customer data sent to EditCustomerInfo:", customerData);
+
+        // 💳 Payment info
+        const paymentData = {
+          method: data.method || "",
+          status: data.status || "",
+          paidAmount: data.paidAmount || 0,
+          remainingAmount: data.remainingAmount || 0,
+          reference: data.reference || "",
+          date: data.date || "",
+          paidBy: data.paidBy || "",
+          approvedBy: data.approvedBy || "",
+          reason: data.reason || "",
+          remarks: data.remarks || "",
+        };
+        setPayment(paymentData);
+        console.log("💳 Payment data sent to EditPaymentInfo:", paymentData);
+
+        // ⚙️ Cost info
+        const costData = {
+          labour: data.labourCosts || [],
+          spares: data.spareCosts || [],
+          others: data.otherCosts || [],
+          summary: data.summary || {},
+        };
+        setCosts(costData);
+        console.log("🧾 Cost data sent to EditCostTables:", costData);
+
+        setLoading(false);
       } catch (err) {
-        console.error("Failed to fetch payment by job_id:", err);
+        console.error("❌ Error fetching payment:", err);
+        Swal.fire("Error", "Failed to load payment data", "error");
       }
     };
 
-    if (job_id) fetchPayment();
-  }, [job_id]);
+    fetchData();
+  }, [id]);
 
-  const validate = () => {
-    const newErrors = {};
-    if (!formData.payment_date) newErrors.payment_date = "Required";
-    if (!formData.paid_amount || formData.paid_amount < 0)
-      newErrors.paid_amount = "Invalid amount";
-    return newErrors;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+  // Validate before update
+  const validateData = () => {
+    if (!payment.method || !payment.status || !payment.paidAmount) {
+      Swal.fire({
+        title: "Error",
+        text: "Payment info is incomplete",
+        icon: "error",
+      });
+      return false;
     }
+    return true;
   };
 
+  // Handle update
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      Swal.fire(
-        "⚠️ Invalid Input",
-        "Please fix highlighted fields.",
-        "warning"
-      );
-      return;
-    }
+
+    if (!validateData()) return;
+
+    // 🧩 Build payload safely
+    const payload = {
+      // Customer fields
+      date: customer.date || "",
+      reference: customer.reference || "",
+      fs: customer.fs || "",
+      name: customer.name || "",
+      mobile: customer.mobile || "",
+      tin: customer.tin || "",
+      vat: customer.vat || "",
+
+      // Payment fields
+      method: payment.method || "cash",
+      status: payment.status || "full",
+      paidAmount: Number(payment.paidAmount) || 0,
+      remainingAmount: Number(payment.remainingAmount) || 0,
+      paidBy: payment.paidBy || "",
+      approvedBy: payment.approvedBy || "",
+      reason: payment.reason || "",
+      remarks: payment.remarks || "",
+
+      // ✅ Only include cost arrays if they have data
+      ...(costs.labour?.length ? { labourCosts: costs.labour } : {}),
+      ...(costs.spares?.length ? { spareCosts: costs.spares } : {}),
+      ...(costs.others?.length ? { otherCosts: costs.others } : {}),
+      ...(Object.keys(costs.summary || {}).length
+        ? { summary: costs.summary }
+        : {}),
+    };
+
+    console.log("🧾 Final update payload:", payload);
 
     try {
-      await api.put(`/payments/by-job/${job_id}`, formData);
-      await Swal.fire({
+      const response = await api.put(`/payments/job/${id}`, payload);
+
+      Swal.fire({
+        title: "Success!",
+        text: response.data.message || "Payment updated successfully.",
         icon: "success",
-        title: "Updated Successfully 🎉",
-        text: "Payment has been updated.",
-        showConfirmButton: false,
-        timer: 2000,
+        confirmButtonColor: "#16a34a",
+      }).then(() => {
+        navigate("/all-payments");
       });
-      navigate("/all-payments");
-    } catch (err) {
-      console.error("Update failed:", err);
+
+      console.log("✅ Backend response:", response.data);
+    } catch (error) {
+      console.error("❌ Error updating payment:", error);
+
+      Swal.fire({
+        title: "Error!",
+        text:
+          error.response?.data?.message ||
+          "Something went wrong while updating the payment.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
     }
   };
 
-  const inputStyle = (name) =>
-    `w-full p-2 rounded-md border text-sm ${
-      errors[name] ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-    } focus:outline-none focus:ring-2 ${
-      errors[name] ? "focus:ring-red-400" : "focus:ring-blue-500"
-    } dark:bg-gray-800 dark:text-white`;
+  if (loading)
+    return <div className="p-6 text-gray-500">Loading payment data...</div>;
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-white">
+    <div className="flex min-h-screen bg-gray-50 text-gray-800 transition-colors duration-300">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex flex-col flex-1">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <div className="fixed phone:top-[13%] tablet:top-4 phone:left-2 tablet:left-[19%] z-[99999999]">
-          <BackButton />
-        </div>
+        <main className="p-4 sm:p-6 md:p-8 flex-1 overflow-y-auto">
+          {/* <BackButton /> */}
 
-        <div className="max-w-5xl mx-auto px-6 py-10">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
-            <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-              Edit Payment (Staff Only)
-            </h1>
-
+          <div className="max-w-5xl mx-auto">
             <form
               onSubmit={handleSubmit}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="bg-white shadow-lg rounded-2xl p-6 sm:p-8 space-y-8"
             >
-              {/* Read-only fields */}
-              <Input
-                label="Job ID"
-                name="job_id"
-                value={formData.job_id}
-                readOnly
-              />
-              <Input
-                label="Customer Name"
-                name="customer_name"
-                value={formData.customer_name}
-                readOnly
-              />
-              <Input
-                label="Plate Number"
-                name="plate_number"
-                value={formData.plate_number}
-                readOnly
-              />
-              <Input
-                label="Reference No"
-                name="ref_no"
-                value={formData.ref_no}
-                readOnly
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Edit Payment
+              </h2>
+
+              {/* 👤 Customer Info */}
+              <EditCustomerInfo value={customer} onChange={setCustomer} />
+
+              {/* ⚙️ Cost Tables */}
+              <EditCostTables
+                value={{
+                  labour: costs.labour || [],
+                  spares: costs.spares || [],
+                  others: costs.others || [],
+                  summary: costs.summary || {},
+                }}
+                onChange={(newCosts) => {
+                  setCosts({
+                    labour: newCosts.labourCosts || [],
+                    spares: newCosts.spareCosts || [],
+                    others: newCosts.otherCosts || [],
+                    summary: newCosts.summary || {},
+                    vatLabour: newCosts.vatLabour || false,
+                    vatSpare: newCosts.vatSpare || false,
+                    vatOther: newCosts.vatOther || false,
+                  });
+                }}
               />
 
-              {/* Editable fields */}
-              <Select
-                label="Payment Method"
-                name="payment_method"
-                value={formData.payment_method}
-                onChange={handleChange}
-              >
-                <option>Cash</option>
-                <option>Transfer</option>
-                <option>Cheque</option>
-                <option>Credit</option>
-              </Select>
+              {/* 💳 Payment Info */}
+              <EditPaymentInfo value={payment} onChange={setPayment} />
 
-              <Select
-                label="Payment Status"
-                name="payment_status"
-                value={formData.payment_status}
-                onChange={handleChange}
-              >
-                <option>Full Payment</option>
-                <option>Advance</option>
-                <option>Credit</option>
-                <option>Remaining</option>
-              </Select>
-
-              <Input
-                type="number"
-                label="Paid Amount"
-                name="paid_amount"
-                value={formData.paid_amount}
-                onChange={handleChange}
-                error={errors.paid_amount}
-              />
-              <Input
-                type="number"
-                label="Remaining Amount"
-                name="remaining_amount"
-                value={formData.remaining_amount}
-                onChange={handleChange}
-              />
-              <Input
-                type="date"
-                label="Payment Date"
-                name="payment_date"
-                value={formData.payment_date}
-                onChange={handleChange}
-                error={errors.payment_date}
-              />
-              <Input
-                label="Paid By"
-                name="paid_by"
-                value={formData.paid_by}
-                onChange={handleChange}
-              />
-              <Input
-                label="Approved By"
-                name="approved_by"
-                value={formData.approved_by}
-                onChange={handleChange}
-              />
-              <Input
-                label="Reason"
-                name="reason"
-                value={formData.reason}
-                onChange={handleChange}
-              />
-
-              <div className="col-span-2">
-                <label className="block font-medium mb-1">Remark</label>
-                <textarea
-                  name="remark"
-                  rows={3}
-                  value={formData.remark}
-                  onChange={handleChange}
-                  className={inputStyle("remark") + " resize-none"}
-                />
-              </div>
-
-              <div className="col-span-2 flex justify-end gap-4 mt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate(-1)}
-                  className="px-5 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
+              <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg shadow-md"
                 >
-                  Save Changes
+                  Update Payment
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
 }
-
-// Input Field
-const Input = ({
-  label,
-  name,
-  value,
-  onChange,
-  type = "text",
-  readOnly = false,
-  error,
-}) => (
-  <div>
-    <label className="block font-medium mb-1">{label}</label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      readOnly={readOnly}
-      className={`w-full p-2 rounded-md border text-sm ${
-        error ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-      } focus:outline-none focus:ring-2 ${
-        error ? "focus:ring-red-400" : "focus:ring-blue-500"
-      } dark:bg-gray-800 dark:text-white ${
-        readOnly ? "bg-gray-100 dark:bg-gray-700 cursor-not-allowed" : ""
-      }`}
-    />
-    {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-  </div>
-);
-
-// Select Field
-const Select = ({ label, name, value, onChange, children }) => (
-  <div>
-    <label className="block font-medium mb-1">{label}</label>
-    <select
-      name={name}
-      value={value}
-      onChange={onChange}
-      className="w-full p-2 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      {children}
-    </select>
-  </div>
-);
 
 export default EditPaymentForm;
