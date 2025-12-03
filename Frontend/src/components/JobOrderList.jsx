@@ -165,7 +165,6 @@ const JobOrderList = () => {
     );
   };
   const placeholderImage = "/images/defa.jpg";
-
   // Toggle selection of all rows
   const toggleSelectAll = () => {
     if (selectedRows.length === displayedRepairs.length) {
@@ -176,7 +175,6 @@ const JobOrderList = () => {
   };
   const deleteSelectedRows = async () => {
     if (selectedRows.length === 0) return alert("No rows selected");
-
     try {
       const response = await api.delete("/repairs", {
         data: { repair_ids: selectedRows },
@@ -291,6 +289,40 @@ const JobOrderList = () => {
       window.removeEventListener("scroll", recompute, true);
     };
   }, [dropdownOpen]);
+
+  const renderPageNumbers = () => {
+    const pageNumbers = [];
+    const maxButtons = 5; // How many numbers to show at once
+
+    if (totalPages <= maxButtons) {
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+    } else {
+      if (currentPage <= 3) {
+        pageNumbers.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(
+          1,
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        pageNumbers.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+
+    return pageNumbers;
+  };
 
   return (
     <div className="relative z-0 p-6 bg-white dark:bg-gray-700 shadow-lg rounded-lg dark:text-white">
@@ -622,30 +654,51 @@ const JobOrderList = () => {
         )}
       </div>
 
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-center items-center gap-2 mt-4">
+        {/* Previous Button */}
         <button
-          disabled={currentPage === 1}
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          className={`px-4 py-2 bg-gray-300 text-gray-700 rounded ${
+          disabled={currentPage === 1}
+          className={`px-3 py-1 border rounded ${
             currentPage === 1
               ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-gray-400"
+              : "hover:bg-gray-200"
           }`}
         >
-          Previous
+          Prev
         </button>
-        <span className="phone:text-sm tablet:text-lg text-gray-700">
-          Page {currentPage} of {totalPages}
-        </span>
+
+        {/* Page Numbers */}
+        {renderPageNumbers().map((page, idx) =>
+          page === "..." ? (
+            <span key={idx} className="px-3 py-1 text-gray-500">
+              ...
+            </span>
+          ) : (
+            <button
+              key={idx}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded ${
+                page === currentPage
+                  ? "bg-blue-500 text-white font-semibold"
+                  : "hover:bg-gray-200"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+
+        {/* Next Button */}
         <button
-          disabled={currentPage === totalPages}
           onClick={() =>
             setCurrentPage((prev) => Math.min(prev + 1, totalPages))
           }
-          className={`px-4 py-2 bg-gray-300 text-gray-700 rounded ${
+          disabled={currentPage === totalPages}
+          className={`px-3 py-1 border rounded ${
             currentPage === totalPages
               ? "opacity-50 cursor-not-allowed"
-              : "hover:bg-gray-400"
+              : "hover:bg-gray-200"
           }`}
         >
           Next
