@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('approved_by')->nullable();
             $table->timestamps();
         });
-        
+
     }
 
     /**

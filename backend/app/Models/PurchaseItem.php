@@ -11,17 +11,16 @@ class PurchaseItem extends Model
 
     protected $fillable = [
         'purchase_id', 'code', 'item_name', 'part_number',
-        'quantity', 'brand', 'model', 'unit_price', 'total_price', 'location', 'condition'
+        'quantity', 'brand', 'model', 'unit_price', 'total_price', 'location', 'condition',
     ];
-    
 
     public function purchase()
     {
         return $this->belongsTo(Purchase::class);
     }
+
     public function storeItem()
     {
         return $this->belongsTo(StoreItem::class);
     }
 }
-

@@ -5,19 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class DailyProgress extends Model
+class StoreIssue extends Model
 {
     use HasFactory;
 
-    protected $table = 'daily_progress';
-
-    protected $fillable = [
-        'job_card_no',
-        'date',
-        'average_progress',
-    ];
+    protected $guarded = []; // instaed of saying all fillible;
 
     protected $casts = [
+        'store_items' => 'array',
         'date' => 'date',
     ];
 }

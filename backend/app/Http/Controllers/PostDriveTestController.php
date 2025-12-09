@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyProgress;
-use Illuminate\Http\Request;
-use App\Models\PostDriveTest;
 use App\Models\JobDeliveryStatus;
-
+use App\Models\PostDriveTest;
+use Illuminate\Http\Request;
 
 class PostDriveTestController extends Controller
 {
@@ -28,108 +27,101 @@ class PostDriveTestController extends Controller
         return response()->json(['message' => 'Post-Drive Test saved successfully', 'data' => $postDriveTest], 201);
     }
 
-
-    public function show($id) {
+    public function show($id)
+    {
         $test = PostDriveTest::find($id);
-        if (!$test) {
+        if (! $test) {
             return response()->json(['message' => 'Test not found'], 404);
         }
+
         return response()->json($test, 200);
     }
 
-
     //
     public function getByJobCardNo($job_card_no)
-{
-    $test = PostDriveTest::where('job_card_no', $job_card_no)->first();
+    {
+        $test = PostDriveTest::where('job_card_no', $job_card_no)->first();
 
-    if (!$test) {
-        return response()->json(['message' => 'Test drive result not found.'], 404);
+        if (! $test) {
+            return response()->json(['message' => 'Test drive result not found.'], 404);
+        }
+
+        return response()->json($test, 200);
     }
 
-    return response()->json($test, 200);
-}
-//
+    //
     public function index()
     {
         return response()->json(PostDriveTest::all());
     }
 
+    public function batchFetch(Request $request)
+    {
+        $jobIds = $request->input('job_ids', []);
+        $unpaddedIds = array_map(fn ($id) => ltrim($id, '0'), $jobIds);
 
+        $tests = PostDriveTest::whereIn('job_card_no', $unpaddedIds)
+            ->get()
+            ->keyBy(function ($item) {
+                return str_pad($item->job_card_no, 4, '0', STR_PAD_LEFT);
+            });
 
+        return response()->json($tests);
+    }
 
-public function batchFetch(Request $request)
-{
-    $jobIds = $request->input('job_ids', []);
-    $unpaddedIds = array_map(fn($id) => ltrim($id, '0'), $jobIds);
+    public function updateDeliveryStatus(Request $request, $jobId)
+    {
+        try {
+            $jobId = ltrim($jobId, '0');
 
-    $tests = PostDriveTest::whereIn('job_card_no', $unpaddedIds)
-        ->get()
-        ->keyBy(function ($item) {
-            return str_pad($item->job_card_no, 4, '0', STR_PAD_LEFT);
-        });
+            // Get latest progress to ensure test drive is Pass
+            $progress = DailyProgress::where('job_card_no', $jobId)
+                ->orderBy('date', 'desc')
+                ->first();
 
-    return response()->json($tests);
-}
+            // if (!$progress || strtolower($progress->test_drive) !== 'pass') {
+            //     return response()->json(['message' => 'Cannot update. Test drive not passed.'], 403);
+            // }
 
+            // Find or create delivery status record
+            $status = JobDeliveryStatus::updateOrCreate(
+                ['job_id' => $jobId],
+                [
+                    'driver_status' => $request->driverStatus,
+                    'checked_by' => $request->checkedBy,
+                    'approved_by' => $request->approvedBy,
+                    'received_date' => $request->receivedDate,
+                ]
+            );
 
-public function updateDeliveryStatus(Request $request, $jobId)
-{
-    try {
-        $jobId = ltrim($jobId, '0');
+            return response()->json(['message' => 'Delivery status updated', 'data' => $status]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Server error',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
-        // Get latest progress to ensure test drive is Pass
-        $progress = DailyProgress::where('job_card_no', $jobId)
-            ->orderBy('date', 'desc')
-            ->first();
+    public function batchByJobIds(Request $request)
+    {
+        $jobIds = $request->input('job_ids', []);
+        $records = JobDeliveryStatus::whereIn('job_id', $jobIds)->get();
 
-        // if (!$progress || strtolower($progress->test_drive) !== 'pass') {
-        //     return response()->json(['message' => 'Cannot update. Test drive not passed.'], 403);
-        // }
+        return response()->json(
+            $records->mapWithKeys(function ($item) {
+                $paddedJobId = str_pad($item->job_id, 4, '0', STR_PAD_LEFT); // "1" → "0001"
 
-        // Find or create delivery status record
-        $status = JobDeliveryStatus::updateOrCreate(
-            ['job_id' => $jobId],
-            [
-                'driver_status' => $request->driverStatus,
-                'checked_by' => $request->checkedBy,
-                'approved_by' => $request->approvedBy,
-                'received_date' => $request->receivedDate,
-            ]
+                return [
+                    $paddedJobId => [
+                        'driver_status' => $item->driver_status,
+                        'checked_by' => $item->checked_by,
+                        'approved_by' => $item->approved_by,
+                        'received_date' => $item->received_date,
+                    ],
+                ];
+            })
         );
 
-        return response()->json(['message' => 'Delivery status updated', 'data' => $status]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Server error',
-            'error' => $e->getMessage()
-        ], 500);
     }
 }
-public function batchByJobIds(Request $request)
-{
-    $jobIds = $request->input('job_ids', []);
-    $records = JobDeliveryStatus::whereIn('job_id', $jobIds)->get();
-
-    return response()->json(
-    $records->mapWithKeys(function ($item) {
-        $paddedJobId = str_pad($item->job_id, 4, '0', STR_PAD_LEFT); // "1" → "0001"
-        return [
-            $paddedJobId => [
-                'driver_status' => $item->driver_status,
-                'checked_by' => $item->checked_by,
-                'approved_by' => $item->approved_by,
-                'received_date' => $item->received_date,
-            ],
-        ];
-    })
-);
-
-}
-
-
-
-
-
-}
-

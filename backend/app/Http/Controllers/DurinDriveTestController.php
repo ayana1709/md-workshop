@@ -7,9 +7,8 @@ use Illuminate\Http\Request;
 
 class DurinDriveTestController extends Controller
 {
-    
-
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $validatedData = $request->validate([
             'job_card_no' => 'required',
             'plate_number' => 'nullable',
@@ -19,14 +18,17 @@ class DurinDriveTestController extends Controller
         ]);
 
         $test = DuringDriveTest::create($validatedData);
+
         return response()->json($test, 201);
     }
-    public function show($id) {
+
+    public function show($id)
+    {
         $test = DuringDriveTest::find($id);
-        if (!$test) {
+        if (! $test) {
             return response()->json(['message' => 'Test not found'], 404);
         }
+
         return response()->json($test, 200);
     }
-    
 }

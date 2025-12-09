@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('payment_status');
             $table->timestamps();
         });
-        
+
     }
 
     /**

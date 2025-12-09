@@ -9,20 +9,19 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up()
-{
-    Schema::create('proforma_items', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('proforma_id')->constrained()->onDelete('cascade');
-        $table->string('description');
-        $table->integer('quantity')->default(1);
-        $table->decimal('material_cost', 10, 2)->default(0);
-        $table->decimal('labor_cost', 10, 2)->default(0);
-        $table->decimal('total_cost', 10, 2);
-        $table->timestamps();
-    });
-}
-
+    public function up()
+    {
+        Schema::create('proforma_items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('proforma_id')->constrained()->onDelete('cascade');
+            $table->string('description');
+            $table->integer('quantity')->default(1);
+            $table->decimal('material_cost', 10, 2)->default(0);
+            $table->decimal('labor_cost', 10, 2)->default(0);
+            $table->decimal('total_cost', 10, 2);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

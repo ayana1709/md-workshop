@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up(): void {
+return new class extends Migration
+{
+    public function up(): void
+    {
         Schema::create('company_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name_en');
@@ -26,14 +28,15 @@ return new class extends Migration {
             $table->string('payment_ref_start')->default('REF0001');
             $table->string('proforma_ref_start')->default('REF0001');
             $table->string('storeout_ref_start')->nullable();
-            $table->string('logo')->nullable(); 
-            $table->string('profile_image')->nullable(); 
+            $table->string('logo')->nullable();
+            $table->string('profile_image')->nullable();
             // store path
             $table->timestamps();
         });
     }
 
-    public function down(): void {
+    public function down(): void
+    {
         Schema::dropIfExists('company_settings');
     }
 };

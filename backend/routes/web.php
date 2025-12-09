@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -25,5 +26,6 @@ Route::get('/{any}', function () {
     if (File::exists($path)) {
         return File::get($path);
     }
-    return Response::make("File not found", 404);
+
+    return Response::make('File not found', 404);
 })->where('any', '.*');

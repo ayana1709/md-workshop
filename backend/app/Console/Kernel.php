@@ -10,12 +10,10 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
-protected function schedule(Schedule $schedule)
-{
-    $schedule->command('progress:store-daily')->everyTwoMinutes()->withoutOverlapping();
-}
-
-
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->command('progress:store-daily')->everyTwoMinutes()->withoutOverlapping();
+    }
 
     /**
      * Register the commands for the application.
@@ -26,9 +24,4 @@ protected function schedule(Schedule $schedule)
 
         require base_path('routes/console.php');
     }
-    
-
-
-
 }
-

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->integer('sale_quantity');
             $table->timestamps();
         });
-        
+
     }
 
     /**

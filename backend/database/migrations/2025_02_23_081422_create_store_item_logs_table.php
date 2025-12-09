@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up() {
+return new class extends Migration
+{
+    public function up()
+    {
         Schema::create('store_item_logs', function (Blueprint $table) {
             $table->id();
             $table->string('code'); // Item Code
@@ -21,12 +23,13 @@ return new class extends Migration {
 
             // User tracking
             $table->unsignedBigInteger('user_id')->nullable()->index(); // Track who made the change
-            
+
             $table->timestamps();
         });
     }
 
-    public function down() {
+    public function down()
+    {
         Schema::dropIfExists('store_item_logs');
     }
 };

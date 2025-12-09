@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Admin;
 use App\Models\RolePermission;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
@@ -18,7 +18,7 @@ class AdminSeeder extends Seeder
         );
 
         // Check if default admin user already exists
-        if (!Admin::where('username', 'admin')->exists()) {
+        if (! Admin::where('username', 'admin')->exists()) {
             $admin = Admin::create([
                 'name' => 'Super Admin',
                 'username' => 'admin',
@@ -36,18 +36,18 @@ class AdminSeeder extends Seeder
 
         // Assign full permissions to admin role
         $features = [
-            "Job Order",
-            "Work Order",
-            "Inventory",
-            "Payment",
-            "Sales",
-            "Purchase",
-            "Proforma",
-            "Checklist",
-            "Setting",
-            "Staff Management",
-            "Income",
-            "Expense",
+            'Job Order',
+            'Work Order',
+            'Inventory',
+            'Payment',
+            'Sales',
+            'Purchase',
+            'Proforma',
+            'Checklist',
+            'Setting',
+            'Staff Management',
+            'Income',
+            'Expense',
         ];
 
         foreach ($features as $feature) {

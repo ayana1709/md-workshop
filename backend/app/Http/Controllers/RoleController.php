@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -12,6 +12,7 @@ class RoleController extends Controller
     public function index()
     {
         $roles = Role::with('permissions')->get();
+
         return response()->json($roles);
     }
 
@@ -44,6 +45,7 @@ class RoleController extends Controller
     public function show($id)
     {
         $role = Role::with('permissions')->findOrFail($id);
+
         return response()->json($role);
     }
 
@@ -53,7 +55,7 @@ class RoleController extends Controller
         $role = Role::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|unique:roles,name,' . $id,
+            'name' => 'required|unique:roles,name,'.$id,
             'description' => 'nullable|string',
             'priority' => 'nullable|integer',
             'status' => 'required|in:Active,Inactive',
@@ -79,6 +81,7 @@ class RoleController extends Controller
     {
         $role = Role::findOrFail($id);
         $role->delete();
+
         return response()->json(['message' => 'Role deleted successfully']);
     }
 
@@ -86,13 +89,15 @@ class RoleController extends Controller
     public function permissions()
     {
         $permissions = Permission::all();
+
         return response()->json($permissions);
     }
-    // PermissionController.php
-public function getByRole($roleId)
-{
-    $permissions = Permission::where('role_id', $roleId)->get();
-    return response()->json($permissions);
-}
 
+    // PermissionController.php
+    public function getByRole($roleId)
+    {
+        $permissions = Permission::where('role_id', $roleId)->get();
+
+        return response()->json($permissions);
+    }
 }

@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class DuringDriveTest extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        'job_card_no', 'plate_number', 'customer_name', 'checked_by', 'work_details'
+        'job_card_no', 'plate_number', 'customer_name', 'checked_by', 'work_details',
     ];
 
     protected $casts = [

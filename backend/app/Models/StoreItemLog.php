@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class StoreItemLog extends Model {
+class StoreItemLog extends Model
+{
     use HasFactory;
 
     protected $fillable = [
@@ -16,7 +17,7 @@ class StoreItemLog extends Model {
         'old_values',  // Store old data before update
         'new_values',  // Store new updated data
         'changed_fields', // Track which fields changed
-        'user_id'
+        'user_id',
     ];
 
     protected $casts = [
@@ -24,4 +25,3 @@ class StoreItemLog extends Model {
         'new_values' => 'array', // Convert JSON to array
     ];
 }
-

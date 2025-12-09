@@ -21,7 +21,7 @@ class CarInspection extends Model
         'Door',
         'Interior',
         'Tools',
-      
+
     ];
 
     public function conditionOfVehicle()
