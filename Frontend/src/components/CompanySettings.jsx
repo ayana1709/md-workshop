@@ -546,17 +546,19 @@ const CompanySettings = () => {
 
               {/* BUTTONS - Only show Save/Cancel when editing */}
               <div className="md:col-span-2 flex justify-end gap-3 mt-6">
+                {!isEditing && (
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
+                    disabled={isEditing} // Prevent reset while editing
+                  >
+                    Reset
+                  </button>
+                )}
+
                 {isEditing && (
                   <>
-                    <button
-                      type="button"
-                      onClick={handleReset}
-                      className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
-                      disabled={isEditing} // Prevent reset while editing
-                    >
-                      Reset
-                    </button>
-
                     <button
                       type="button"
                       onClick={handleCancel}
