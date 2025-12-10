@@ -4,7 +4,7 @@ import { useStores } from "../contexts/storeContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { DataTable } from "./ui/dataTable";
-import { columns } from "./columns";
+import { columns } from "./Columns";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";

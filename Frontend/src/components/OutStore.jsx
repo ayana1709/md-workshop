@@ -4,7 +4,7 @@ import { useStores } from "../contexts/storeContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { DataTable } from "./ui/dataTable"; // Assuming this is your ShadCN wrapper
-import { columns } from "./columns"; // We'll define this shortly
+import { columns } from "./Columns"; // We'll define this shortly
 import { FiSearch } from "react-icons/fi";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
