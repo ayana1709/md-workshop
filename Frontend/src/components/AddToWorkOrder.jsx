@@ -8,7 +8,7 @@ import BackButton from "./BackButton";
 import { FiEye, FiEdit, FiTrash2, FiSave, FiChevronDown } from "react-icons/fi";
 import RequestSpare from "./RequestSpare";
 import TestDrive from "./TestDrive";
-import OutSource from "./OutSource";
+import OutSource from "./Outsource";
 import RequestedItemsTable from "./RequestedItemsTable";
 import SpareChange from "./SpareChange";
 import ServiceReminderForm from "./ServiceReminderForm";
