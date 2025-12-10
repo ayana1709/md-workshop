@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class CanceledRequest extends Model {
+class CanceledRequest extends Model
+{
     use HasFactory;
 
     protected $fillable = [
         'job_card_no', 'plate_number', 'customer_name', 'part_number',
-        'description', 'brand', 'model', 'request_quantity','request_by', 'unit_price', 'total_price', 'status'
+        'description', 'brand', 'model', 'request_quantity', 'request_by', 'unit_price', 'total_price', 'status',
     ];
 }
-

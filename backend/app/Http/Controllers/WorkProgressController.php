@@ -17,14 +17,14 @@ class WorkProgressController extends Controller
             'repair_category' => 'required', // Validation remains the same
             'work_details' => 'required|array',
         ]);
-    
+
         foreach ($request->work_details as $work) {
             WorkProgress::create([
                 'job_card_no' => $request->job_card_no,
                 'plate_number' => $request->plate_number,
                 'customer_name' => $request->customer_name,
-                'repair_category' => is_array($request->repair_category) 
-                    ? implode(", ", $request->repair_category)  // Convert array to string
+                'repair_category' => is_array($request->repair_category)
+                    ? implode(', ', $request->repair_category)  // Convert array to string
                     : $request->repair_category,
                 'work_description' => $work['workDescription'],
                 'assigned_to' => $work['AssignTo'],
@@ -35,20 +35,18 @@ class WorkProgressController extends Controller
                 'remark' => $work['Remark'],
             ]);
         }
-    
+
         return response()->json(['message' => 'Work progress saved successfully'], 201);
     }
-    
 
     public function index($job_card_no)
-{
-    $workProgress = WorkProgress::where('job_card_no', $job_card_no)->get();
+    {
+        $workProgress = WorkProgress::where('job_card_no', $job_card_no)->get();
 
-    if ($workProgress->isEmpty()) {
-        return response()->json(['message' => 'No work progress found'], 404);
+        if ($workProgress->isEmpty()) {
+            return response()->json(['message' => 'No work progress found'], 404);
+        }
+
+        return response()->json($workProgress, 200);
     }
-
-    return response()->json($workProgress, 200);
-}
-
 }

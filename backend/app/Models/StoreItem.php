@@ -1,6 +1,7 @@
 <?php
 
 // app/Models/StoreItem.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,8 +12,9 @@ class StoreItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'code', 'item_name', 'partNumber', 'quantity', 'brand', 'model', 'condition', 'unitPrice', 'totalPrice', 'location'
+        'code', 'item_name', 'partNumber', 'quantity', 'brand', 'model', 'condition', 'unitPrice', 'totalPrice', 'location',
     ];
+
     public function purchaseItems()
     {
         return $this->hasMany(PurchaseItem::class);

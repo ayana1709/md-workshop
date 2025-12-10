@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ItemOut extends Model {
+class ItemOut extends Model
+{
     use HasFactory;
 
     protected $table = 'item_out'; // Specify table name
@@ -25,8 +26,8 @@ class ItemOut extends Model {
     ];
 
     // Define the relationship with the Item model
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(Item::class);
     }
 }
-

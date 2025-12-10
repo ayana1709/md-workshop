@@ -1,15 +1,16 @@
 <?php
 
 namespace App\Http\Controllers;
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\PreDriveTest;
+use Illuminate\Http\Request;
 
-class PreDriveTestController extends Controller {
-
-
-    public function store(Request $request) {
+class PreDriveTestController extends Controller
+{
+    public function store(Request $request)
+    {
         $validatedData = $request->validate([
             'job_card_no' => 'required',
             'plate_number' => 'nullable',
@@ -19,21 +20,22 @@ class PreDriveTestController extends Controller {
         ]);
 
         $test = PreDriveTest::create($validatedData);
+
         return response()->json($test, 201);
     }
 
-    public function index() {
+    public function index()
+    {
         return response()->json(PreDriveTest::all(), 200);
     }
 
-    public function show($id) {
+    public function show($id)
+    {
         $test = PreDriveTest::find($id);
-        if (!$test) {
+        if (! $test) {
             return response()->json(['message' => 'Test not found'], 404);
         }
+
         return response()->json($test, 200);
     }
-
-    
 }
-

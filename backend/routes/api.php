@@ -1,57 +1,45 @@
 <?php
 
-use App\Http\Controllers\JobCardController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-use App\Models\Admin;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\BolloController;
-use App\Http\Controllers\ConditionOfVehicleController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\JobController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\InspectionController;
-use App\Http\Controllers\RepairController;
-use App\Http\Controllers\RepairRegistrationController;
-use App\Http\Controllers\WheelAlignemntController;
-use App\Http\Controllers\WorkOrderController;
-use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
 use App\Http\Controllers\DurinDriveTestController;
-use App\Http\Controllers\SpareRequestController;
-use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\StoreItemController;
-use App\Models\ItemOut;
-use App\Http\Controllers\PreDriveTestController;
-use App\Http\Controllers\WorkProgressController;
-use App\Http\Controllers\PostDriveTestController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\InspectionController;
+use App\Http\Controllers\ItemController;
 use App\Http\Controllers\OutsourceController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PendingRequestedItemController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PostDriveTestController;
+use App\Http\Controllers\PreDriveTestController;
+use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\PurchaseItemController;
-use App\Http\Controllers\ItemController;
-use App\Http\Controllers\PaymentController;
-use App\Models\Customer;
-
-use App\Http\Controllers\RequestItemOutController;
-use App\Http\Controllers\PendingRequestedItemController;
-use App\Http\Controllers\SpareChangeController;
-use App\Http\Controllers\ServiceReminderController;
-use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\ProformaController;
-use App\Http\Controllers\CompanySettingController;
-use App\Http\Controllers\RepairDetailController; 
-
-
-use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\RepairDetailController;
+use App\Http\Controllers\RepairRegistrationController;
+use App\Http\Controllers\RequestItemOutController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\ServiceReminderController;
+use App\Http\Controllers\SpareChangeController;
+use App\Http\Controllers\SpareRequestController;
+use App\Http\Controllers\StoreIssueController;
+use App\Http\Controllers\StoreItemController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\PermissionController;
-
-
+use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\WheelAlignemntController;
+use App\Http\Controllers\WorkOrderController;
+use App\Http\Controllers\WorkProgressController;
+use App\Models\Customer;
+use App\Models\ItemOut;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +55,16 @@ use App\Http\Controllers\PermissionController;
 //     return $request->user();
 // });
 
+// store issue endpoints one by one
+
+// Route::get('/store-issues', [StoreIssueController::class, 'index']);
+// Route::post('/store-issues', [StoreIssueController::class, 'store']);
+// Route::get('/store-issues/{id}', [StoreIssueController::class, 'show']);
+// Route::put('/store-issues/{id}', [StoreIssueController::class, 'update']);
+// Route::delete('/store-issues/{id}', [StoreIssueController::class, 'destroy']);
+
+//or simply like below
+Route::apiResource('store-issues', StoreIssueController::class);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -79,27 +77,27 @@ Route::post('/admin/login', [AdminAuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', function (Request $request) {
         $request->user()->tokens()->delete();
+
         return response()->json(['message' => 'Logged out successfully']);
     });
 });
 
-//add customers
+// add customers
 Route::post('/customers', [CustomerController::class, 'store']);
-//list customer 
+// list customer
 Route::get('/list-of-customer', [CustomerController::class, 'index']);
 // Fetch all customers
 Route::get('/customers/{id}', [CustomerController::class, 'show']); // Fetch customer details
 Route::put('/customers/{id}', [CustomerController::class, 'update']); // Update customer details
-//vehicle 
+// vehicle
 Route::get('/select-customer', [VehicleController::class, 'getCustomers']);
 Route::post('/vehicles', [VehicleController::class, 'store']);
 Route::get('/job-orders', [VehicleController::class, 'getJobOrders']);
-// employe 
+// employe
 Route::get('/print-report/{id}', [CustomerController::class, 'printReport'])->name('print-report');
 Route::post('/employees', [EmployeeController::class, 'store']);
 Route::get('/employees-list', [EmployeeController::class, 'index']);
 Route::get('/select-employee', [EmployeeController::class, 'getCustomers']);
-
 
 // work order controller
 Route::post('/work-orders', [WorkOrderController::class, 'store']);
@@ -112,8 +110,6 @@ Route::delete('/work-orders/{id}', [WorkOrderController::class, 'destroy']);
 Route::delete('/work-details/{id}', [WorkOrderController::class, 'deleteWorkDetail']);
 Route::get('/view-work/{id}', [WorkOrderController::class, 'show']); // Get Task by ID
 Route::put('/update-work/{id}', [WorkOrderController::class, 'update']); // Update Task by ID
-
-
 
 // spare request routes
 Route::post('/spare-request', [SpareRequestController::class, 'store']);
@@ -138,20 +134,13 @@ Route::get('/spare-changes/job-card/{job_card_no}', [SpareChangeController::clas
 Route::put('/spare-changes/{workDetailId}', [SpareChangeController::class, 'updateSpareDetail']);
 Route::delete('/spare-changes/{workDetailId}', [SpareChangeController::class, 'deleteWorkDetail']);
 
-
-
-
-
-//outsorce route
+// outsorce route
 Route::post('/outsource', [OutsourceController::class, 'store']);
 Route::get('/outsource', [OutsourceController::class, 'index']);
 Route::get('/outsource/{id}', [OutsourceController::class, 'show']);
 Route::get('/outsource/job-card/{job_card_no}', [OutsourceController::class, 'showByJobCardNo']);
 Route::delete('/outsource/{id}', [OutsourceController::class, 'deleteWorkDetail']);
 Route::put('/outsource-details/{id}', [OutsourceController::class, 'updateOutsourceDetail']);
-
-
-
 
 Route::post('/add-bolo', [BolloController::class, 'store']);
 Route::get('/bolo-list', [BolloController::class, 'index']);
@@ -166,26 +155,26 @@ Route::get('/wheel-list', [WheelAlignemntController::class, 'index']);
 Route::get('/view-wheel/{id}', [WheelAlignemntController::class, 'show']);
 Route::put('/update/{id}', [WheelAlignemntController::class, 'update']); // Update a job card by ID
 // Route::get('/vehicle/{id}', [VehicleController::class, 'show']);
-Route::patch('/job-orders/{id}/priority', [VehicleController::class, 'updatePriority']); 
+Route::patch('/job-orders/{id}/priority', [VehicleController::class, 'updatePriority']);
 Route::patch('/job-orders/{id}/status', [VehicleController::class, 'updateStatus']);
-//updated registration 
+// updated registration
 Route::post('/repairs', [RepairRegistrationController::class, 'store']);
 Route::get('/repairs', [RepairRegistrationController::class, 'index']);
 Route::get('/repairs/{id}', [RepairRegistrationController::class, 'show']);
 Route::get('/repairs/basic/{id}', [RepairRegistrationController::class, 'showBasicInfo']);
 
 Route::put('/repairs/{id}', [RepairRegistrationController::class, 'update']);
-//delete repair
+// delete repair
 Route::delete('/repairs/{id}', [RepairRegistrationController::class, 'destroy']);
-//delete bolo
+// delete bolo
 Route::delete('/delete-bolo/{id}', [BolloController::class, 'destroy']);
-//delete inspection
+// delete inspection
 Route::delete('/delete-inspection/{id}', [InspectionController::class, 'destroy']);
-//delete wheel
+// delete wheel
 Route::delete('/delete-wheel/{id}', [WheelAlignemntController::class, 'destroy']);
-//delete work order
+// delete work order
 Route::delete('/delete-work/{id}', [WorkOrderController::class, 'destroy']);
-//store-item
+// store-item
 // Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::get('/store-items', [StoreItemController::class, 'index']);
@@ -196,12 +185,11 @@ Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
 });
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
-//total numberof items
+// total numberof items
 Route::get('/store-items/total', [StoreItemController::class, 'getTotalItems']);
-//total number of repairs 
+// total number of repairs
 Route::get('/total-repairs', [RepairRegistrationController::class, 'totalRepairs']);
 Route::get('/total-items-out', [StoreItemController::class, 'getTotalItemsOut']);
-
 
 Route::post('/pre-drive-tests', [PreDriveTestController::class, 'store']);
 Route::get('/pre-drive-tests', [PreDriveTestController::class, 'index']);
@@ -212,58 +200,46 @@ Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'inde
 
 Route::get('/items/stats', [ItemController::class, 'dashboardStats']);
 
-
-
-
-//post drive test 
+// post drive test
 Route::post('/post-drive-tests', [PostDriveTestController::class, 'store']);
 Route::get('/post-drive-tests/{id}', [PostDriveTestController::class, 'show']);
 Route::get('/post-drive-tests/by-job-card/{job_card_no}', [PostDriveTestController::class, 'getByJobCardNo']);
 
 Route::get('/post-drive-tests', [PostDriveTestController::class, 'index']);
 
-
-// during test 
+// during test
 Route::post('/during-drive-tests', [DurinDriveTestController::class, 'store']);
 Route::get('/during-drive-tests/{id}', [DurinDriveTestController::class, 'show']);
 
-//selected bulk operation
+// selected bulk operation
 Route::delete('/repairs', [RepairRegistrationController::class, 'deleteRepairs']);
 Route::post('/repairs/add-to-work', [RepairRegistrationController::class, 'addToWork']);
 Route::post('/repair/import', [RepairRegistrationController::class, 'importExcel']);
 
-//selected bulk operation for bolo
+// selected bulk operation for bolo
 Route::delete('/bolos', [BolloController::class, 'deleteRepairs']);
 Route::post('/bolos/add-to-work', [BolloController::class, 'addToWork']);
 
-//selected bulk operation for inspection
+// selected bulk operation for inspection
 Route::delete('/inspections', [InspectionController::class, 'deleteRepairs']);
 Route::post('/inspections/add-to-work', [InspectionController::class, 'addToWork']);
 
 // selected bulk operation for wheel
 Route::delete('/wheels', [WheelAlignemntController::class, 'deleteRepairs']);
 Route::post('/wheels/add-to-work', [WheelAlignemntController::class, 'addToWork']);
- 
+
 // change status
 Route::post('/update-status/{id}', [RepairRegistrationController::class, 'updateStatus']);
 Route::patch('/repairs/{id}', [RepairRegistrationController::class, 'updateStat']);
 
-
-
-//bulk add work order
+// bulk add work order
 Route::post('/bulk-work-order', [WorkOrderController::class, 'BulkStore']); // Store multiple work orders
 
-
-
-
-
-
-// purchase route 
+// purchase route
 
 Route::post('/purchases', [PurchaseController::class, 'store']);
 Route::get('/purchases', [PurchaseController::class, 'index']);
 Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
-
 
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
@@ -279,16 +255,13 @@ Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
 
-
-
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
 Route::patch('/request-item-out/{id}/approve', [RequestItemOutController::class, 'approve']);
 Route::delete('/request-item-out/{id}/reject', [RequestItemOutController::class, 'reject']);
 Route::get('/requested-items', [RequestItemOutController::class, 'getRequestedItems']);
 
-
-//pending requested item route
+// pending requested item route
 Route::post('/pending-requested-item', [PendingRequestedItemController::class, 'store']);
 Route::get('/pending-requested-items', [PendingRequestedItemController::class, 'index']);
 Route::delete('/pending-requested-items/{id}', [PendingRequestedItemController::class, 'destroy']);
@@ -299,24 +272,20 @@ Route::get('/pending-item-out', [RequestItemOutController::class, 'getPendingIte
 Route::post('/cancel-request/{id}', [RequestItemOutController::class, 'cancelRequest']);
 Route::get('/canceled-requests', [RequestItemOutController::class, 'getCanceledRequests']);
 
-
-
-
 Route::get('/search-customers', function (Request $request) {
     $query = $request->query('q');
 
     // Make sure it's not empty before searching
-    if (!$query) {
+    if (! $query) {
         return response()->json([]);
     }
 
     $customers = Customer::where('name', 'LIKE', "%{$query}%")
-                         ->pluck('name')
-                         ->toArray();
+        ->pluck('name')
+        ->toArray();
 
     return response()->json($customers);
 });
-
 
 Route::get('/service-reminders', [ServiceReminderController::class, 'index']);
 Route::get('/service-reminders/{id}', [ServiceReminderController::class, 'show']);
@@ -324,28 +293,17 @@ Route::post('/service-reminders', [ServiceReminderController::class, 'store']);
 // Laravel route example in `routes/api.php`
 Route::get('/service-reminders/plate/{plateNumber}', [ServiceReminderController::class, 'getByPlate']);
 
-
-
-
 Route::post('/sales', [SaleController::class, 'store']);
 Route::get('/sales/latest-ref', [SaleController::class, 'latestRef']); // 👈 Must come BEFORE {id}
 Route::get('/sales', [SaleController::class, 'index']);
 Route::put('/sales/{id}', [SaleController::class, 'update']);
 Route::get('/sales/{id}', [SaleController::class, 'show']);
 
-
 Route::post('/purchases', [PurchaseOrderController::class, 'store']);
 Route::get('/purchases', [PurchaseOrderController::class, 'index']);
 
-
-
-
-
-
-
-// payment  route 
+// payment  route
 // use App\Http\Controllers\PaymentsController;
-
 
 Route::get('/payments', [PaymentController::class, 'index']);
 Route::post('/payments', [PaymentController::class, 'store']);
@@ -356,14 +314,6 @@ Route::get('/payments/latest-ref', [PaymentController::class, 'generateRefNum'])
 Route::delete('/payments/bulk', [PaymentController::class, 'bulkDestroy']);
 Route::delete('/payments/job/{id}/item', [PaymentController::class, 'deleteItem']);
 
-
-
-
-
-
-
-
-
 // Route::post('/daily-progress', [DailyProgressController::class, 'store']);
 Route::get('/work-orders/{job_card_no}/average-progress', [WorkOrderController::class, 'getAverageProgressByJobCardNo']);
 
@@ -371,21 +321,12 @@ Route::post('/progress/store-daily/{job_card_no}', [WorkOrderController::class, 
 Route::get('/daily-progress', [WorkOrderController::class, 'getDailyProgress']);
 Route::get('/repairs/job/{jobId}', [RepairRegistrationController::class, 'getByJobId']);
 
-// 
+//
 Route::post('/repairs/job/batch', [RepairRegistrationController::class, 'getBatchByJobIds']);
 Route::post('/post-drive-tests/job/batch', [PostDriveTestController::class, 'batchFetch']);
 
-
 Route::put('/job-delivery-status/{jobId}', [PostDriveTestController::class, 'updateDeliveryStatus']);
 Route::post('/job-delivery-status/batch', [PostDriveTestController::class, 'batchByJobIds']);
-
-
-
-
-
-
-
-
 
 Route::post('/proformas', [ProformaController::class, 'store']);
 Route::get('/proformas', [ProformaController::class, 'index']);
@@ -394,29 +335,20 @@ Route::put('/proformas/{refNum}', [ProformaController::class, 'update']);
 Route::delete('/proformas/{refNum}', [ProformaController::class, 'destroy']);
 Route::get('/proforma/generate-ref', [ProformaController::class, 'generateRefNum']);
 
-
-
-
-
 Route::get('/settings', [CompanySettingController::class, 'index']);
 Route::post('/settings', [CompanySettingController::class, 'store']);
 Route::post('/settings/reset', [CompanySettingController::class, 'resetSystem']);
 // Route::get('/settings/export', [CompanySettingController::class, 'export']);
 Route::get('/settings/export', [CompanySettingController::class, 'exportDatabase']);
-Route::get('/download-backup/{filename}', function($filename){
-    $path = storage_path("app/backups/" . $filename);
+Route::get('/download-backup/{filename}', function ($filename) {
+    $path = storage_path('app/backups/'.$filename);
 
-    if (!file_exists($path)) {
-        return abort(404, "File not found");
+    if (! file_exists($path)) {
+        return abort(404, 'File not found');
     }
 
     return response()->download($path);
 });
-
-
-
-
-
 
 Route::prefix('repairsdetail')->group(function () {
     Route::get('{jobId}', [RepairDetailController::class, 'show']);
@@ -424,9 +356,6 @@ Route::prefix('repairsdetail')->group(function () {
     Route::put('{jobId}', [RepairDetailController::class, 'update']);
     Route::delete('{jobId}', [RepairDetailController::class, 'destroy']);
 });
-
-
-
 
 Route::prefix('expenses')->group(function () {
     Route::get('/', [ExpenseController::class, 'index']);
@@ -443,21 +372,12 @@ Route::prefix('expenses')->group(function () {
     Route::post('/bulk-delete', [ExpenseController::class, 'bulkDelete']);
 });
 
-
-
-
-   
-
-
-
 Route::get('/roles', [RoleController::class, 'index']);
 Route::get('/roles/{id}', [RoleController::class, 'show']);
 Route::post('/roles', [RoleController::class, 'store']);
 Route::put('/roles/{id}', [RoleController::class, 'update']);
 Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
 Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
-
-
 
 Route::prefix('users')->group(function () {
     Route::get('/', [UserController::class, 'index']); // List all users

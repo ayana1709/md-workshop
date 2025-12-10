@@ -21,6 +21,8 @@ class JobDeliveryStatus extends Model
 
     // If job_id is not an integer, disable incrementing and set primary key
     protected $primaryKey = 'job_id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 }

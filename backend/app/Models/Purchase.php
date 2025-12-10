@@ -11,13 +11,11 @@ class Purchase extends Model
 
     protected $fillable = [
         'purchase_date', 'purchased_by', 'received_by',
-        'payment_method', 'payment_status'
+        'payment_method', 'payment_status',
     ];
-    
 
     public function items()
     {
         return $this->hasMany(PurchaseItem::class);
     }
 }
-

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\StoreItem;
@@ -8,7 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
-    
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -28,12 +29,12 @@ class PurchaseController extends Controller
             '*.location' => 'required|string',
             '*.condition' => 'required|string',
         ]);
-    
+
         try {
             DB::beginTransaction();
-    
+
             $firstItem = $request->all()[0];
-    
+
             // Create the purchase
             $purchase = Purchase::create([
                 'purchase_date' => $firstItem['purchaseDate'],
@@ -42,18 +43,18 @@ class PurchaseController extends Controller
                 'payment_method' => $firstItem['paymentMethod'],
                 'payment_status' => $firstItem['paymentStatus'],
             ]);
-    
+
             foreach ($request->all() as $item) {
                 // Check if the item exists in store
                 $existingStoreItem = StoreItem::where('code', $item['code'])->first();
-    
+
                 if ($existingStoreItem) {
                     // ✅ Update the quantity in store
                     $existingStoreItem->update([
                         'quantity' => $existingStoreItem->quantity + $item['quantity'],
-                        'totalPrice' => ($existingStoreItem->quantity + $item['quantity']) * $existingStoreItem->unitPrice
+                        'totalPrice' => ($existingStoreItem->quantity + $item['quantity']) * $existingStoreItem->unitPrice,
                     ]);
-    
+
                     $storeItemId = $existingStoreItem->id;
                 } else {
                     // ✅ Create a new store item
@@ -69,10 +70,10 @@ class PurchaseController extends Controller
                         'totalPrice' => $item['totalPrice'],
                         'location' => $item['location'],
                     ]);
-    
+
                     $storeItemId = $newStoreItem->id;
                 }
-    
+
                 // Store the purchase item and link to the store item
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
@@ -89,19 +90,20 @@ class PurchaseController extends Controller
                     'condition' => $item['condition'],
                 ]);
             }
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'message' => 'Purchase and items saved successfully!',
-                'purchase' => $purchase->load('items')
+                'purchase' => $purchase->load('items'),
             ], 201);
-    
+
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'message' => 'Error saving purchase',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -113,7 +115,4 @@ class PurchaseController extends Controller
 
         return response()->json($purchases, 200);
     }
-    
-
 }
-

@@ -28,7 +28,7 @@ class ServiceReminderController extends Controller
 
         return response()->json([
             'message' => 'Service Reminder saved successfully.',
-            'data' => $reminder
+            'data' => $reminder,
         ], 201);
     }
 
@@ -36,15 +36,15 @@ class ServiceReminderController extends Controller
     {
         return ServiceReminder::findOrFail($id);
     }
+
     public function getByPlate($plateNumber)
-{
-    $reminder = ServiceReminder::where('plate_number', $plateNumber)->first();
+    {
+        $reminder = ServiceReminder::where('plate_number', $plateNumber)->first();
 
-    if (!$reminder) {
-        return response()->json(['message' => 'Not found'], 404);
+        if (! $reminder) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        return response()->json($reminder);
     }
-
-    return response()->json($reminder);
-}
-
 }

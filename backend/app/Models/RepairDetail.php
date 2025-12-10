@@ -23,9 +23,9 @@ class RepairDetail extends Model
     ];
 
     protected $casts = [
-        'tasks'        => 'array',
-        'spares'       => 'array',
-        'vat_applied'  => 'boolean', // Cast VAT applied to boolean
+        'tasks' => 'array',
+        'spares' => 'array',
+        'vat_applied' => 'boolean', // Cast VAT applied to boolean
     ];
 
     public function repair()

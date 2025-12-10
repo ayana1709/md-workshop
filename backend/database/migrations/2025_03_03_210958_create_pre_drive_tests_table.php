@@ -4,8 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
-    public function up() {
+return new class extends Migration
+{
+    public function up()
+    {
         Schema::create('pre_drive_tests', function (Blueprint $table) {
             $table->id();
             $table->string('job_card_no');
@@ -17,7 +19,8 @@ return new class extends Migration {
         });
     }
 
-    public function down() {
+    public function down()
+    {
         Schema::dropIfExists('pre_drive_tests');
     }
 };

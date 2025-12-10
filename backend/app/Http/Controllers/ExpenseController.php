@@ -12,32 +12,33 @@ class ExpenseController extends Controller
     {
         return response()->json(Expense::latest()->get());
     }
-public function generateRefNum()
-{
-    $lastExpense = Expense::whereNotNull('reference_no')
-                          ->orderBy('id', 'desc')
-                          ->first();
 
-    if (!$lastExpense) {
-        return response()->json(['nextRef' => 'EXP-0001']);
+    public function generateRefNum()
+    {
+        $lastExpense = Expense::whereNotNull('reference_no')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (! $lastExpense) {
+            return response()->json(['nextRef' => 'EXP-0001']);
+        }
+
+        preg_match('/(\d+)$/', $lastExpense->reference_no, $matches);
+
+        $lastNum = isset($matches[1]) ? (int) $matches[1] : 0;
+        $nextRef = 'EXP-'.str_pad($lastNum + 1, 4, '0', STR_PAD_LEFT);
+
+        return response()->json(['nextRef' => $nextRef]);
     }
 
-    preg_match('/(\d+)$/', $lastExpense->reference_no, $matches);
+    public function getLastRef()
+    {
+        $last = Expense::whereNotNull('reference_no')
+            ->orderBy('id', 'desc')
+            ->value('reference_no');
 
-    $lastNum = isset($matches[1]) ? (int)$matches[1] : 0;
-    $nextRef = 'EXP-' . str_pad($lastNum + 1, 4, '0', STR_PAD_LEFT);
-
-    return response()->json(['nextRef' => $nextRef]);
-}
-
-public function getLastRef()
-{
-    $last = Expense::whereNotNull('reference_no')
-                   ->orderBy('id', 'desc')
-                   ->value('reference_no');
-
-    return response()->json(['lastRef' => $last]);
-}
+        return response()->json(['lastRef' => $last]);
+    }
 
     // ✅ Store new expense
     public function store(Request $request)
@@ -71,6 +72,7 @@ public function getLastRef()
         }
 
         $expense = Expense::create($data);
+
         return response()->json($expense, 201);
     }
 
@@ -78,9 +80,10 @@ public function getLastRef()
     public function show($id)
     {
         $expense = Expense::find($id);
-        if (!$expense) {
+        if (! $expense) {
             return response()->json(['message' => 'Expense not found'], 404);
         }
+
         return response()->json($expense);
     }
 
@@ -88,11 +91,12 @@ public function getLastRef()
     public function update(Request $request, $id)
     {
         $expense = Expense::find($id);
-        if (!$expense) {
+        if (! $expense) {
             return response()->json(['message' => 'Expense not found'], 404);
         }
 
         $expense->update($request->all());
+
         return response()->json(['message' => 'Expense updated successfully', 'expense' => $expense]);
     }
 
@@ -100,11 +104,12 @@ public function getLastRef()
     public function destroy($id)
     {
         $expense = Expense::find($id);
-        if (!$expense) {
+        if (! $expense) {
             return response()->json(['message' => 'Expense not found'], 404);
         }
 
         $expense->delete();
+
         return response()->json(['message' => 'Expense deleted successfully']);
     }
 
@@ -127,9 +132,10 @@ public function getLastRef()
     public function deleteByJobId($jobId)
     {
         $deleted = Expense::where('job_id', $jobId)->delete();
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'No expenses found for this job ID'], 404);
         }
+
         return response()->json(['message' => 'Expenses deleted successfully']);
     }
 
@@ -137,11 +143,12 @@ public function getLastRef()
     public function bulkDelete(Request $request)
     {
         $ids = $request->input('ids');
-        if (!is_array($ids) || empty($ids)) {
+        if (! is_array($ids) || empty($ids)) {
             return response()->json(['message' => 'Invalid or empty ids array'], 400);
         }
 
         Expense::whereIn('id', $ids)->delete();
+
         return response()->json(['message' => 'Selected expenses deleted successfully']);
     }
 }

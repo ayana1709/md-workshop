@@ -14,8 +14,8 @@ class SpareChange extends Model
         // 'plate_number',
         'customer_name',
         'repair_category',
-        'spare_change', 
-    
+        'spare_change',
+
     ];
 
     protected $casts = [

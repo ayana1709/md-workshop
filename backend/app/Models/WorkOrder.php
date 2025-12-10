@@ -14,21 +14,17 @@ class WorkOrder extends Model
     protected $casts = [
         'work_details' => 'array',
         'repair_category' => 'array',
-        
-        
+
         // Automatically convert JSON to array
     ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'employee_id');
     }
 
-   
-    
     public function workDetails()
-{
-    return $this->hasMany(WorkDetail::class);
-}
-
-    
+    {
+        return $this->hasMany(WorkDetail::class);
+    }
 }

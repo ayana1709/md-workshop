@@ -21,7 +21,7 @@ class SpareItem extends Model
         'qty',          // Quantity of spare parts
         'unit_price',   // Price per unit
         'total',        // Total for this row (qty * unit_price)
-       'remark',
+        'remark',
     ];
 
     // Define the relationship to Proforma

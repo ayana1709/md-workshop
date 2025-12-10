@@ -22,9 +22,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('job_id')
-                  ->references('job_id')
-                  ->on('repair_registrations')
-                  ->onDelete('cascade');
+                ->references('job_id')
+                ->on('repair_registrations')
+                ->onDelete('cascade');
         });
     }
 

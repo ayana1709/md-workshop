@@ -6,14 +6,14 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
-
 {
-
     public function getCustomers()
     {
-        $customers = Employee::all(['id', 'full_name',]);
+        $customers = Employee::all(['id', 'full_name']);
+
         return response()->json(['data' => $customers], 200);
     }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -34,4 +34,3 @@ class EmployeeController extends Controller
         return Employee::all();
     }
 }
-

@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Admin;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -16,6 +15,7 @@ class UserController extends Controller
     public function index()
     {
         $users = Admin::with('roles')->get();
+
         return response()->json($users);
     }
 
@@ -25,6 +25,7 @@ class UserController extends Controller
     public function show($id)
     {
         $user = Admin::with('roles')->findOrFail($id);
+
         return response()->json($user);
     }
 
@@ -42,7 +43,7 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
-            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png'
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
         ]);
 
         $imageName = null;
@@ -59,7 +60,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'status' => $request->status ?? 'active',
             'level' => $request->level,
-            'profile_image' => $imageName
+            'profile_image' => $imageName,
         ]);
 
         $user->assignRole($request->role);
@@ -83,13 +84,13 @@ class UserController extends Controller
             'phone' => 'nullable|string|max:20',
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
-            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png'
+            'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
         ]);
 
         // Handle Image Change
         if ($request->hasFile('profile_image')) {
-            if ($user->profile_image && Storage::disk('public')->exists('profile_images/' . $user->profile_image)) {
-                Storage::disk('public')->delete('profile_images/' . $user->profile_image);
+            if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
+                Storage::disk('public')->delete('profile_images/'.$user->profile_image);
             }
 
             $imageName = time().'_'.$request->profile_image->getClientOriginalName();
@@ -120,8 +121,8 @@ class UserController extends Controller
     {
         $user = Admin::findOrFail($id);
 
-        if ($user->profile_image && Storage::disk('public')->exists('profile_images/' . $user->profile_image)) {
-            Storage::disk('public')->delete('profile_images/' . $user->profile_image);
+        if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
+            Storage::disk('public')->delete('profile_images/'.$user->profile_image);
         }
 
         $user->delete();

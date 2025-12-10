@@ -20,10 +20,8 @@ class WorkDetail extends Model
         'status',
     ];
 
-
     public function workOrder()
     {
         return $this->belongsTo(WorkOrder::class);
     }
-    
 }

@@ -27,4 +27,3 @@ class CreateSaleItemsTable extends Migration
         Schema::dropIfExists('sale_items');
     }
 }
-

@@ -3,9 +3,6 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
-use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Pipeline\Pipeline;
 
 class Kernel extends HttpKernel
 {

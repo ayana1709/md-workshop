@@ -21,9 +21,9 @@ class CompanySetting extends Model
         'logo',
         'login_page_name',
         'login_page_name_am',
-    'username',
-    'profile_image',
-    'storeout_ref_start',
+        'username',
+        'profile_image',
+        'storeout_ref_start',
 
         // ✅ newly added fields
         'date_format',

@@ -10,7 +10,7 @@ class ProformaItem extends Model
 {
     protected $fillable = [
         'proforma_id', 'description', 'quantity',
-        'material_cost', 'labor_cost', 'total_cost'
+        'material_cost', 'labor_cost', 'total_cost',
     ];
 
     public function proforma()
