@@ -165,7 +165,7 @@ const CompanySettings = () => {
   };
 
   const handleReset = async () => {
-    // Step 1 — Ask if they want to export data
+    // Step 1 — Ask if they want to export data first
     Swal.fire({
       title: "Export Before Reset?",
       text: "Do you want to export all system data before resetting?",
@@ -184,7 +184,6 @@ const CompanySettings = () => {
             didOpen: () => Swal.showLoading(),
           });
 
-          // Download export file as blob
           const res = await api.get("/settings/export", {
             responseType: "blob",
           });
@@ -207,9 +206,9 @@ const CompanySettings = () => {
           Swal.fire({
             icon: "error",
             title: "Export Failed",
-            text: "Could not export data.",
+            text: error.response?.data?.error || "Could not export data.",
           });
-          return; // Stop reset process if export fails
+          return; // ⛔ Stop reset if export fails
         }
       }
 
@@ -234,28 +233,31 @@ const CompanySettings = () => {
           });
 
           const res = await api.post("/settings/reset");
-
-          // Clear localStorage and update admin state for proper redirect
+          // Clear localStorage first
           localStorage.clear();
           setAdmin(false);
 
+          // Success alert
           Swal.fire({
             icon: "success",
             title: "System Reset!",
-            text: "System has been reset successfully.",
+            text: res.data.message || "System has been reset successfully.",
             timer: 1500,
             showConfirmButton: false,
           });
 
+          // Navigate after short delay
           setTimeout(() => {
-            // Use react-router navigation if available or fallback to window.location
             navigate(res.data.redirect || "/");
           }, 1500);
         } catch (err) {
           Swal.fire({
             icon: "error",
             title: "Reset Failed",
-            text: err.response?.data?.message || "Unexpected error occurred.",
+            text:
+              err.response?.data?.error || // Real backend error
+              err.response?.data?.message || // Fallback Laravel message
+              "Unexpected error occurred.",
           });
         }
       });

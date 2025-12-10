@@ -125,6 +125,7 @@ export default function EditUser() {
             </h2>
 
             {/* Profile Image */}
+
             <div className="text-center">
               <img
                 src={preview}
@@ -133,13 +134,62 @@ export default function EditUser() {
               />
 
               <label className="mt-3 block font-medium">Update Image</label>
+
               <input
                 type="file"
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files[0];
-                  setImage(file);
-                  setPreview(URL.createObjectURL(file));
+                  if (!file) return;
+
+                  const img = new Image();
+                  const reader = new FileReader();
+
+                  reader.onload = (event) => {
+                    img.src = event.target.result;
+
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+
+                      const maxSize = 600; // 🔥 same as your second example
+                      let width = img.width;
+                      let height = img.height;
+
+                      if (width > height) {
+                        if (width > maxSize) {
+                          height *= maxSize / width;
+                          width = maxSize;
+                        }
+                      } else {
+                        if (height > maxSize) {
+                          width *= maxSize / height;
+                          height = maxSize;
+                        }
+                      }
+
+                      canvas.width = width;
+                      canvas.height = height;
+
+                      const ctx = canvas.getContext("2d");
+                      ctx.drawImage(img, 0, 0, width, height);
+
+                      canvas.toBlob(
+                        (blob) => {
+                          const compressedFile = new File([blob], file.name, {
+                            type: "image/jpeg",
+                            lastModified: Date.now(),
+                          });
+
+                          setImage(compressedFile);
+                          setPreview(URL.createObjectURL(compressedFile)); // 🔥 show compressed preview
+                        },
+                        "image/jpeg",
+                        0.7 // compression quality
+                      );
+                    };
+                  };
+
+                  reader.readAsDataURL(file);
                 }}
                 className="mt-2 w-full text-sm"
               />

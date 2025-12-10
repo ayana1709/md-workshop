@@ -81,50 +81,56 @@ class CompanySettingController extends Controller
 
 
 
+
 public function resetSystem()
 {
     try {
-
-        // 🔥 Fresh migration + seed
-        \Artisan::call('migrate:fresh --seed');
-
-        // 🔥 Run AdminSeeder separately
+        // Suppress Artisan output completely
+        \Artisan::call('migrate:fresh', [
+            '--seed' => true,
+            '--force' => true,
+        ]);
         \Artisan::call('db:seed', [
-            '--class' => 'AdminSeeder'
+            '--class' => 'AdminSeeder',
+            '--force' => true,
         ]);
 
-        // 🔥 Delete old storage link
-        if (is_link(public_path('storage'))) {
-            unlink(public_path('storage'));
+        $storageLink = public_path('storage');
+        if (is_link($storageLink) || file_exists($storageLink)) {
+            @unlink($storageLink);
         }
 
-        // 🔥 Rebuild storage folder
-        \Illuminate\Support\Facades\File::deleteDirectory(storage_path('app/public'));
-        \Illuminate\Support\Facades\File::makeDirectory(storage_path('app/public'), 0777, true);
+        $publicStorage = storage_path('app/public');
+        if (file_exists($publicStorage)) {
+            \Illuminate\Support\Facades\File::deleteDirectory($publicStorage);
+        }
+        \Illuminate\Support\Facades\File::makeDirectory($publicStorage, 0777, true);
 
-        // 🔥 Create storage link
         \Artisan::call('storage:link');
-
-        // 🔥 Clear Laravel cache
         \Artisan::call('optimize:clear');
 
+        // ✅ Force JSON only — no extra output
         return response()->json([
             'status' => 'success',
-            'message' => 'System reset successfully',
-           'redirect' => config('app.frontend_url') ?? '/',
-
-        ]);
+            'message' => 'System reset successfully.',
+            'redirect' => config('app.frontend_url') ?? '/',
+        ], 200);
 
     } catch (\Exception $e) {
+        \Log::error("SYSTEM RESET FAILED", [
+            "message" => $e->getMessage(),
+            "line" => $e->getLine(),
+            "file" => $e->getFile(),
+        ]);
 
-       return response()->json([
-    'status' => 'success',
-    'message' => 'System reset successfully',
-    'redirect' => config('app.frontend_url')
-]);
-
+        return response()->json([
+            'status' => 'error',
+            'message' => 'System reset failed! See logs for details.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
 }
+
 
 
 public function exportDatabase()

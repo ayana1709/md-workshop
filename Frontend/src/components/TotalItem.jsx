@@ -34,11 +34,28 @@ const TotalItem = () => {
 
   const filteredItems = useMemo(() => {
     let data = items;
+
     if (searchItem) {
+      const keyword = searchItem.toLowerCase();
+
       data = data.filter((item) =>
-        item.part_number?.toLowerCase().includes(searchItem.toLowerCase())
+        [
+          item.item_name,
+          item.part_number,
+          item.brand,
+          item.type,
+          item.condition,
+          item.location,
+          item.shelf_number,
+          item.purchase_price?.toString(),
+          item.selling_price?.toString(),
+          item.quantity?.toString(),
+        ]
+          .filter(Boolean) // remove null/undefined
+          .some((field) => field.toLowerCase().includes(keyword))
       );
     }
+
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -335,7 +352,7 @@ const TotalItem = () => {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <Input
             type="text"
-            placeholder="Search part number..."
+            placeholder="Search ..."
             value={searchItem}
             onChange={(e) => setSearchItem(e.target.value)}
             className="w-full sm:w-64"

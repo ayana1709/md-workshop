@@ -128,25 +128,87 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
-        </div>
-        <div className="space-x-2">
-          <Button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
+      {/* Number Pagination */}
+      <div className="flex items-center justify-center gap-2 mt-4">
+        {/* Prev Button */}
+        <button
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+          className={`px-3 py-1 border rounded ${
+            !table.getCanPreviousPage()
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-gray-200"
+          }`}
+        >
+          Prev
+        </button>
+
+        {/* Page Numbers */}
+        {(() => {
+          const pages = [];
+          const totalPages = table.getPageCount();
+          const currentPage = table.getState().pagination.pageIndex + 1;
+
+          const add = (...arr) => pages.push(...arr);
+
+          if (totalPages <= 5) {
+            for (let i = 1; i <= totalPages; i++) add(i);
+          } else {
+            if (currentPage <= 3) add(1, 2, 3, 4, "...", totalPages);
+            else if (currentPage >= totalPages - 2)
+              add(
+                1,
+                "...",
+                totalPages - 3,
+                totalPages - 2,
+                totalPages - 1,
+                totalPages
+              );
+            else
+              add(
+                1,
+                "...",
+                currentPage - 1,
+                currentPage,
+                currentPage + 1,
+                "...",
+                totalPages
+              );
+          }
+
+          return pages.map((page, idx) =>
+            page === "..." ? (
+              <span key={idx} className="px-3 py-1 text-gray-500">
+                ...
+              </span>
+            ) : (
+              <button
+                key={idx}
+                onClick={() => table.setPageIndex(page - 1)}
+                className={`px-3 py-1 border rounded ${
+                  page === currentPage
+                    ? "bg-blue-500 text-white font-semibold"
+                    : "hover:bg-gray-200"
+                }`}
+              >
+                {page}
+              </button>
+            )
+          );
+        })()}
+
+        {/* Next Button */}
+        <button
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+          className={`px-3 py-1 border rounded ${
+            !table.getCanNextPage()
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-gray-200"
+          }`}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

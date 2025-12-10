@@ -294,7 +294,7 @@ const EditSalesPage = () => {
         {/* Sales Info */}
         <div className="w-full max-w-3xl mx-auto px-4 py-6 bg-white rounded-2xl shadow-md">
           <h2 className="text-xl font-semibold text-gray-800 mb-6 border-b pb-2">
-            Customer Information
+            Store Issue Voucher
           </h2>
 
           <div className="flex flex-col gap-5">
@@ -440,7 +440,7 @@ const EditSalesPage = () => {
                   "Part Number*",
                   "Brand",
                   "Unit",
-                  "Price",
+                  // "Price",
                   "Quantity",
                   "Available",
                   "Total",
@@ -515,28 +515,6 @@ const EditSalesPage = () => {
                         handleItemChange(index, "unit", e.target.value)
                       }
                     />
-                  </td>
-
-                  <td className="px-2 sm:px-3 py-2 min-w-[100px] sm:min-w-[120px]">
-                    <input
-                      type="number"
-                      className="border rounded-md px-2 py-1 w-full text-xs sm:text-sm no-spinner focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                      value={item.selling_price || ""}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        const val = raw === "" ? "" : Number(raw);
-                        handleItemChange(
-                          index,
-                          "selling_price",
-                          isNaN(val) ? 0 : val
-                        );
-                      }}
-                    />
-                    {errors[`item_${index}_price`] && (
-                      <div className="text-red-500 text-xs mt-1">
-                        {errors[`item_${index}_price`]}
-                      </div>
-                    )}
                   </td>
 
                   <td className="px-2 sm:px-3 py-2 min-w-[100px] sm:min-w-[120px]">

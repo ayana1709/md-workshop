@@ -95,7 +95,7 @@ export default function ManageSales() {
 
     { accessorKey: "approved_by", header: "Approved By" },
 
-    { accessorKey: "requested_date", header: "Requested Date" },
+    // { accessorKey: "requested_date", header: "Requested Date" },
 
     { accessorKey: "location", header: "Location" },
 
@@ -269,16 +269,18 @@ export default function ManageSales() {
             <table class="info">
               <tr>
                 <td>
+
                   <strong>Ref No:</strong> ${ref_num} <br/>
-                  <strong>Status:</strong> ${status} <br/>
                   <strong>Approved By:</strong> ${approved_by || "-"} <br/>
                   <strong>Delivered By:</strong> ${delivered_by || "-"} <br/>
                 </td>
                 <td>
-                  <strong>Customer:</strong> ${customer_name} <br/>
-                  <strong>Sales Date:</strong> ${sales_date} <br/>
+                  <strong>To:</strong> ${customer_name} <br/>
+                  <strong>Store out Date:</strong> ${sales_date} <br/>
                   <strong>Requested Date:</strong> ${requested_date} <br/>
                   <strong>Location:</strong> ${location || "-"} <br/>
+                  <strong>Status:</strong> ${status} <br/>
+
                 </td>
               </tr>
             </table>
@@ -299,11 +301,7 @@ export default function ManageSales() {
             </table>
 
             <!-- SUMMARY -->
-            <table class="summary">
-              <tr><th>Sub Total</th><td style="text-align:right">${sub_total}</td></tr>
-              <tr><th>Discount</th><td style="text-align:right">${discount}</td></tr>
-              <tr><th>VAT (${vat_rate}%)</th><td style="text-align:right">${vatAmount}</td></tr>
-            </table>
+            
 
             <div style="clear:both;"></div>
 

@@ -16,6 +16,13 @@ export default function Users() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  // Reset password modal states
+  const [oldPassword, setOldPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -60,14 +67,52 @@ export default function Users() {
   };
 
   const handleResetPassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      Swal.fire("Error!", "All fields are required.", "error");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Swal.fire(
+        "Error!",
+        "New password must be at least 6 characters.",
+        "error"
+      );
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Swal.fire(
+        "Error!",
+        "New password and confirm password do not match!",
+        "error"
+      );
+      return;
+    }
+
     try {
-      await api.post(`/users/${selectedUser.id}/reset-password`, {
-        password: newPassword,
-      });
+      const response = await api.post(
+        `/users/${selectedUser.id}/reset-password`,
+        {
+          old_password: oldPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }
+      );
+
+      Swal.fire("Success!", response.data.message, "success");
       setShowModal(false);
-      Swal.fire("Success!", "Password reset successfully!", "success");
+
+      // Clear inputs
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (error) {
-      Swal.fire("Error!", "Failed to reset password!", "error");
+      Swal.fire(
+        "Error!",
+        error.response?.data?.message || "Failed to reset password!",
+        "error"
+      );
     }
   };
 
@@ -109,12 +154,7 @@ export default function Users() {
                     ? `${import.meta.env.VITE_API_URL}/storage/profile_images/${
                         u.profile_image
                       }`
-                    : `${
-                        import.meta.env.VITE_API_URL
-                      }/storage/profile_images/userprofile.jpg
-        
-                    
-                   `; // 👈 Put a default profile placeholder in /public folder
+                    : "../../images/userprofile.jpg"; // 👈 Put a default profile placeholder in /public folder
 
                   return (
                     <tr
@@ -125,7 +165,7 @@ export default function Users() {
 
                       <td className="p-3">
                         <img
-                          src={imgSrc}
+                          src={imgSrc ? imgSrc : "../../images/userprofile.jpg"}
                           alt="Profile"
                           className="w-10 h-10 rounded-full object-cover border"
                         />
@@ -182,28 +222,68 @@ export default function Users() {
       </div>
 
       {/* Reset Password Modal */}
+
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
             <h2 className="text-xl font-semibold mb-4">
               Reset Password for {selectedUser?.name}
             </h2>
+
+            {/* Old Password */}
             <div className="relative mb-4">
               <input
-                type={showPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                type={showOld ? "text" : "password"}
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                placeholder="Old Password"
                 className="w-full border p-2 rounded pr-10"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowOld(!showOld)}
                 className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                {showOld ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
+
+            {/* New Password */}
+            <div className="relative mb-4">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New Password"
+                className="w-full border p-2 rounded pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+              >
+                {showNew ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative mb-6">
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm Password"
+                className="w-full border p-2 rounded pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirm ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowModal(false)}
@@ -215,7 +295,7 @@ export default function Users() {
                 onClick={handleResetPassword}
                 className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
               >
-                Reset
+                Update
               </button>
             </div>
           </div>
