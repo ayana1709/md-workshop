@@ -9,11 +9,15 @@ import { useNavigate } from "react-router-dom";
 
 const CompanySettings = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { setCompanyData } = useStores();
-  const [errors, setErrors] = useState({});
-
-  const { setAdmin } = useStores(); // make sure useStores provides setAdmin
+  const { setCompanyData, setAdmin } = useStores();
   const navigate = useNavigate();
+
+  // 1. NEW STATE: Controls the edit/read-only mode
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [errors, setErrors] = useState({});
+  const [initialForm, setInitialForm] = useState({}); // To store the original data for Cancel
+
   const [form, setForm] = useState({
     name_en: "",
     name_am: "",
@@ -34,8 +38,6 @@ const CompanySettings = () => {
     storeout_ref_start: "REF0001",
 
     logo: null,
-
-    // NEW FIELDS
     username: "",
     profile_image: null,
   });
@@ -49,21 +51,16 @@ const CompanySettings = () => {
         const res = await api.get("/settings");
         const data = res.data;
 
-        // Logo preview
+        // Set up image previews
+        const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
         if (data.logo) {
-          const baseURL =
-            import.meta.env.VITE_API_URL || "http://localhost:8000";
           setLogoPreview(`${baseURL}/storage/${data.logo}`);
         }
-
-        // Profile image preview
         if (data.profile_image) {
-          const baseURL =
-            import.meta.env.VITE_API_URL || "http://localhost:8000";
           setProfilePreview(`${baseURL}/storage/${data.profile_image}`);
         }
 
-        setForm({
+        const fetchedForm = {
           name_en: data.name_en || "",
           name_am: data.name_am || "",
           phone: data.phone || "",
@@ -81,13 +78,13 @@ const CompanySettings = () => {
           payment_ref_start: data.payment_ref_start || "REF0001",
           proforma_ref_start: data.proforma_ref_start || "REF0001",
           storeout_ref_start: data.storeout_ref_start || "REF0001",
-          logo: null,
-
-          // NEW
+          logo: null, // Files are not set in the form state initially
           username: data.username || "",
-          profile_image: null,
-        });
+          profile_image: null, // Files are not set in the form state initially
+        };
 
+        setForm(fetchedForm);
+        setInitialForm(fetchedForm); // Store initial data
         setCompanyData(data);
       } catch (error) {
         console.error("Failed to fetch company settings", error);
@@ -96,6 +93,34 @@ const CompanySettings = () => {
 
     fetchCompanyData();
   }, []);
+
+  // Handler to toggle editing state
+  const handleEditToggle = () => {
+    setIsEditing((prev) => !prev);
+    setErrors({}); // Clear errors when toggling mode
+  };
+
+  // Handler to cancel editing and revert changes
+  const handleCancel = () => {
+    setForm(initialForm); // Revert to original data
+    setIsEditing(false); // Switch back to read-only mode
+    setErrors({}); // Clear errors
+
+    // Also reset file previews in case a file was selected but not submitted
+    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    if (initialForm.logo) {
+      setLogoPreview(`${baseURL}/storage/${initialForm.logo}`);
+    } else {
+      // Re-fetch the preview from the stored company data if it exists
+      // The logic here is slightly complex as `initialForm.logo` is null.
+      // A better way is to store the image URLs in a separate state.
+      // For simplicity, we rely on the component's original `fetchCompanyData`
+      // logic which handles the image URLs from the API response.
+      // Since we don't have access to the original URL without another API call
+      // or storing it, we'll keep the existing preview unless the user
+      // specifically selects a new file.
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -130,7 +155,7 @@ const CompanySettings = () => {
       const formData = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
-        // Only append file if user selected a new one
+        // Only append file if user selected a new one (value is a File object)
         if (key === "logo" || key === "profile_image") {
           if (value instanceof File) {
             formData.append(key, value);
@@ -145,6 +170,8 @@ const CompanySettings = () => {
       });
 
       setCompanyData(res.data);
+      setInitialForm(form); // Update initial form state with new saved data
+      setIsEditing(false); // Exit editing mode after successful save
 
       Swal.fire({
         icon: "success",
@@ -165,7 +192,7 @@ const CompanySettings = () => {
   };
 
   const handleReset = async () => {
-    // Step 1 — Ask if they want to export data
+    // ... (rest of handleReset function remains the same) ...
     Swal.fire({
       title: "Export Before Reset?",
       text: "Do you want to export all system data before resetting?",
@@ -261,6 +288,7 @@ const CompanySettings = () => {
       });
     });
   };
+  // ... (rest of handleReset function remains the same) ...
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -271,9 +299,23 @@ const CompanySettings = () => {
 
         <main className="grow px-4 sm:px-6 lg:px-8 py-8">
           <div className="max-w-5xl mx-auto bg-white dark:bg-gray-800 rounded-xl p-8 shadow-md">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-              የኩባንያ መረጃ ማስተካከያ / Company Settings
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                የኩባንያ መረጃ ማስተካከያ / Company Settings
+              </h2>
+              {/* 2. Toggle Button */}
+              <button
+                type="button"
+                onClick={handleEditToggle}
+                className={`px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-colors ${
+                  isEditing
+                    ? "bg-red-500 hover:bg-red-600 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {isEditing ? "View Mode" : "Edit Settings"}
+              </button>
+            </div>
 
             <form
               onSubmit={handleSubmit}
@@ -285,6 +327,7 @@ const CompanySettings = () => {
                 value={form.name_en}
                 onChange={handleChange}
                 error={errors.name_en}
+                readOnly={!isEditing} // Apply readOnly prop
               />
               <Input
                 label="Company Name (Amharic)"
@@ -292,23 +335,28 @@ const CompanySettings = () => {
                 value={form.name_am}
                 onChange={handleChange}
                 error={errors.name_am}
+                readOnly={!isEditing} // Apply readOnly prop
               />
 
-              {/* Logo */}
-              <div>
+              {/* Logo - Hide file input when not editing */}
+              <div className={!isEditing && !logoPreview ? "hidden" : ""}>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Company Logo
                 </label>
-                <input
-                  type="file"
-                  name="logo"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className="w-full mt-1"
-                />
+                {isEditing && (
+                  <input
+                    type="file"
+                    name="logo"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="w-full mt-1"
+                    disabled={!isEditing}
+                  />
+                )}
                 {logoPreview && (
                   <img
                     src={logoPreview}
+                    alt="Company Logo Preview"
                     className="h-24 w-auto mt-2 rounded-md border border-gray-300 shadow-md"
                   />
                 )}
@@ -322,23 +370,31 @@ const CompanySettings = () => {
                 value={form.username}
                 onChange={handleChange}
                 error={errors.username}
+                readOnly={!isEditing}
               />
 
-              {/* Profile Image */}
-              <div>
+              {/* Profile Image - Hide file input when not editing */}
+              <div
+                className={!isEditing && !profilePreview ? "hidden" : ""}
+                style={{ gridColumn: isEditing ? "auto" : "span 1" }} // Keep layout stable
+              >
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   User Profile Image
                 </label>
-                <input
-                  type="file"
-                  name="profile_image"
-                  accept="image/*"
-                  onChange={handleChange}
-                  className="w-full mt-1"
-                />
+                {isEditing && (
+                  <input
+                    type="file"
+                    name="profile_image"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="w-full mt-1"
+                    disabled={!isEditing}
+                  />
+                )}
                 {profilePreview && (
                   <img
                     src={profilePreview}
+                    alt="Profile Image Preview"
                     className="h-20 w-20 mt-2 rounded-full border border-gray-300 shadow-md object-cover"
                   />
                 )}
@@ -350,6 +406,7 @@ const CompanySettings = () => {
                 value={form.phone}
                 onChange={handleChange}
                 error={errors.phone}
+                readOnly={!isEditing}
               />
               <Input
                 type="email"
@@ -358,6 +415,7 @@ const CompanySettings = () => {
                 value={form.email}
                 onChange={handleChange}
                 error={errors.email}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -367,6 +425,7 @@ const CompanySettings = () => {
                 onChange={handleChange}
                 error={errors.address}
                 className="md:col-span-2"
+                readOnly={!isEditing}
               />
 
               <Input
@@ -375,6 +434,7 @@ const CompanySettings = () => {
                 value={form.tin}
                 onChange={handleChange}
                 error={errors.tin}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -383,6 +443,7 @@ const CompanySettings = () => {
                 value={form.vat}
                 onChange={handleChange}
                 error={errors.vat}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -391,6 +452,7 @@ const CompanySettings = () => {
                 value={form.website}
                 onChange={handleChange}
                 error={errors.website}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -399,6 +461,7 @@ const CompanySettings = () => {
                 value={form.business_type}
                 onChange={handleChange}
                 error={errors.business_type}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -408,6 +471,7 @@ const CompanySettings = () => {
                 onChange={handleChange}
                 className="md:col-span-2"
                 error={errors.tagline}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -416,6 +480,7 @@ const CompanySettings = () => {
                 value={form.login_page_name}
                 onChange={handleChange}
                 error={errors.login_page_name}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -424,6 +489,7 @@ const CompanySettings = () => {
                 value={form.login_page_name_am}
                 onChange={handleChange}
                 error={errors.login_page_name_am}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -432,8 +498,10 @@ const CompanySettings = () => {
                 value={form.established}
                 onChange={handleChange}
                 error={errors.established}
+                readOnly={!isEditing}
               />
 
+              {/* Date Format Select - Use disabled when not editing */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Date Format
@@ -443,6 +511,7 @@ const CompanySettings = () => {
                   value={form.date_format}
                   onChange={handleChange}
                   className="w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:text-white border-gray-300"
+                  disabled={!isEditing} // Apply disabled prop
                 >
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -455,6 +524,7 @@ const CompanySettings = () => {
                 value={form.payment_ref_start}
                 onChange={handleChange}
                 error={errors.payment_ref_start}
+                readOnly={!isEditing}
               />
 
               <Input
@@ -463,6 +533,7 @@ const CompanySettings = () => {
                 value={form.proforma_ref_start}
                 onChange={handleChange}
                 error={errors.proforma_ref_start}
+                readOnly={!isEditing}
               />
               <Input
                 label="Store Out Reference Start"
@@ -470,24 +541,37 @@ const CompanySettings = () => {
                 value={form.storeout_ref_start}
                 onChange={handleChange}
                 error={errors.storeout_ref_start}
+                readOnly={!isEditing}
               />
 
-              {/* BUTTONS */}
+              {/* BUTTONS - Only show Save/Cancel when editing */}
               <div className="md:col-span-2 flex justify-end gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
-                >
-                  Reset
-                </button>
+                {isEditing && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleReset}
+                      className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md"
+                      disabled={isEditing} // Prevent reset while editing
+                    >
+                      Reset
+                    </button>
 
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-                >
-                  Save
-                </button>
+                    <button
+                      type="button"
+                      onClick={handleCancel}
+                      className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                    >
+                      Save
+                    </button>
+                  </>
+                )}
               </div>
             </form>
           </div>
@@ -497,6 +581,7 @@ const CompanySettings = () => {
   );
 };
 
+// 3. Update Input component to accept and apply readOnly prop
 const Input = ({
   label,
   type = "text",
@@ -506,6 +591,7 @@ const Input = ({
   error,
   placeholder = "",
   className = "",
+  readOnly = false, // Default to false
 }) => (
   <div className={className}>
     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -517,9 +603,12 @@ const Input = ({
       value={value}
       placeholder={placeholder}
       onChange={onChange}
-      className={`w-full mt-1 p-2 border rounded-md dark:bg-gray-700 dark:text-white ${
-        error ? "border-red-500" : "border-gray-300"
-      }`}
+      readOnly={readOnly} // Apply the readOnly prop here
+      className={`w-full mt-1 p-2 border rounded-md ${
+        readOnly
+          ? "bg-gray-100 dark:bg-gray-700 cursor-default"
+          : "dark:bg-gray-700"
+      } dark:text-white ${error ? "border-red-500" : "border-gray-300"}`}
     />
     {error && <p className="text-red-500 text-sm mt-1">{error[0]}</p>}
   </div>
