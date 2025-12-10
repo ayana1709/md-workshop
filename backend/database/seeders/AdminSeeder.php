@@ -38,6 +38,7 @@ class AdminSeeder extends Seeder
         $features = [
             'Job Order',
             'Work Order',
+            'Store Issue',
             'Inventory',
             'Payment',
             'Sales',

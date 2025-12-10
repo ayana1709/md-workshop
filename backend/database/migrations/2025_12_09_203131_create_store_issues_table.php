@@ -20,6 +20,8 @@ return new class extends Migration
             // store items
             $table->json('store_items')->comment('Array of items requested with qty, price, etc.');
 
+            $table->string('received_by')->nullable()->comment('Person who received the items');
+
             //C) cost breakdown
             $table->decimal('subtotal', 10, 2);
             $table->decimal('total_vat', 10, 2);

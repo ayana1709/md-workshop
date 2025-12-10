@@ -150,6 +150,11 @@ import FormalPayment from "./components/payment/FormalPayment";
 import ProformaPrint from "./components/Proforma/ManageProforma/modals/ProformaPrint";
 import EditSalesPage from "./components/EditSalesPage";
 
+import StoreIssueManager from "./components/StoreIssue/StoreIssueManager";
+import StoreIssueView from "./components/StoreIssue/StoreIssueView";
+import StoreIssuePrint from "./components/StoreIssue/StoreIssuePrint";
+import StoreIssueForm from "./components/StoreIssue/StoreIssueForm";
+
 function App() {
   const location = useLocation();
   // const [admin, setAdmin] = useState(
@@ -233,6 +238,32 @@ function App() {
           <Route path="inspection-list" element={<InspectionList />} />
           <Route path="wheel-alignment-list" element={<WheelAlignemntList />} />
         </Route>
+
+        <Route
+          path="/store-issue/create"
+          element={
+            <ProtectedRoute>
+              <StoreIssueForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/store-issue/manager"
+          element={
+            <ProtectedRoute>
+              <StoreIssueManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Route for editing a specific issue */}
+        <Route path="/store-issue/edit/:id" element={<StoreIssueForm isEdit={true} />} />
+
+
+        {/* for specifc view */}
+        <Route path="/store-issue/view/:id" element={<StoreIssueView />} />
+        <Route path="/store-issue/print/:id" element={<StoreIssuePrint />} />
+        
         {/*  work order  */}
         <Route path="/work" element={<WorkOrder />}>
           <Route index element={<Navigate to="/work/work-order-list" />} />
@@ -299,6 +330,7 @@ function App() {
         <Route path="/sales/edit/:id" element={<EditSalesPage />} />
 
         <Route path="purchase" element={<Purchases />} />
+
 
         {/* Incoming Request  */}
         <Route path="/history/:code" element={<HistoryPage />} />

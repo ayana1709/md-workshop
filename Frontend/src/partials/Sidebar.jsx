@@ -269,6 +269,98 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                 </SidebarLinkGroup>
               )}
 
+              {hasAccess("Store Issue", "manage") && (
+                <SidebarLinkGroup activecondition={pathname.includes("store-issue")}>
+                  {(handleClick, open) => (
+                    <React.Fragment>
+                      {/* Main Menu Item: Store Issue */}
+                      <a
+                        href="#0"
+                        className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+                          pathname.includes("store-issue")
+                            ? ""
+                            : "hover:text-gray-800 dark:hover:text-white"
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleClick();
+                          setSidebarExpanded(true);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                           
+                            <svg
+                              className="shrink-0 fill-green-500"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M14 6H3v12h18V6h-7zm0 10H8v-2h6v2zm6-4H8V8h12v4zM7 8H4v4h3V8zm0 6H4v2h3v-2z" />
+                            </svg>
+                            <span className="text-sm font-medium ml-4 duration-200">
+                              Store Issue
+                            </span>
+                          </div>
+                          {/* Dropdown Arrow */}
+                          <div className="flex shrink-0 ml-2">
+                            <svg
+                              className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                                open && "rotate-180"
+                              }`}
+                              viewBox="0 0 12 12"
+                            >
+                              <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+                            </svg>
+                          </div>
+                        </div>
+                      </a>
+
+                      {/* Submenu Items */}
+                      {open && (
+                        <ul className="pl-8 mt-1">
+                          {/* ✅ Create Store Issue (only if has create access) */}
+                          {hasAccess("Store Issue", "create") && (
+                            <li>
+                              <NavLink
+                                end
+                                to="/store-issue/create"
+                                className={({ isActive }) =>
+                                  "block transition duration-150 truncate pl-4 " +
+                                  (isActive
+                                    ? "text-violet-500"
+                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                                }
+                              >
+                                Create Store Issue
+                              </NavLink>
+                            </li>
+                          )}
+
+                          {/* ✅ Store Issue Manager (only if has manage access) */}
+                          {hasAccess("Store Issue", "manage") && (
+                            <li>
+                              <NavLink
+                                end
+                                to="/store-issue/manager" 
+                                className={({ isActive }) =>
+                                  "block transition duration-150 truncate pl-4 " +
+                                  (isActive
+                                    ? "text-violet-500"
+                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                                }
+                              >
+                                Store Issue Manager
+                              </NavLink>
+                            </li>
+                          )}
+                        </ul>
+                      )}
+                    </React.Fragment>
+                  )}
+                </SidebarLinkGroup>
+              )}
               {/* Work orders */}
               {hasAccess("Work Order", "manage") && (
                 <SidebarLinkGroup

@@ -17,7 +17,6 @@ class StoreIssueController extends Controller
     {
         $validatedData = $request->validate([
             'date' => 'required|date',
-            'ref_no' => 'required|string|unique:store_issues,ref_no',
             'objective_for' => 'required|string|max:255',
             'priority' => 'required|integer',
 
@@ -26,6 +25,8 @@ class StoreIssueController extends Controller
             'total_vat' => 'required|numeric|min:0',
             'total_price_including_vat' => 'required|numeric|min:0',
             'amount_in_words' => 'required|string',
+
+            'received_by' => 'nullable|string|max:255',
 
             'requested_from' => 'required|string|max:255',
             'store_branch' => 'required|string|max:255',
@@ -51,11 +52,30 @@ class StoreIssueController extends Controller
             'approved_status' => ['required', Rule::in(['not_approved', 'approved', 'rejected'])],
             'approved_remark' => 'nullable|string',
         ]);
+        
+        // Auto-generate unique ref_no (SI-YYYYMMDD-XXX format)
+        $validatedData['ref_no'] = $this->generateRefNo();
 
         $issue = StoreIssue::create($validatedData);
 
         return response()->json($issue, 201);
     }
+        /**
+     * Generate unique reference number: SI-YYYYMMDD-XXX
+     */
+private function generateRefNo()
+{
+    $attempt = 1;
+
+    do {
+        // Pad the number to 4 digits with leading zeros
+        $refNo = "REF-" . str_pad($attempt, 4, '0', STR_PAD_LEFT);
+        $attempt++;
+    } while (StoreIssue::where('ref_no', $refNo)->exists());
+
+    return $refNo;
+}
+
 
     public function show(StoreIssue $storeIssue)
     {
@@ -66,12 +86,6 @@ class StoreIssueController extends Controller
     {
         $validatedData = $request->validate([
             'date' => 'sometimes|required|date',
-            'ref_no' => [
-                'sometimes',
-                'required',
-                'string',
-                Rule::unique('store_issues', 'ref_no')->ignore($storeIssue->id),
-            ],
             'objective_for' => 'sometimes|required|string|max:255',
             'priority' => 'sometimes|required|integer',
 
@@ -80,6 +94,8 @@ class StoreIssueController extends Controller
             'total_vat' => 'sometimes|required|numeric|min:0',
             'total_price_including_vat' => 'sometimes|required|numeric|min:0',
             'amount_in_words' => 'sometimes|required|string',
+
+            'received_by' => 'sometimes|nullable|string|max:255',
 
             'requested_from' => 'sometimes|required|string|max:255',
             'store_branch' => 'sometimes|required|string|max:255',

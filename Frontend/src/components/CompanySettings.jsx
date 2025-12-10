@@ -192,7 +192,6 @@ const CompanySettings = () => {
   };
 
   const handleReset = async () => {
-    // ... (rest of handleReset function remains the same) ...
     Swal.fire({
       title: "Export Before Reset?",
       text: "Do you want to export all system data before resetting?",
@@ -290,7 +289,6 @@ const CompanySettings = () => {
       });
     });
   };
-  // ... (rest of handleReset function remains the same) ...
 
   return (
     <div className="flex h-screen overflow-hidden">

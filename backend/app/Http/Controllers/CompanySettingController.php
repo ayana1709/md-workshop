@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CompanySetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -83,10 +84,10 @@ class CompanySettingController extends Controller
         try {
 
             // 🔥 Fresh migration + seed
-            \Artisan::call('migrate:fresh --seed');
+            Artisan::call('migrate:fresh --seed');
 
             // 🔥 Run AdminSeeder separately
-            \Artisan::call('db:seed', [
+            Artisan::call('db:seed', [
                 '--class' => 'AdminSeeder',
             ]);
 
@@ -100,10 +101,10 @@ class CompanySettingController extends Controller
             \Illuminate\Support\Facades\File::makeDirectory(storage_path('app/public'), 0777, true);
 
             // 🔥 Create storage link
-            \Artisan::call('storage:link');
+            Artisan::call('storage:link');
 
             // 🔥 Clear Laravel cache
-            \Artisan::call('optimize:clear');
+            Artisan::call('optimize:clear');
 
             return response()->json([
                 'status' => 'success',
