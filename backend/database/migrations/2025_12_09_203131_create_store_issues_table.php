@@ -36,18 +36,21 @@ return new class extends Migration
             $table->string('requested_user')->nullable();
             $table->enum('requested_status', ['pending', 'approved', 'rejected'])->default('pending')->index();
             $table->text('request_remark')->nullable();
+            $table->date('requested_date')->nullable();
 
             // Delivery details
             $table->string('delivered_by')->nullable();
             $table->string('delivered_dept')->nullable();
             $table->enum('delivered_status', ['not_delivered', 'delivered'])->default('not_delivered')->index();
             $table->text('delivered_remark')->nullable();
+            $table->date('delivered_date')->nullable();
 
             // Issue details
             $table->string('issued_to')->nullable();
             $table->string('issued_department')->nullable();
             $table->enum('issued_status', ['not_issued', 'issued'])->default('not_issued')->index();
             $table->text('issued_remark')->nullable();
+            $table->date('issued_date')->nullable();
 
             // Approval details
             $table->string('approved_by')->nullable();
@@ -55,6 +58,7 @@ return new class extends Migration
             $table->string('approved_dept')->nullable();
             $table->enum('approved_status', ['not_approved', 'approved', 'rejected'])->default('not_approved')->index();
             $table->text('approved_remark')->nullable();
+            $table->date('approved_date')->nullable();
 
             $table->timestamps();
         });
