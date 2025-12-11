@@ -36,7 +36,6 @@ return new class extends Migration
             $table->string('requested_user')->nullable();
             $table->enum('requested_status', ['pending', 'approved', 'rejected'])->default('pending')->index();
             $table->text('request_remark')->nullable();
-            $table->date('requested_date')->nullable();
 
             // Delivery details
             $table->string('delivered_by')->nullable();

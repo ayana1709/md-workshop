@@ -35,22 +35,26 @@ class StoreIssueController extends Controller
             'requested_user' => 'nullable|string|max:255',
             'requested_status' => ['required', Rule::in(['pending', 'approved', 'rejected'])],
             'request_remark' => 'nullable|string',
+            'requested_date' => 'nullable|date',
 
             'delivered_by' => 'nullable|string|max:255',
             'delivered_dept' => 'nullable|string|max:255',
             'delivered_status' => ['required', Rule::in(['not_delivered', 'delivered'])],
             'delivered_remark' => 'nullable|string',
+            'delivered_date' => 'nullable|date',
 
             'issued_to' => 'nullable|string|max:255',
             'issued_department' => 'nullable|string|max:255',
             'issued_status' => ['required', Rule::in(['not_issued', 'issued'])],
             'issued_remark' => 'nullable|string',
+            'issued_date' => 'nullable|date',
 
             'approved_by' => 'nullable|string|max:255',
             'approved_name' => 'nullable|string|max:255',
             'approved_dept' => 'nullable|string|max:255',
             'approved_status' => ['required', Rule::in(['not_approved', 'approved', 'rejected'])],
             'approved_remark' => 'nullable|string',
+            'approved_date' => 'nullable|date',
         ]);
         
         // Auto-generate unique ref_no (SI-YYYYMMDD-XXX format)
@@ -109,17 +113,20 @@ private function generateRefNo()
             'delivered_dept' => 'sometimes|nullable|string|max:255',
             'delivered_status' => ['sometimes', 'required', Rule::in(['not_delivered', 'delivered'])],
             'delivered_remark' => 'sometimes|nullable|string',
+            'delivered_date' => 'sometimes|nullable|date',
 
             'issued_to' => 'sometimes|nullable|string|max:255',
             'issued_department' => 'sometimes|nullable|string|max:255',
             'issued_status' => ['sometimes', 'required', Rule::in(['not_issued', 'issued'])],
             'issued_remark' => 'sometimes|nullable|string',
+            'issued_date' => 'sometimes|nullable|date',
 
             'approved_by' => 'sometimes|nullable|string|max:255',
             'approved_name' => 'sometimes|nullable|string|max:255',
             'approved_dept' => 'sometimes|nullable|string|max:255',
             'approved_status' => ['sometimes', 'required', Rule::in(['not_approved', 'approved', 'rejected'])],
             'approved_remark' => 'sometimes|nullable|string',
+            'approved_date' => 'sometimes|nullable|date',
         ]);
 
         $storeIssue->update($validatedData);
