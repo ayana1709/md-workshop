@@ -255,15 +255,15 @@ function App() {
             </ProtectedRoute>
           }
         />
-
         {/* Route for editing a specific issue */}
-        <Route path="/store-issue/edit/:id" element={<StoreIssueForm isEdit={true} />} />
-
-
+        <Route
+          path="/store-issue/edit/:id"
+          element={<StoreIssueForm isEdit={true} />}
+        />
         {/* for specifc view */}
         <Route path="/store-issue/view/:id" element={<StoreIssueView />} />
         <Route path="/store-issue/print/:id" element={<StoreIssuePrint />} />
-        
+
         {/*  work order  */}
         <Route path="/work" element={<WorkOrder />}>
           <Route index element={<Navigate to="/work/work-order-list" />} />
@@ -330,7 +330,6 @@ function App() {
         <Route path="/sales/edit/:id" element={<EditSalesPage />} />
 
         <Route path="purchase" element={<Purchases />} />
-
 
         {/* Incoming Request  */}
         <Route path="/history/:code" element={<HistoryPage />} />

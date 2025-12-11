@@ -269,98 +269,574 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                 </SidebarLinkGroup>
               )}
 
-              {hasAccess("Store Issue", "manage") && (
-                <SidebarLinkGroup activecondition={pathname.includes("store-issue")}>
-                  {(handleClick, open) => (
-                    <React.Fragment>
-                      {/* Main Menu Item: Store Issue */}
-                      <a
-                        href="#0"
-                        className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
-                          pathname.includes("store-issue")
-                            ? ""
-                            : "hover:text-gray-800 dark:hover:text-white"
-                        }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleClick();
-                          setSidebarExpanded(true);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                           
-                            <svg
-                              className="shrink-0 fill-green-500"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                            >
-                              <path d="M14 6H3v12h18V6h-7zm0 10H8v-2h6v2zm6-4H8V8h12v4zM7 8H4v4h3V8zm0 6H4v2h3v-2z" />
-                            </svg>
-                            <span className="text-sm font-medium ml-4 duration-200">
-                              Store Issue
-                            </span>
-                          </div>
-                          {/* Dropdown Arrow */}
-                          <div className="flex shrink-0 ml-2">
-                            <svg
-                              className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
-                                open && "rotate-180"
-                              }`}
-                              viewBox="0 0 12 12"
-                            >
-                              <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </a>
+{/* 1. Store Issue */}
+{hasAccess("Store Issue", "manage") && (
+  <SidebarLinkGroup
+    activecondition={pathname.includes("store-issue")}
+  >
+    {(handleClick, open) => (
+      <React.Fragment>
+        {/* Main Menu Item: Store Issue */}
+        <a
+          href="#0"
+          className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+            pathname.includes("store-issue")
+              ? ""
+              : "hover:text-gray-800 dark:hover:text-white"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+            setSidebarExpanded(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {/* Icon for Store Issue */}
+              <svg
+                className={`shrink-0 fill-green-500 ${
+                  pathname.includes("store-issue")
+                    ? "text-violet-500"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM8 12h8v2H8zm0 4h8v2H8z" />
+              </svg>
+              <span className="text-sm font-medium ml-4 duration-200">
+                Store Issue
+              </span>
+            </div>
+            {/* Dropdown Arrow */}
+            <div className="flex shrink-0 ml-2">
+              <svg
+                className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                  open && "rotate-180"
+                }`}
+                viewBox="0 0 12 12"
+              >
+                <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+              </svg>
+            </div>
+          </div>
+        </a>
 
-                      {/* Submenu Items */}
-                      {open && (
-                        <ul className="pl-8 mt-1">
-                          {/* ✅ Create Store Issue (only if has create access) */}
-                          {hasAccess("Store Issue", "create") && (
-                            <li>
-                              <NavLink
-                                end
-                                to="/store-issue/create"
-                                className={({ isActive }) =>
-                                  "block transition duration-150 truncate pl-4 " +
-                                  (isActive
-                                    ? "text-violet-500"
-                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                                }
-                              >
-                                Create Store Issue
-                              </NavLink>
-                            </li>
-                          )}
+        {/* Submenu Items */}
+        {open && (
+          <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+            {/* Create Store Issue */}
+            {hasAccess("Store Issue", "create") && (
+              <li className="mb-1 last:mb-0 relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+                <NavLink
+                  end
+                  to="/store-issue/create"
+                  className={({ isActive }) =>
+                    "block transition duration-150 truncate pl-4 " +
+                    (isActive
+                      ? "text-violet-500"
+                      : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                  }
+                >
+                  <span className="text-sm font-medium duration-200">
+                    Create Store Issue
+                  </span>
+                </NavLink>
+              </li>
+            )}
+            {/* Manage Store Issue */}
+            {hasAccess("Store Issue", "manage") && (
+              <li className="mb-1 last:mb-0 relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+                <NavLink
+                  end
+                  to="/store-issue/manager"
+                  className={({ isActive }) =>
+                    "block transition duration-150 truncate pl-4 " +
+                    (isActive
+                      ? "text-violet-500"
+                      : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                  }
+                >
+                  <span className="text-sm font-medium duration-200">
+                    Manage Store Issue
+                  </span>
+                </NavLink>
+              </li>
+            )}
+          </ul>
+        )}
+      </React.Fragment>
+    )}
+  </SidebarLinkGroup>
+)}
 
-                          {/* ✅ Store Issue Manager (only if has manage access) */}
-                          {hasAccess("Store Issue", "manage") && (
-                            <li>
-                              <NavLink
-                                end
-                                to="/store-issue/manager" 
-                                className={({ isActive }) =>
-                                  "block transition duration-150 truncate pl-4 " +
-                                  (isActive
-                                    ? "text-violet-500"
-                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                                }
-                              >
-                                Store Issue Manager
-                              </NavLink>
-                            </li>
-                          )}
-                        </ul>
-                      )}
-                    </React.Fragment>
-                  )}
-                </SidebarLinkGroup>
-              )}
+{/* 2. Store Request */}
+{hasAccess("Store Request", "manage") && (
+  <SidebarLinkGroup
+    activecondition={pathname.includes("store-request")}
+  >
+    {(handleClick, open) => (
+      <React.Fragment>
+        {/* Main Menu Item: Store Request */}
+        <a
+          href="#0"
+          className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+            pathname.includes("store-request")
+              ? ""
+              : "hover:text-gray-800 dark:hover:text-white"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+            setSidebarExpanded(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {/* Icon for Store Request */}
+              <svg
+                className={`shrink-0 fill-green-500 ${
+                  pathname.includes("store-request")
+                    ? "text-violet-500"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM8 12h8v2H8zm0 4h8v2H8z" />
+              </svg>
+              <span className="text-sm font-medium ml-4 duration-200">
+                Store Request
+              </span>
+            </div>
+            {/* Dropdown Arrow */}
+            <div className="flex shrink-0 ml-2">
+              <svg
+                className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                  open && "rotate-180"
+                }`}
+                viewBox="0 0 12 12"
+              >
+                <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        {/* Submenu Items */}
+        {open && (
+          <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+            {/* Create Store Request */}
+            {hasAccess("Store Request", "create") && (
+              <li className="mb-1 last:mb-0 relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+                <NavLink
+                  end
+                  to="/store-request/create"
+                  className={({ isActive }) =>
+                    "block transition duration-150 truncate pl-4 " +
+                    (isActive
+                      ? "text-violet-500"
+                      : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                  }
+                >
+                  <span className="text-sm font-medium duration-200">
+                    Create Store Request
+                  </span>
+                </NavLink>
+              </li>
+            )}
+            {/* Manage Store Request */}
+            {hasAccess("Store Request", "manage") && (
+              <li className="mb-1 last:mb-0 relative">
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+                <NavLink
+                  end
+                  to="/store-request/manager"
+                  className={({ isActive }) =>
+                    "block transition duration-150 truncate pl-4 " +
+                    (isActive
+                      ? "text-violet-500"
+                      : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                  }
+                >
+                  <span className="text-sm font-medium duration-200">
+                    Manage Store Request
+                  </span>
+                </NavLink>
+              </li>
+            )}
+          </ul>
+        )}
+      </React.Fragment>
+    )}
+  </SidebarLinkGroup>
+)}
+
+{/* 3. Incoming Request */}
+{hasAccess("Incoming Request", "manage") && (
+  <SidebarLinkGroup
+    activecondition={pathname.includes("incoming-request")}
+  >
+    {(handleClick, open) => (
+      <React.Fragment>
+        {/* Main Menu Item: Incoming Request */}
+        <a
+          href="#0"
+          className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+            pathname.includes("incoming-request")
+              ? ""
+              : "hover:text-gray-800 dark:hover:text-white"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+            setSidebarExpanded(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {/* Icon for Incoming Request (Using a package icon) */}
+              <svg
+                className={`shrink-0 fill-green-500 ${
+                  pathname.includes("incoming-request")
+                    ? "text-violet-500"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-6 0h-4V4h4v3z" />
+              </svg>
+              <span className="text-sm font-medium ml-4 duration-200">
+                Incoming Request
+              </span>
+            </div>
+            {/* Dropdown Arrow */}
+            <div className="flex shrink-0 ml-2">
+              <svg
+                className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                  open && "rotate-180"
+                }`}
+                viewBox="0 0 12 12"
+              >
+                <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        {/* Submenu Items */}
+        {open && (
+          <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+            {/* From Store Issue */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/incoming-request/store-issue"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  From Store Issue
+                </span>
+              </NavLink>
+            </li>
+          </ul>
+        )}
+      </React.Fragment>
+    )}
+  </SidebarLinkGroup>
+)}
+
+{/* 4. Purchase */}
+{hasAccess("Purchase", "manage") && (
+  <SidebarLinkGroup
+    activecondition={pathname.includes("purchase")}
+  >
+    {(handleClick, open) => (
+      <React.Fragment>
+        {/* Main Menu Item: Purchase */}
+        <a
+          href="#0"
+          className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+            pathname.includes("purchase")
+              ? ""
+              : "hover:text-gray-800 dark:hover:text-white"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+            setSidebarExpanded(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {/* Icon for Purchase (Using a package icon) */}
+              <svg
+                className={`shrink-0 fill-green-500 ${
+                  pathname.includes("purchase")
+                    ? "text-violet-500"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-6 0h-4V4h4v3z" />
+              </svg>
+              <span className="text-sm font-medium ml-4 duration-200">
+                Purchase
+              </span>
+            </div>
+            {/* Dropdown Arrow */}
+            <div className="flex shrink-0 ml-2">
+              <svg
+                className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                  open && "rotate-180"
+                }`}
+                viewBox="0 0 12 12"
+              >
+                <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        {/* Submenu Items */}
+        {open && (
+          <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+            {/* Store Requisitions */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/purchase/requisitions"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Store Requisitions
+                </span>
+              </NavLink>
+            </li>
+            {/* Delivery Vouchers */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/purchase/delivery-vouchers"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Delivery Vouchers
+                </span>
+              </NavLink>
+            </li>
+            {/* Payment Vouchers */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/purchase/payment-vouchers"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Payment Vouchers
+                </span>
+              </NavLink>
+            </li>
+          </ul>
+        )}
+      </React.Fragment>
+    )}
+  </SidebarLinkGroup>
+)}
+
+{/* 5. Approvals */}
+{hasAccess("Approvals", "manage") && (
+  <SidebarLinkGroup
+    activecondition={pathname.includes("approvals")}
+  >
+    {(handleClick, open) => (
+      <React.Fragment>
+        {/* Main Menu Item: Approvals */}
+        <a
+          href="#0"
+          className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
+            pathname.includes("approvals")
+              ? ""
+              : "hover:text-gray-800 dark:hover:text-white"
+          }`}
+          onClick={(e) => {
+            e.preventDefault();
+            handleClick();
+            setSidebarExpanded(true);
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              {/* Icon for Approvals (Using a check/stamp icon) */}
+              <svg
+                className={`shrink-0 fill-green-500 ${
+                  pathname.includes("approvals")
+                    ? "text-violet-500"
+                    : "text-gray-400 dark:text-gray-500"
+                }`}
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 14h-2v-2h2v2zm0-4h-2v-4h2v4zm4 4h-2v-4h2v4zm0-6h-2v-2h2v2zm4 4h-2v-4h2v4zm0-6h-2v-2h2v2z" />
+              </svg>
+              <span className="text-sm font-medium ml-4 duration-200">
+                Approvals
+              </span>
+            </div>
+            {/* Dropdown Arrow */}
+            <div className="flex shrink-0 ml-2">
+              <svg
+                className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
+                  open && "rotate-180"
+                }`}
+                viewBox="0 0 12 12"
+              >
+                <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
+              </svg>
+            </div>
+          </div>
+        </a>
+
+        {/* Submenu Items */}
+        {open && (
+          <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+            {/* Purchase Requisition */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/approvals/purchase-requisition"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Purchase Requisition
+                </span>
+              </NavLink>
+            </li>
+            {/* Store Issue */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/approvals/store-issue"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Store Issue
+                </span>
+              </NavLink>
+            </li>
+            {/* Delivery Voucher */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/approvals/delivery-voucher"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Delivery Voucher
+                </span>
+              </NavLink>
+            </li>
+            {/* Payment Voucher */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/approvals/payment-voucher"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Payment Voucher
+                </span>
+              </NavLink>
+            </li>
+            {/* Other Voucher */}
+            <li className="mb-1 last:mb-0 relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+              <NavLink
+                end
+                to="/approvals/other-vouchers"
+                className={({ isActive }) =>
+                  "block transition duration-150 truncate pl-4 " +
+                  (isActive
+                    ? "text-violet-500"
+                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                }
+              >
+                <span className="text-sm font-medium duration-200">
+                  Other Voucher
+                </span>
+              </NavLink>
+            </li>
+          </ul>
+        )}
+      </React.Fragment>
+    )}
+  </SidebarLinkGroup>
+)}
+
+        
               {/* Work orders */}
               {hasAccess("Work Order", "manage") && (
                 <SidebarLinkGroup
@@ -942,6 +1418,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
+
               {hasAccess("Inventory", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1128,10 +1605,10 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               >
                                 <path
                                   d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2Zm10 0c-1.1 
-  0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.16 14h9.45c.75 0 
-  1.41-.41 1.75-1.03l3.58-6.49c.38-.69-.11-1.48-.89-1.48H5.21L4.27 
-  2H1v2h2l3.6 7.59-1.35 2.44C4.52 14.37 5.07 15 5.82 
-  15H19v-2H7.42l.75-1.36-.01-.01Z"
+                                    0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.16 14h9.45c.75 0 
+                                    1.41-.41 1.75-1.03l3.58-6.49c.38-.69-.11-1.48-.89-1.48H5.21L4.27 
+                                    2H1v2h2l3.6 7.59-1.35 2.44C4.52 14.37 5.07 15 5.82 
+                                    15H19v-2H7.42l.75-1.36-.01-.01Z"
                                 />
                               </svg>
 
@@ -1309,10 +1786,10 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               >
                                 <path
                                   d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2Zm10 0c-1.1 
-  0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.16 14h9.45c.75 0 
-  1.41-.41 1.75-1.03l3.58-6.49c.38-.69-.11-1.48-.89-1.48H5.21L4.27 
-  2H1v2h2l3.6 7.59-1.35 2.44C4.52 14.37 5.07 15 5.82 
-  15H19v-2H7.42l.75-1.36-.01-.01Z"
+                                    0-1.99.9-1.99 2S15.9 22 17 22s2-.9 2-2-.9-2-2-2ZM7.16 14h9.45c.75 0 
+                                    1.41-.41 1.75-1.03l3.58-6.49c.38-.69-.11-1.48-.89-1.48H5.21L4.27 
+                                    2H1v2h2l3.6 7.59-1.35 2.44C4.52 14.37 5.07 15 5.82 
+                                    15H19v-2H7.42l.75-1.36-.01-.01Z"
                                 />
                               </svg>
 
