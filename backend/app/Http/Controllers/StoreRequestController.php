@@ -29,7 +29,9 @@ class StoreRequestController extends Controller
             'requested_by' => 'required|string|max:255',
             'requested_department' => 'required|string|max:255',
             'requested_user' => 'nullable|string|max:255',
+            'request_remark' => 'nullable|string',
             'requested_items' => 'required|array',
+            'is_fully_issued' => 'boolean',
 
             'approved_by' => 'nullable|string|max:255',
             'approved_name' => 'nullable|string|max:255',
@@ -81,7 +83,9 @@ class StoreRequestController extends Controller
             'requested_by' => 'required|string|max:255',
             'requested_department' => 'required|string|max:255',
             'requested_user' => 'nullable|string|max:255',
+            'requested_remark' => 'nullable|string',
             'requested_items' => 'required|array',
+            'is_fully_issued' => 'required|boolean',    
 
             'approved_by' => 'nullable|string|max:255',
             'approved_name' => 'nullable|string|max:255',

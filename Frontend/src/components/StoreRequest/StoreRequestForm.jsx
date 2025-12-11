@@ -29,6 +29,8 @@ const StoreRequestForm = ({ isEdit = false }) => {
     requested_department: "",
     requested_from: "", // The store/branch/project they are requesting from
     request_remark: "",
+
+    is_fully_issued: false,
     
     // Approval Fields
     approved_by: "", // User ID of the approver (nullable)
@@ -261,13 +263,30 @@ const StoreRequestForm = ({ isEdit = false }) => {
                   onChange={handleChange}
                   error={errors.requested_user}
                 />
+                {/* is fully issued select true or false */}
+                <Select
+                  label="Is Fully Issued?"
+                  name="is_fully_issued"
+                  value={form.is_fully_issued ? "true" : "false"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      is_fully_issued: e.target.value === "true",
+                    }))
+                  }
+                  options={[
+                    { value: "false", label: "No" },
+                    { value: "true", label: "Yes" },
+                  ]}
+                  error={errors.is_fully_issued}
+                />
                  <TextArea
                     label="Request Remark"
                     name="request_remark"
                     value={form.request_remark}
                     onChange={handleChange}
                     error={errors.request_remark}
-                    className="md:col-span-3"
+                    className="md:col-span-4"
                 />
               </div>
 
