@@ -10,6 +10,8 @@ import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
 import api from "@/api";
+import Swal from "sweetalert2";
+
 
 const TotalItem = () => {
   const printRef = useRef(null);
@@ -23,6 +25,9 @@ const TotalItem = () => {
   const [selectedRows, setSelectedRows] = useState([]);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [importing, setImporting] = useState(false);
+const [progress, setProgress] = useState(0);
+const [total, setTotal] = useState(0);
 
   const {
     items,
@@ -236,94 +241,132 @@ const TotalItem = () => {
     printWindow.close();
   };
 
-  const handleImportClick = () => {
-    if (fileInputRef.current) fileInputRef.current.value = null;
-    fileInputRef.current?.click();
-  };
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+const handleImportClick = () => {
+  if (fileInputRef.current) fileInputRef.current.value = null;
+  fileInputRef.current?.click();
+};
 
-      const rows = XLSX.utils.sheet_to_json(worksheet, {
-        defval: "",
-        raw: true,
-      });
+const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-      if (!rows.length) {
-        toast.error("Import failed: No rows found.");
-        return;
-      }
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
 
-      const cleaned = rows
-        .map((row) => {
-          const normalized = {};
-          for (const key in row) {
-            normalized[key.trim().toLowerCase()] = row[key];
-          }
+    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
 
-          // skip empty
-          if (Object.values(normalized).join("").trim() === "") return null;
-
-          const quantity =
-            normalized["quantity"] ||
-            normalized["qty"] ||
-            normalized["qnty"] ||
-            "";
-
-          return {
-            item_name:
-              normalized["item name"] ||
-              normalized["item_name"] ||
-              normalized["item"] ||
-              "",
-            part_number:
-              normalized["part number"] || normalized["part_number"] || null,
-            brand: normalized["brand"] || "",
-            unit: normalized["unit"] || "",
-            quantity: Number(quantity) || 0,
-            low_quantity:
-              normalized["low quantity"] || normalized["low_quantity"] || 0,
-            purchase_price:
-              normalized["purchase price"] || normalized["purchase_price"] || 0,
-            selling_price:
-              normalized["selling price"] || normalized["selling_price"] || 0,
-            least_price:
-              normalized["least price"] || normalized["least_price"] || 0,
-
-            // Default image automatically
-            image: normalized["image"] || "items/default.jpg",
-
-            condition: normalized["condition"] || "New",
-            type: normalized["type"] || "",
-            manufacturer: normalized["manufacturer"] || "",
-            location: normalized["location"] || "",
-            shelf_number:
-              normalized["shelf number"] || normalized["shelf_number"] || "",
-          };
-        })
-        .filter(Boolean);
-
-      const response = await api.post("/items/import", {
-        items: cleaned,
-      });
-
-      toast.success("Items imported successfully!");
-
-      // 🟢 Re-fetch items instead of manual setItems
-      await fetchItems(); // <-- You MUST create this function
-    } catch (error) {
-      toast.error(
-        "Import failed: " + (error.response?.data?.message || error.message)
-      );
+    if (!rows.length) {
+      toast.error("Import failed: No rows found.");
+      return;
     }
-  };
+
+    const cleaned = rows
+      .map((row) => {
+        const normalized = {};
+        for (const key in row) {
+          normalized[key.trim().toLowerCase()] = row[key];
+        }
+
+        if (Object.values(normalized).join("").trim() === "") return null;
+
+        const quantity =
+          normalized["quantity"] ||
+          normalized["qty"] ||
+          normalized["qnty"] ||
+          "";
+
+        return {
+          item_name:
+            normalized["item name"] ||
+            normalized["item_name"] ||
+            normalized["item"] ||
+            "",
+          part_number:
+            normalized["part number"] || normalized["part_number"] || null,
+          brand: normalized["brand"] || "",
+          unit: normalized["unit"] || "",
+          quantity: Number(quantity) || 0,
+          low_quantity:
+            normalized["low quantity"] || normalized["low_quantity"] || 0,
+          purchase_price:
+            normalized["purchase price"] || normalized["purchase_price"] || 0,
+          selling_price:
+            normalized["selling price"] || normalized["selling_price"] || 0,
+          least_price:
+            normalized["least price"] || normalized["least_price"] || 0,
+          image: normalized["image"] || "items/default.jpg",
+          condition: normalized["condition"] || "New",
+          type: normalized["type"] || "",
+          manufacturer: normalized["manufacturer"] || "",
+          location: normalized["location"] || "",
+          shelf_number:
+            normalized["shelf number"] || normalized["shelf_number"] || "",
+        };
+      })
+      .filter(Boolean);
+
+    // ---- OPEN PROGRESS SWAL ---- //
+    Swal.fire({
+      title: "Importing Items...",
+      html: `
+        <div style="font-size:14px;margin-bottom:6px">
+          <span id="import-text">Starting...</span>
+        </div>
+
+        <div style="width:100%;background:#e5e7eb;height:10px;border-radius:6px;">
+          <div id="import-bar" style="
+            height:10px;
+            width:0%;
+            background:#2563eb;
+            border-radius:6px;
+            transition: width 0.3s;
+          "></div>
+        </div>
+      `,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+    });
+
+    let importedCount = 0;
+    const chunkSize = 50;
+
+    for (let i = 0; i < cleaned.length; i += chunkSize) {
+      const chunk = cleaned.slice(i, i + chunkSize);
+
+      await api.post("/items/import", { items: chunk });
+
+      importedCount += chunk.length;
+      const percent = Math.round(
+        (importedCount / cleaned.length) * 100
+      );
+
+      // Update Swal UI
+      document.getElementById("import-text").innerHTML =
+        `Importing ${importedCount}/${cleaned.length} items...`;
+      document.getElementById("import-bar").style.width = percent + "%";
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Import Completed",
+      text: `Successfully imported ${importedCount} items!`,
+    });
+
+    await fetchItems();
+  } catch (error) {
+    Swal.close();
+    toast.error(
+      "Import failed: " + (error.response?.data?.message || error.message)
+    );
+  }
+};
+
+
   const fetchItems = async () => {
     try {
       const res = await api.get("/items");
@@ -339,6 +382,7 @@ const TotalItem = () => {
       console.log("Failed to fetch items", err);
     }
   };
+
 
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
