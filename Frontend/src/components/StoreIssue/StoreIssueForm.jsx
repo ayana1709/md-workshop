@@ -270,6 +270,18 @@ const StoreIssueForm = ({ isEdit = false }) => {
                   onChange={handleChange}
                   error={errors.requested_from}
                 />
+                <Select
+                  label="Requested Status *"
+                  name="requested_status"
+                  value={form.requested_status}
+                  onChange={handleChange}
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "approved", label: "Approved" },
+                    { value: "rejected", label: "Rejected" },
+                  ]}
+                  error={errors.requested_status}
+                />
                 <Input
                   label="Store Branch"
                   name="store_branch"
