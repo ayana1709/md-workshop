@@ -130,30 +130,29 @@ class UserController extends Controller
         return response()->json(['message' => 'User deleted successfully']);
     }
 
-public function resetPassword(Request $request, $id)
-{
-    $request->validate([
-        'old_password' => 'required|string',
-        'new_password' => 'required|string|min:6',
-        'confirm_password' => 'required|same:new_password',
-    ]);
+    public function resetPassword(Request $request, $id)
+    {
+        $request->validate([
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:6',
+            'confirm_password' => 'required|same:new_password',
+        ]);
 
-    $user = Admin::findOrFail($id);
+        $user = Admin::findOrFail($id);
 
-    // Check if old password is correct
-    if (!Hash::check($request->old_password, $user->password)) {
+        // Check if old password is correct
+        if (! Hash::check($request->old_password, $user->password)) {
+            return response()->json([
+                'message' => 'Old password is incorrect.',
+            ], 422);
+        }
+
+        // Save new password
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
         return response()->json([
-            'message' => 'Old password is incorrect.'
-        ], 422);
+            'message' => 'Password updated successfully.',
+        ]);
     }
-
-    // Save new password
-    $user->password = Hash::make($request->new_password);
-    $user->save();
-
-    return response()->json([
-        'message' => 'Password updated successfully.'
-    ]);
-}
-
 }

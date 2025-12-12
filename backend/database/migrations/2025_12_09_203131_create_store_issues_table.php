@@ -22,7 +22,7 @@ return new class extends Migration
 
             $table->string('received_by')->nullable()->comment('Person who received the items');
 
-            //C) cost breakdown
+            // C) cost breakdown
             $table->decimal('subtotal', 10, 2);
             $table->decimal('total_vat', 10, 2);
             $table->decimal('total_price_including_vat', 10, 2);

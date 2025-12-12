@@ -30,6 +30,7 @@ use App\Http\Controllers\SpareChangeController;
 use App\Http\Controllers\SpareRequestController;
 use App\Http\Controllers\StoreIssueController;
 use App\Http\Controllers\StoreItemController;
+use App\Http\Controllers\StoreRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WheelAlignemntController;
@@ -63,8 +64,14 @@ use Illuminate\Support\Facades\Route;
 // Route::put('/store-issues/{id}', [StoreIssueController::class, 'update']);
 // Route::delete('/store-issues/{id}', [StoreIssueController::class, 'destroy']);
 
-//or simply like below
+// or simply like below
 Route::apiResource('store-issues', StoreIssueController::class);
+// Route::apiResource('store-requests', StoreRequestController::class);
+Route::get('/store-requests', [StoreRequestController::class, 'index']);
+Route::post('/store-requests', [StoreRequestController::class, 'store']);
+Route::get('/store-requests/{id}', [StoreRequestController::class, 'show']);
+Route::put('/store-requests/{id}', [StoreRequestController::class, 'update']);
+Route::delete('/store-requests/{id}', [StoreRequestController::class, 'destroy']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 

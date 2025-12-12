@@ -154,6 +154,9 @@ import StoreIssueManager from "./components/StoreIssue/StoreIssueManager";
 import StoreIssueView from "./components/StoreIssue/StoreIssueView";
 import StoreIssuePrint from "./components/StoreIssue/StoreIssuePrint";
 import StoreIssueForm from "./components/StoreIssue/StoreIssueForm";
+import StoreRequestForm from "./components/StoreRequest/StoreRequestForm";
+import StoreRequestManager from "./components/StoreRequest/StoreRequestManager";
+import StoreRequestPrint from "./components/StoreRequest/StoreRequestPrint";
 
 function App() {
   const location = useLocation();
@@ -263,6 +266,31 @@ function App() {
         {/* for specifc view */}
         <Route path="/store-issue/view/:id" element={<StoreIssueView />} />
         <Route path="/store-issue/print/:id" element={<StoreIssuePrint />} />
+
+                <Route
+          path="/store-request/create"
+          element={
+            <ProtectedRoute>
+              <StoreRequestForm
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/store-request/manager"
+          element={
+            <ProtectedRoute>
+              <StoreRequestManager />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/store-request/edit/:id"
+          element={<StoreRequestForm isEdit={true} />}
+        />
+        <Route path="/store-request/print/:id" element={<StoreRequestPrint isPrint={true} />} />
+
+        {/* Route for editing a specific request */}
 
         {/*  work order  */}
         <Route path="/work" element={<WorkOrder />}>

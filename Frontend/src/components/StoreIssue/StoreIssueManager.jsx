@@ -218,13 +218,13 @@ const StoreIssueManager = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                      {filteredIssues.map((issue) => (
+                      {filteredIssues.map((issue,index) => (
                         <tr
                           key={issue.id}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700"
                         >
                           <td>
-                            {issue.id}
+                            {index + 1}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                             {issue.ref_no}
