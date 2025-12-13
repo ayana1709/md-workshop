@@ -5,6 +5,7 @@ import api from "@/api"; // Assuming this is your axios instance
 import Swal from "sweetalert2";
 import { useNavigate, useParams } from "react-router-dom";
 import { TrashIcon, PhotoIcon, EyeIcon, CloudArrowUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import DateInput from "../DateInput";
 
 const StoreRequestForm = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -27,7 +28,7 @@ const StoreRequestForm = () => {
   };
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: '',
     objective_for: "",
     priority: 3,
     requested_by: "",
@@ -225,7 +226,15 @@ const StoreRequestForm = () => {
 
   // Class for standard input styling
   const inputClass = "p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500";
-
+const handleDateChange = (value) => {
+  // Create a synthetic event object that mimics a regular input change
+  handleChange({
+    target: {
+      name: 'date',
+      value: value
+    }
+  });
+};
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -252,12 +261,12 @@ const StoreRequestForm = () => {
             <form onSubmit={handleSubmit}>
               {/* General info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-4 border rounded-md dark:border-gray-700">
-                <input 
-                  type="date" 
-                  name="date" 
-                  value={form.date} 
-                  onChange={handleChange} 
-                  className={`${inputClass}`} 
+                <DateInput
+                  value={form.date}
+                  onChange={handleDateChange}
+                  placeholder="DD/MM/YYYY"
+                  className={inputClass}
+                  format="DD/MM/YYYY"
                 />
                 <input 
                   type="text" 
