@@ -63,6 +63,7 @@ const StoreRequestForm = () => {
       }));
 
       setForm({
+        ref_no: data.ref_no,
         date: data.date ? new Date(data.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
         objective_for: data.objective_for || "",
         priority: data.priority || 3,
@@ -222,6 +223,10 @@ const StoreRequestForm = () => {
     }
   };
 
+  // Class for standard input styling
+  const inputClass = "p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-indigo-500 focus:border-indigo-500";
+
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -229,10 +234,11 @@ const StoreRequestForm = () => {
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         <main className="grow px-4 sm:px-6 lg:px-8 py-8">
+          {/* Main Card */}
           <div className="max-w-7xl mx-auto bg-white dark:bg-gray-800 rounded-xl p-8 shadow-md">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                {isEdit ? `✏️ Edit Store Request (ID: ${id})` : "➕ Create New Store Request"}
+                {isEdit ? `✏️ Edit Store Request (Ref: ${form.ref_no})` : "➕ Create New Store Request"}
               </h2>
               <button
                 type="button"
@@ -246,11 +252,43 @@ const StoreRequestForm = () => {
             <form onSubmit={handleSubmit}>
               {/* General info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-4 border rounded-md dark:border-gray-700">
-                <input type="date" name="date" value={form.date} onChange={handleChange} className="p-2 border rounded" />
-                <input type="text" name="requested_by" placeholder="Requested By" value={form.requested_by} onChange={handleChange} className="p-2 border rounded" />
-                <input type="text" name="requested_department" placeholder="Requested Department" value={form.requested_department} onChange={handleChange} className="p-2 border rounded" />
-                <input type="text" name="objective_for" placeholder="Objective" value={form.objective_for} onChange={handleChange} className="p-2 border rounded md:col-span-2" />
-                <select name="priority" value={form.priority} onChange={handleChange} className="p-2 border rounded">
+                <input 
+                  type="date" 
+                  name="date" 
+                  value={form.date} 
+                  onChange={handleChange} 
+                  className={`${inputClass}`} 
+                />
+                <input 
+                  type="text" 
+                  name="requested_by" 
+                  placeholder="Requested By" 
+                  value={form.requested_by} 
+                  onChange={handleChange} 
+                  className={`${inputClass}`} 
+                />
+                <input 
+                  type="text" 
+                  name="requested_department" 
+                  placeholder="Requested Department" 
+                  value={form.requested_department} 
+                  onChange={handleChange} 
+                  className={`${inputClass}`} 
+                />
+                <input 
+                  type="text" 
+                  name="objective_for" 
+                  placeholder="Objective" 
+                  value={form.objective_for} 
+                  onChange={handleChange} 
+                  className={`${inputClass} md:col-span-2`} 
+                />
+                <select 
+                  name="priority" 
+                  value={form.priority} 
+                  onChange={handleChange} 
+                  className={`${inputClass}`}
+                >
                   <option value={1}>1 - Urgent</option>
                   <option value={2}>2 - High</option>
                   <option value={3}>3 - Normal</option>
@@ -260,28 +298,28 @@ const StoreRequestForm = () => {
 
 
               {/* Items */}
-              <div className="mb-4 border-t pt-4">
-                <h3 className="text-xl font-semibold mb-4">📦 Items Requested</h3>
-                <div className="overflow-x-auto border rounded-lg">
-                  <table className="min-w-full divide-y">
-                    <thead className="bg-gray-50">
+              <div className="mb-4 border-t pt-4 dark:border-gray-700">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">📦 Items Requested</h3>
+                <div className="overflow-x-auto border rounded-lg dark:border-gray-700">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
-                        <th className="p-2">Item Name</th>
-                        <th className="p-2 w-20">Quantity</th>
-                        <th className="p-2 w-20">Unit</th>
-                        <th className="p-2">Remark</th>
-                        <th className="p-2 w-32 text-center">Image</th>
+                        <th className="p-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Item Name</th>
+                        <th className="p-2 w-20 text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Quantity</th>
+                        <th className="p-2 w-20 text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Unit</th>
+                        <th className="p-2 text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Remark</th>
+                        <th className="p-2 w-32 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300">Image</th>
                         <th className="p-2 w-16"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {form.requested_items.map((item, index) => (
-                        <tr key={index}>
+                        <tr key={index} className="bg-white dark:bg-gray-800">
                           <td className="p-2">
                             <input
                               value={item.item_name || ""}
                               onChange={(e) => handleItemChange(index, "item_name", e.target.value)}
-                              className="w-full border rounded p-2"
+                              className={`w-full ${inputClass}`}
                             />
                             {/* Display Item Name validation errors if applicable */}
                             {errors[`requested_items.${index}.item_name`] && 
@@ -294,21 +332,21 @@ const StoreRequestForm = () => {
                               min="1"
                               value={item.quantity || 1}
                               onChange={(e) => handleItemChange(index, "quantity", Number(e.target.value))}
-                              className="w-full border rounded p-2"
+                              className={`w-full ${inputClass}`}
                             />
                           </td>
                           <td className="p-2">
                             <input
                               value={item.unit || "pcs"}
                               onChange={(e) => handleItemChange(index, "unit", e.target.value)}
-                              className="w-full border rounded p-2"
+                              className={`w-full ${inputClass}`}
                             />
                           </td>
                           <td className="p-2">
                             <input
                               value={item.remark || ""}
                               onChange={(e) => handleItemChange(index, "remark", e.target.value)}
-                              className="w-full border rounded p-2"
+                              className={`w-full ${inputClass}`}
                             />
                           </td>
                           
@@ -330,20 +368,21 @@ const StoreRequestForm = () => {
                             {/* item.image_url now holds the calculated public URL for display */}
                             {item.image_url ? (
                               <div className="flex justify-center gap-2 items-center">
+                                {/* Text color for icons adjusted for dark mode, but keeping the intent (blue/green/red) */}
                                 <button type="button" title="Preview Image" onClick={() => setPreviewImage(item.image_url)}>
-                                  <EyeIcon className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+                                  <EyeIcon className="h-4 w-4 text-blue-500 hover:text-blue-400" />
                                 </button>
                                 <button type="button" title="Change Image" onClick={() => fileInputRefs.current[index]?.click()}>
-                                  <CloudArrowUpIcon className="h-4 w-4 text-green-500 hover:text-green-700" />
+                                  <CloudArrowUpIcon className="h-4 w-4 text-green-500 hover:text-green-400" />
                                 </button>
                                 <button type="button" title="Remove Image" onClick={() => removeImage(index)}>
-                                  <TrashIcon className="h-4 w-4 text-red-600 hover:text-red-800" />
+                                  <TrashIcon className="h-4 w-4 text-red-600 hover:text-red-500" />
                                 </button>
                               </div>
                             ) : (
                               <button 
                                 type="button" 
-                                className="text-sm text-gray-500 hover:text-indigo-600 flex items-center justify-center gap-1 mx-auto"
+                                className="text-sm text-gray-500 hover:text-indigo-600 flex items-center justify-center gap-1 mx-auto dark:text-gray-400 dark:hover:text-indigo-400"
                                 onClick={() => fileInputRefs.current[index]?.click()}
                               >
                                 <PhotoIcon className="h-4 w-4" /> Upload
@@ -354,14 +393,18 @@ const StoreRequestForm = () => {
 
                           <td className="p-2 text-center">
                             <button type="button" onClick={() => removeItem(index)} title="Remove Item">
-                              <TrashIcon className="h-5 w-5 text-red-600 hover:text-red-800" />
+                              <TrashIcon className="h-5 w-5 text-red-600 hover:text-red-800 dark:hover:text-red-500" />
                             </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <button type="button" onClick={addItem} className="m-3 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
+                  <button 
+                    type="button" 
+                    onClick={addItem} 
+                    className="m-3 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
                     Add Item
                   </button>
                 </div>
@@ -379,7 +422,7 @@ const StoreRequestForm = () => {
         </main>
       </div>
 
-      {/* Image Preview Modal */}
+      {/* Image Preview Modal (z-50 is good for fixed/modal overlays) */}
       {previewImage && (
         <div 
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" 
