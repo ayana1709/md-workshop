@@ -33,6 +33,8 @@ return new class extends Migration
             $table->enum('condition', ['New', 'Used'])->default('New');
             $table->string('image')->nullable(); // 🆕 Image column
             $table->timestamps();
+
+            $table->engine = 'InnoDB'; // ✅ Ensure InnoDB
         });
     }
 

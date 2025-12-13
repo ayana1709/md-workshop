@@ -56,22 +56,14 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-// store issue endpoints one by one
-
-// Route::get('/store-issues', [StoreIssueController::class, 'index']);
-// Route::post('/store-issues', [StoreIssueController::class, 'store']);
-// Route::get('/store-issues/{id}', [StoreIssueController::class, 'show']);
-// Route::put('/store-issues/{id}', [StoreIssueController::class, 'update']);
-// Route::delete('/store-issues/{id}', [StoreIssueController::class, 'destroy']);
-
-// or simply like below
 Route::apiResource('store-issues', StoreIssueController::class);
-// Route::apiResource('store-requests', StoreRequestController::class);
+
 Route::get('/store-requests', [StoreRequestController::class, 'index']);
 Route::post('/store-requests', [StoreRequestController::class, 'store']);
-Route::get('/store-requests/{id}', [StoreRequestController::class, 'show']);
-Route::put('/store-requests/{id}', [StoreRequestController::class, 'update']);
-Route::delete('/store-requests/{id}', [StoreRequestController::class, 'destroy']);
+Route::get('/store-requests/{StoreRequest}', [StoreRequestController::class, 'show']);
+Route::put('/store-requests/{StoreRequest}', [StoreRequestController::class, 'update']);
+Route::delete('/store-requests/{StoreRequest}', [StoreRequestController::class, 'destroy']);
+Route::post('/store-requests/upload-image', [StoreRequestController::class, 'upload']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 

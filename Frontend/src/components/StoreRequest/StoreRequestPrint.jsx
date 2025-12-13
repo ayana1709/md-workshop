@@ -3,42 +3,47 @@ import { useParams, useNavigate } from "react-router-dom";
 import api from "@/api";
 import Swal from "sweetalert2";
 
-// Import the ItemTable (we'll ensure it's read-only here)
-import ItemTable from "@/components/StoreIssue/ItemTable"; // Keep ItemTable import if needed for structure
 import { Print } from "@mui/icons-material";
 import PrintHeader from "../PrintHeader";
 
+// Helper to format date to DD/MM/YYYY (GC)
+const formatGCDate = (isoDate) => {
+  if (!isoDate) return "N/A";
+  try {
+    // 1. Remove the time component (everything starting from 'T')
+    const dateOnlyString = isoDate.split('T')[0]; // Result: "YYYY-MM-DD"
+
+    // 2. Now split the clean date string
+    const dateParts = dateOnlyString.split('-'); // Result: ["YYYY", "MM", "DD"]
+    
+    // 3. Reorder to DD/MM/YYYY
+    if (dateParts.length === 3) {
+      return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+    }
+    return dateOnlyString;
+  } catch (e) {
+    return 'N/A';
+  }
+};
+
+
 // --- Component Start ---
 
-const StoreRequestPrint = () => { // Renamed component
+const StoreRequestPrint = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  // Renamed state from issue to request
-  const [request, setRequest] = useState(null); 
+  const [request, setRequest] = useState(null);
 
-  // Renamed fetch function
   const fetchRequest = useCallback(async () => {
     if (!id) return;
 
     try {
       setLoading(true);
-      // Changed endpoint from /store-issues to /store-requests
       const response = await api.get(`/store-requests/${id}`);
       const requestData = response.data.data || response.data;
 
-      // Note: Financial fields (subtotal, total_vat, amount_in_words) 
-      // were NOT in the 'store_requests' migration, but they are kept here 
-      // assuming they are still needed for the printout and handled elsewhere 
-      // (e.g., attached to the request object by a backend transformer).
-      setRequest({
-        ...requestData,
-        // Ensure numerical data is correctly parsed
-        subtotal: parseFloat(requestData.subtotal) || 0,
-        total_vat: parseFloat(requestData.total_vat) || 0,
-        total_price_including_vat:
-          parseFloat(requestData.total_price_including_vat) || 0,
-      });
+      setRequest(requestData);
     } catch (error) {
       console.error("Failed to load store request:", error);
       Swal.fire({
@@ -46,8 +51,7 @@ const StoreRequestPrint = () => { // Renamed component
         title: "Error",
         text: error.response?.data?.message || "Failed to load store request.",
       });
-      // Changed navigation link
-      navigate("/store-request/manager"); 
+      navigate("/store-request/manager");
     } finally {
       setLoading(false);
     }
@@ -73,28 +77,21 @@ const StoreRequestPrint = () => { // Renamed component
     );
   }
 
-  // Destructure request fields (only using fields from the store_requests migration + financial fields)
+  // Destructure fields based on the StoreRequest Form/Model
   const {
     ref_no,
     date,
     objective_for,
     request_remark,
-    requested_items, // Renamed from store_items
+    requested_items,
     requested_department,
     requested_by,
-    status, // Using the single 'status' field for approval status
-    
-    // Financial fields (still included for print layout, if necessary)
-    total_price_including_vat,
-    subtotal,
-    total_vat,
-    amount_in_words,
+    status,
   } = request;
 
-  const requestDate = date ? new Date(date).toLocaleDateString("en-US") : "N/A";
+  const requestDate = formatGCDate(date); // Use the cleaner formatting helper
 
   return (
-    
     <>
       <div className="flex justify-end mb-4 print:hidden">
         <button
@@ -108,7 +105,7 @@ const StoreRequestPrint = () => { // Renamed component
 
       <div className="max-w-4xl mx-auto bg-white print:bg-white print:p-0">
         <div className="p-8 print:p-0 print:text-[10pt] text-gray-900">
-          {/* --- DOCUMENT HEADER (Matching Sketch Layout) --- */}
+          {/* --- DOCUMENT HEADER --- */}
           <div className="border border-gray-900 p-2">
             <PrintHeader />
           </div>
@@ -119,7 +116,7 @@ const StoreRequestPrint = () => { // Renamed component
               <div className="text-center flex-1">
                 <div className="relative inline-block">
                   <h1 className="text-xl font-bold text-gray-900 mb-1">
-                    ከሰቶር የ ዕቃ መጠየቂያ ሰነድ
+                    ከሰቶር የ ዕቃ ማውጫ ሰነድ
                   </h1>
                   <h2 className="text-lg font-bold text-gray-700">
                     Store Request Form
@@ -165,35 +162,26 @@ const StoreRequestPrint = () => { // Renamed component
             </div>
           </div>
 
-          {/* --- ITEMS TABLE (Based on Sketch Columns) --- */}
+          {/* --- ITEMS TABLE (Updated for Item Name, Unit, Qty, Remark) --- */}
           <div className="mb-6">
             <div className="border border-gray-900">
-              {/* Header Row - Columns adjusted for Request only */}
+              {/* Header Row - Columns adjusted for Request only fields */}
               <div className="grid grid-cols-11 font-bold text-center border-b border-gray-900 bg-gray-100">
                 <div className="col-span-1 border-r border-gray-900 p-1">
                   S.N
                 </div>
-                <div className="col-span-3 border-r border-gray-900 p-1">
-                  የእቃዎች ስም
-                  <br />
-                  Item Name
+                <div className="col-span-5 border-r border-gray-900 p-1">
+                  የእቃዎች ስም / Item Name
                 </div>
                 <div className="col-span-1 border-r border-gray-900 p-1">
-                  አይነት Type
+                  መለኪያ / Unit
                 </div>
-                <div className="col-span-1 border-r border-gray-900 p-1">
-                  ኮድ Code
+                <div className="col-span-2 border-r border-gray-900 p-1">
+                  የተጠ. ብዛት / Req. Qty
                 </div>
-                <div className="col-span-1 border-r border-gray-900 p-1">
-                  መለኪያ Unit
+                <div className="col-span-2 border-r border-gray-900 p-1">
+                  ምርመራ / Remark
                 </div>
-                <div className="col-span-1 border-r border-gray-900 p-1">
-                  የዕቃ Part No
-                </div>
-                <div className="col-span-1 border-r border-gray-900 p-1">
-                  የተጠየቀ ብዛት Req. Qty
-                </div>
-                <div className="col-span-2 p-1">ማስጠንቀቂያ Remark</div>
               </div>
 
               {/* Data Rows */}
@@ -206,27 +194,17 @@ const StoreRequestPrint = () => { // Renamed component
                     <div className="col-span-1 border-r border-gray-900 p-1 border-b">
                       {index + 1}
                     </div>
-                    <div className="col-span-3 border-r border-gray-900 p-1 border-b text-left">
+                    <div className="col-span-5 border-r border-gray-900 p-1 border-b text-left">
                       {item.item_name || "N/A"}
-                    </div>
-                    <div className="col-span-1 border-r border-gray-900 p-1 border-b">
-                      {item.type || "N/A"}
-                    </div>
-                    <div className="col-span-1 border-r border-gray-900 p-1 border-b">
-                      {item.code || "N/A"}
                     </div>
                     <div className="col-span-1 border-r border-gray-900 p-1 border-b">
                       {item.unit || "N/A"}
                     </div>
-                    <div className="col-span-1 border-r border-gray-900 p-1 border-b">
-                      {item.part_no || "N/A"}
+                    <div className="col-span-2 border-r border-gray-900 p-1 border-b font-bold">
+                      {item.quantity || "0"} 
                     </div>
-                    <div className="col-span-1 border-r border-gray-900 p-1 border-b font-bold">
-                      {/* Only showing requested quantity */}
-                      {item.quantity || item.requested_qty} 
-                    </div>
-                    <div className="col-span-2 p-1 border-b text-left text-[8pt]">
-                      {request.request_remark || "N/A"}
+                    <div className="col-span-2 p-1 border-b border-gray-900 text-left">
+                      {item.remark || "N/A"}
                     </div>
                   </div>
                 ))
@@ -235,29 +213,9 @@ const StoreRequestPrint = () => { // Renamed component
                   No items listed.
                 </div>
               )}
-
-              {/* Ensure table has space/lines if data is sparse */}
-              {requested_items &&
-                requested_items.length < 5 &&
-                Array(5 - requested_items.length)
-                  .fill(0)
-                  .map((_, i) => (
-                    <div
-                      key={`empty-${i}`}
-                      className="grid grid-cols-11 text-center h-8"
-                    >
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-3 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-1 border-r border-gray-900 p-1 border-b"></div>
-                      <div className="col-span-2 p-1 border-b"></div>
-                    </div>
-                  ))}
             </div>
           </div>
+          
           {/* Notice/Remark Box below Item Table */}
           <div className="flex text-sm mb-8 ms-[55px] items-start">
             {/* Label Section */}
@@ -269,36 +227,17 @@ const StoreRequestPrint = () => { // Renamed component
 
             {/* Value Section (boxed) */}
             <div className="w-full border border-gray-900 p-2 break-words whitespace-pre-wrap rounded-sm">
-              {request_remark || "N/A"}
+              {request.objective_for || "N/A"}
             </div>
           </div>
 
           {/* --- SIGNATURES / STATUS LOGS (Request & Approval) --- */}
           <div className="mb-6">
-            {/* Financial Summary and Amount in Words */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="border border-gray-900 p-2 text-sm">
-                <p className="font-bold mb-1">Amount in Words:</p>
-                <p className="border-b border-dotted border-gray-900 min-h-6">
-                  {amount_in_words || "N/A"}
-                </p>
-              </div>
-              <div className="border border-gray-900 p-2 text-sm">
-                <p className="font-bold text-base mb-1">Financial Summary</p>
-                <FinancialLine label="Subtotal (Excl VAT)" value={subtotal} />
-                <FinancialLine label="Total VAT" value={total_vat} />
-                <div className="border-t border-gray-400 mt-1 pt-1">
-                  <FinancialLine
-                    label="Grand Total (Inc. VAT)"
-                    value={total_price_including_vat}
-                    isTotal
-                  />
-                </div>
-              </div>
-            </div>
+            
+            {/* REMOVED FINANCIAL SUMMARY SECTION */}
 
             {/* Signature Grid (Simplified) */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
+            <div className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
               {/* Requested By (Request/Originator Box) */}
               <SketchSignatureBox
                 title="የጠየቀው (Requested by)"
@@ -306,20 +245,10 @@ const StoreRequestPrint = () => { // Renamed component
                 dept={request.requested_department}
                 status={request.status} // Use the single status field
                 date={request.date}
-                storeBranch={request.requested_from} // Using requested_from for 'Store Name/Branch' line
+                // requested_from may not exist, so use a placeholder or remove if not needed.
+                // Assuming it's used to specify WHICH store they requested from.
+                storeBranch={request.requested_from || request.requested_department} 
               />
-
-              {/* Approved By (Approval Box) */}
-              <SketchSignatureBox
-                title="ያፀደቀው (Approved by)"
-                name={request.approved_name || request.approved_by}
-                dept={request.approved_dept}
-                status={request.status}
-                date={request.approved_date}
-                remark={request.approved_remark}
-              />
-              
-              {/* Removed Delivered/Issued and Received By boxes */}
             </div>
           </div>
         </div>
@@ -330,33 +259,20 @@ const StoreRequestPrint = () => { // Renamed component
 
 // --- Helper Components ---
 
-const FinancialLine = ({ label, value, isTotal = false }) => (
-  <div
-    className={`flex justify-between text-sm ${
-      isTotal ? "font-bold text-gray-900" : "text-gray-700"
-    }`}
-  >
-    <span>{label}:</span>
-    <span>${(parseFloat(value) || 0).toFixed(2)}</span>
-  </div>
-);
+// REMOVED FinancialLine HELPER
 
 // Helper component matching the sketch's signature box layout
 const SketchSignatureBox = ({
   title,
   name,
   dept,
-  status,
   date,
   remark,
-  storeBranch, // Used for requested_from
 }) => {
   const statusText = status
     ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")
     : "N/A";
-  const formattedDate = date
-    ? new Date(date).toLocaleDateString("en-US")
-    : "N/A";
+  const formattedDate = formatGCDate(date);
 
   return (
     <div className="border border-gray-900 p-2 rounded text-sm print:text-xs">
@@ -366,28 +282,19 @@ const SketchSignatureBox = ({
       </p>
 
       {/* The Sketch Fields */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Store/Branch is only relevant for the first box (requested from) */}
-        {storeBranch && (
-          <div className="col-span-2 flex justify-between">
-            <span className="font-semibold">Store name/Branch:</span>
-            <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
-              {storeBranch}
-            </span>
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-2">       
 
         <div className="col-span-2 flex justify-between">
           <span className="font-semibold">Name/Signature:</span>
           <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
-            {name}
+            {name || "__________________"}
           </span>
         </div>
 
         <div className="flex justify-between col-span-1">
           <span className="font-semibold">Dept/Position:</span>
           <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
-            {dept}
+            {dept || "__________________"}
           </span>
         </div>
 
@@ -395,13 +302,6 @@ const SketchSignatureBox = ({
           <span className="font-semibold">Date:</span>
           <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
             {formattedDate}
-          </span>
-        </div>
-
-        <div className="flex justify-between col-span-1">
-          <span className="font-semibold">Status:</span>
-          <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
-            {statusText}
           </span>
         </div>
 

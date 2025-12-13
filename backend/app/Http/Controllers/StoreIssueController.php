@@ -56,7 +56,7 @@ class StoreIssueController extends Controller
             'approved_remark' => 'nullable|string',
             'approved_date' => 'nullable|date',
         ]);
-        
+
         // Auto-generate unique ref_no (SI-YYYYMMDD-XXX format)
         $validatedData['ref_no'] = $this->generateRefNo();
 
@@ -64,22 +64,22 @@ class StoreIssueController extends Controller
 
         return response()->json($issue, 201);
     }
-        /**
+
+    /**
      * Generate unique reference number: SI-YYYYMMDD-XXX
      */
-private function generateRefNo()
-{
-    $attempt = 1;
+    private function generateRefNo()
+    {
+        $attempt = 1;
 
-    do {
-        // Pad the number to 4 digits with leading zeros
-        $refNo = "REF-" . str_pad($attempt, 4, '0', STR_PAD_LEFT);
-        $attempt++;
-    } while (StoreIssue::where('ref_no', $refNo)->exists());
+        do {
+            // Pad the number to 4 digits with leading zeros
+            $refNo = 'REF-'.str_pad($attempt, 4, '0', STR_PAD_LEFT);
+            $attempt++;
+        } while (StoreIssue::where('ref_no', $refNo)->exists());
 
-    return $refNo;
-}
-
+        return $refNo;
+    }
 
     public function show(StoreIssue $storeIssue)
     {
