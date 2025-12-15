@@ -555,71 +555,24 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               </span>
                             </NavLink>
                           </li>
-                        </ul>
-                      )}
-                    </React.Fragment>
-                  )}
-                </SidebarLinkGroup>
-              )}
-
-              {/* 4. Purchase */}
-              {hasAccess("Purchase", "manage") && (
-                <SidebarLinkGroup
-                  activecondition={pathname.includes("purchase")}
-                >
-                  {(handleClick, open) => (
-                    <React.Fragment>
-                      {/* Main Menu Item: Purchase */}
-                      <a
-                        href="#0"
-                        className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
-                          pathname.includes("purchase")
-                            ? ""
-                            : "hover:text-gray-800 dark:hover:text-white"
-                        }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleClick();
-                          setSidebarExpanded(true);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            {/* Icon for Purchase (Using a package icon) */}
-                            <svg
-                              className={`shrink-0 fill-green-500 ${
-                                pathname.includes("purchase")
+                          {/* purchase */}
+                          <li className="mb-1 last:mb-0 relative">
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
+                            <NavLink
+                              end
+                              to="/purchase"
+                              className={({ isActive }) =>
+                                "block transition duration-150 truncate pl-4 " +
+                                (isActive
                                   ? "text-violet-500"
-                                  : "text-gray-400 dark:text-gray-500"
-                              }`}
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
+                                  : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
+                              }
                             >
-                              <path d="M20 7h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v3H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-6 0h-4V4h4v3z" />
-                            </svg>
-                            <span className="text-sm font-medium ml-4 duration-200">
-                              Purchase
-                            </span>
-                          </div>
-                          {/* Dropdown Arrow */}
-                          <div className="flex shrink-0 ml-2">
-                            <svg
-                              className={`w-3 h-3 shrink-0 ml-1 fill-green-500 text-gray-400 dark:text-gray-500 ${
-                                open && "rotate-180"
-                              }`}
-                              viewBox="0 0 12 12"
-                            >
-                              <path d="M5.9 11.4L.5 6l1.4-1.4 4 4 4-4L11.3 6z" />
-                            </svg>
-                          </div>
-                        </div>
-                      </a>
-
-                      {/* Submenu Items */}
-                      {open && (
-                        <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
+                              <span className="text-sm font-medium duration-200">
+                                Purchase
+                              </span>
+                            </NavLink>
+                          </li>
                           {/* Store Requisitions */}
                           <li className="mb-1 last:mb-0 relative">
                             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
@@ -681,7 +634,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                 </SidebarLinkGroup>
               )}
 
-              {/* 5. Approvals */}
+              {/* 4. Approvals */}
               {hasAccess("Approvals", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("approvals")}
