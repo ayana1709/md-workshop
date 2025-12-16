@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StoreRequest;
+use App\Models\GoodsRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class StoreRequestController extends Controller
+class GoodsRequestController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -14,7 +14,7 @@ class StoreRequestController extends Controller
     public function index()
     {
         // Simple pagination for the list view
-        return StoreRequest::latest()->paginate(15);
+        return GoodsRequest::latest()->paginate(15);
     }
 
     /**
@@ -43,24 +43,24 @@ class StoreRequestController extends Controller
         $validatedData['ref_no'] = $this->generateRefNo();
 
         // The requested_items (including image paths) will be saved as JSON (if configured in Model/Migration)
-        $storeRequest = StoreRequest::create($validatedData);
+        $GoodsRequest = GoodsRequest::create($validatedData);
 
-        return response()->json($storeRequest, 201);
+        return response()->json($GoodsRequest, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(StoreRequest $StoreRequest)
+    public function show(GoodsRequest $GoodsRequest)
     {
 
-        return response()->json($StoreRequest);
+        return response()->json($GoodsRequest);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, StoreRequest $StoreRequest)
+    public function update(Request $request, GoodsRequest $GoodsRequest)
     {
         $validatedData = $request->validate([
             'date' => 'required|date',
@@ -78,18 +78,18 @@ class StoreRequestController extends Controller
             'requested_items.*.image' => 'nullable|string',
         ]);
 
-        $StoreRequest->update($validatedData);
+        $GoodsRequest->update($validatedData);
 
-        return response()->json($StoreRequest);
+        return response()->json($GoodsRequest);
     }
 
     /**
      * Remove the specified resource from storage, and delete associated files.
      */
-    public function destroy(StoreRequest $StoreRequest)
+    public function destroy(GoodsRequest $GoodsRequest)
     {
         // **Image Deletion Logic**
-        $requestedItems = $StoreRequest->requested_items;
+        $requestedItems = $GoodsRequest->requested_items;
 
         if (is_array($requestedItems)) {
             foreach ($requestedItems as $item) {
@@ -101,7 +101,7 @@ class StoreRequestController extends Controller
         }
 
         // Delete the database record
-        $StoreRequest->delete();
+        $GoodsRequest->delete();
 
         return response()->json(['message' => 'Store request and associated files deleted successfully'], 200);
     }
@@ -112,7 +112,7 @@ class StoreRequestController extends Controller
         do {
             $refNo = 'REF-'.str_pad($attempt, 4, '0', STR_PAD_LEFT);
             $attempt++;
-        } while (StoreRequest::where('ref_no', $refNo)->exists());
+        } while (GoodsRequest::where('ref_no', $refNo)->exists());
 
         return $refNo;
     }

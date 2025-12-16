@@ -29,7 +29,7 @@ const formatGCDate = (isoDate) => {
 
 // --- Component Start ---
 
-const StoreRequestPrint = () => {
+const GoodsRequestPrint = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -40,18 +40,20 @@ const StoreRequestPrint = () => {
 
     try {
       setLoading(true);
-      const response = await api.get(`/store-requests/${id}`);
+      const response = await api.get(`/goods-requests/${id}`);
       const requestData = response.data.data || response.data;
+
+      const remark =  response.data.objective_for;
 
       setRequest(requestData);
     } catch (error) {
-      console.error("Failed to load store request:", error);
+      console.error("Failed to load Goods request:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.response?.data?.message || "Failed to load store request.",
+        text: error.response?.data?.message || "Failed to load Goods request.",
       });
-      navigate("/store-request/manager");
+      navigate("/goods-request/manager");
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ const StoreRequestPrint = () => {
   if (loading) {
     return (
       <div className="p-8 text-center text-xl text-gray-700 dark:text-gray-300">
-        Loading Store Request Document...
+        Loading Goods Request Document...
       </div>
     );
   }
@@ -77,12 +79,11 @@ const StoreRequestPrint = () => {
     );
   }
 
-  // Destructure fields based on the StoreRequest Form/Model
+  // Destructure fields based on the GoodsRequest Form/Model
   const {
     ref_no,
     date,
     objective_for,
-    request_remark,
     requested_items,
     requested_department,
     requested_by,
@@ -119,7 +120,7 @@ const StoreRequestPrint = () => {
                     ከሰቶር የ ዕቃ ማውጫ ሰነድ
                   </h1>
                   <h2 className="text-lg font-bold text-gray-700">
-                    Store Request Form
+                    Goods Request Form
                   </h2>
                   <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
                 </div>
@@ -234,7 +235,7 @@ const StoreRequestPrint = () => {
           {/* --- SIGNATURES / STATUS LOGS (Request & Approval) --- */}
           <div className="mb-6">
             
-            {/* REMOVED FINANCIAL SUMMARY SECTION */}
+            {/* REMOVED FINANCIAL SUMMARY SECTION */}store
 
             {/* Signature Grid (Simplified) */}
             <div className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm">
@@ -304,17 +305,10 @@ const SketchSignatureBox = ({
             {formattedDate}
           </span>
         </div>
-
-        <div className="flex justify-between col-span-1">
-          <span className="font-semibold">Remark:</span>
-          <span className="border-b border-dotted border-gray-700 flex-grow ml-2 text-right">
-            {remark || "N/A"}
-          </span>
-        </div>
       </div>
     </div>
   );
 };
 
 
-export default StoreRequestPrint;
+export default GoodsRequestPrint;
