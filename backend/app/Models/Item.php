@@ -29,6 +29,22 @@ class Item extends Model
         'total_price',
         'location',
         'condition',
-        'image', // ✅ new
+        'image',
     ];
+
+    // In Item model
+    public function toArray()
+    {
+        $array = parent::toArray();
+
+        array_walk_recursive($array, function (&$value) {
+            if (is_string($value)) {
+                $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+        });
+
+        return $array;
+    }
+
+
 }
