@@ -16,6 +16,9 @@ import ButtonRepairOperation from "./ButtonRepairOperation";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import DescriptionModal from "./DescriptionModal";
 import StatusCell from "./StatusCell";
+import { useDateFormatter } from "./DateFormat/useDateFormatter";
+
+
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,6 +34,10 @@ const JobOrderList = () => {
   const menuRefs = React.useRef({}); // id -> menu element
   const [popupImage, setPopupImage] = useState(null);
   // console.log(selectedRows);
+
+  const { formatGCDate, formatEthioDate } = useDateFormatter();
+
+
 
   const {
     setIsModalOpen,
@@ -571,11 +578,25 @@ const JobOrderList = () => {
                   </td>
                   {/* Start Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    {repair.received_date}
+                    {formatGCDate(repair.received_date)}
+                    <br />
+                     <span
+                          className="text-xs text-indigo-600 dark:text-indigo-400"
+                          title="Ethiopian Calendar"
+                        >
+                          {formatEthioDate(repair.received_date)}
+                    </span>
                   </td>
                   {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
-                    {repair.promise_date || "-"}
+                    {formatGCDate(repair.promise_date || "-")}
+                      <br />
+                     <span
+                          className="text-xs text-indigo-600 dark:text-indigo-400"
+                          title="Ethiopian Calendar"
+                        >
+                          {formatEthioDate(repair.promise_date || "-")}
+                    </span>
                   </td>
                   {/* Status */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">

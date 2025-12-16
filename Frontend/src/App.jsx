@@ -154,9 +154,9 @@ import StoreIssueManager from "./components/StoreIssue/StoreIssueManager";
 import StoreIssueView from "./components/StoreIssue/StoreIssueView";
 import StoreIssuePrint from "./components/StoreIssue/StoreIssuePrint";
 import StoreIssueForm from "./components/StoreIssue/StoreIssueForm";
-import StoreRequestForm from "./components/StoreRequest/StoreRequestForm";
-import StoreRequestManager from "./components/StoreRequest/StoreRequestManager";
-import StoreRequestPrint from "./components/StoreRequest/StoreRequestPrint";
+import GoodsRequestForm from "./components/GoodsRequest/GoodsRequestForm";
+import GoodsRequestManager from "./components/GoodsRequest/GoodsRequestManager";
+import GoodsRequestPrint from "./components/GoodsRequest/GoodsRequestPrint";
 
 function App() {
   const location = useLocation();
@@ -268,27 +268,27 @@ function App() {
         <Route path="/store-issue/print/:id" element={<StoreIssuePrint />} />
 
                 <Route
-          path="/store-request/create"
+          path="/goods-request/create"
           element={
             <ProtectedRoute>
-              <StoreRequestForm
+              <GoodsRequestForm
               />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/store-request/manager"
+          path="/goods-request/manager"
           element={
             <ProtectedRoute>
-              <StoreRequestManager />
+              <GoodsRequestManager />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/store-request/edit/:id"
-          element={<StoreRequestForm isEdit={true} />}
+          path="/goods-request/edit/:id"
+          element={<GoodsRequestForm isEdit={true} />}
         />
-        <Route path="/store-request/print/:id" element={<StoreRequestPrint isPrint={true} />} />
+        <Route path="/goods-request/print/:id" element={<GoodsRequestPrint isPrint={true} />} />
 
         {/* Route for editing a specific request */}
 

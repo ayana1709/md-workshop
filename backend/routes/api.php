@@ -30,7 +30,7 @@ use App\Http\Controllers\SpareChangeController;
 use App\Http\Controllers\SpareRequestController;
 use App\Http\Controllers\StoreIssueController;
 use App\Http\Controllers\StoreItemController;
-use App\Http\Controllers\StoreRequestController;
+use App\Http\Controllers\GoodsRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WheelAlignemntController;
@@ -58,12 +58,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::apiResource('store-issues', StoreIssueController::class);
 
-Route::get('/store-requests', [StoreRequestController::class, 'index']);
-Route::post('/store-requests', [StoreRequestController::class, 'store']);
-Route::get('/store-requests/{StoreRequest}', [StoreRequestController::class, 'show']);
-Route::put('/store-requests/{StoreRequest}', [StoreRequestController::class, 'update']);
-Route::delete('/store-requests/{StoreRequest}', [StoreRequestController::class, 'destroy']);
-Route::post('/store-requests/upload-image', [StoreRequestController::class, 'upload']);
+Route::get('/goods-requests', [GoodsRequestController::class, 'index']);
+Route::post('/goods-requests', [GoodsRequestController::class, 'store']);
+Route::get('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'show']);
+Route::put('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'update']);
+Route::delete('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'destroy']);
+Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -183,6 +183,7 @@ Route::patch('/store-items/{code}/item-out', [StoreItemController::class, 'itemO
 Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
 });
+
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
 // total numberof items
 Route::get('/store-items/total', [StoreItemController::class, 'getTotalItems']);

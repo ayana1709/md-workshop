@@ -10,13 +10,20 @@ import EditFieldModal from "./EditFieldModal";
 import ItemDetail from "./ItemDetail";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import ItemOutModal from "./ItemOutModal";
+import { toast } from "react-toastify"; // Import toast for error handling
 
 const Store = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const tabRefs = useRef([]);
-  const [indicatorStyle, setIndicatorStyle] = useState({});
-  const [totalItems, setTotalItems] = useState(0);
   const location = useLocation();
+
+  // State to hold the counts for all tabs
+  const [counts, setCounts] = useState({
+    "total-items": 0,
+    "out-of-store": 0,
+    "low-store": 0,
+  });
+
   const {
     showModal,
     showEditModal,
@@ -31,43 +38,46 @@ const Store = () => {
     itemOutData,
   } = useStores();
 
-  console.log(isItemModalOpen);
+  const tabs = ["total-items", "out-of-store", "low-store"];
 
-  const tabs = [
-    "total-items",
-    "out-of-store",
-    "low-store",
-    // "sales",
-    // "purchase",
-  ];
+  // 1. Fetch ALL counts when the component mounts
+  useEffect(() => {
+    const fetchAllCounts = async () => {
+      try {
+        // *** UPDATED URL TO MATCH NEW API ROUTE ***
+        const response = await api.get("/items/stats"); 
+        
+        const data = response.data;
+
+        setCounts({
+          // Map backend keys (snake_case) to frontend tab keys (kebab-case)
+          "total-items": data.total_items || 0,
+          "out-of-store": data.out_of_stock || 0, // Assuming Out-of-Store uses the out_of_stock count
+          "low-store": data.low_stock || 0,
+        });
+
+      } catch (error) {
+        console.error("Error fetching inventory counts:", error);
+        // Ensure you have `import { toast } from "react-toastify";` at the top
+        // toast.error("Failed to load inventory counts."); 
+      }
+    };
+
+    fetchAllCounts();
+  }, []); // Run once on mount
+
 
   useLayoutEffect(() => {
     const currentPath = location.pathname.split("/")[2];
     const activeTabIndex = tabs.indexOf(currentPath);
     if (tabRefs.current[activeTabIndex]) {
-      const activeTab = tabRefs.current[activeTabIndex];
-      setIndicatorStyle({
-        transform: `translateX(${activeTab.offsetLeft}px)`,
-        width: `${activeTab.offsetWidth}px`,
-      });
+      // The logic for setting indicatorStyle goes here if you re-implement it.
     }
   }, [location]);
-  // useEffect(() => {
-  //   const fetchItemCount = async () => {
-  //     try {
-  //       const response = await api.get("/store-items/count");
-  //       console.log(response);
-  //       setTotalItems(response.data.totalItems); // Update the state with the total count
-  //     } catch (error) {
-  //       console.error("Error fetching item count:", error);
-  //     }
-  //   };
-
-  //   fetchItemCount();
-  // }, []); // Empty dependency array ensures the request runs once on mount
 
   return (
     <div className="relative z-[9] w-full flex h-screen overflow-y-auto bg-gray-100 dark:bg-gray-900">
+      {/* Modal Overlays (Kept as is) */}
       <div className="">{showModal ? <AddStore /> : ""}</div>
       <div className="">{showEditModal ? <EditItem /> : ""}</div>
       <div className="">{showDetailModal ? <ItemDetail /> : ""}</div>
@@ -83,26 +93,19 @@ const Store = () => {
       )}
       {isItemModalOpen ? (
         <div className="absolute w-full h-full z-10 top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
-          <ConfirmDeleteModal
-          // isOpen={isModalOpen}
-          // onClose={() => setIsModalOpen(false)}
-          // onConfirm={() => handleDelete(selectedId, type)}
-          />
+          <ConfirmDeleteModal />
         </div>
       ) : (
         ""
       )}
       {itemOutData ? (
         <div className="absolute w-full h-full z-10 top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
-          <ItemOutModal
-          // isOpen={isModalOpen}
-          // onClose={() => setIsModalOpen(false)}
-          // onConfirm={() => handleDelete(selectedId, type)}
-          />
+          <ItemOutModal />
         </div>
       ) : (
         ""
       )}
+
       {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
@@ -111,7 +114,7 @@ const Store = () => {
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         <div className="relative z-[9] phone:w-[98%] tablet:w-[90%] laptop:w-[98%] mx-auto my-6 mt-4 shadow-md rounded-lg overflow-y-auto">
-          {/* Tab Navigation */}
+          {/* Tab Navigation (UPDATED HERE) */}
           <nav className="flex phone:flex-col tablet:flex-row rounded-t-xl overflow-hidden">
             {tabs.map((tab, index) => (
               <NavLink
@@ -126,7 +129,11 @@ const Store = () => {
                   }`
                 }
               >
+                {/* 2. Display Label and Count */}
                 {tab.replace("-", " ").toUpperCase()}
+                <span className="ml-2 px-2 py-0.5 rounded-full bg-white text-black text-lg font-bold dark:bg-gray-700 dark:text-white">
+                  {counts[tab]}
+                </span>
               </NavLink>
             ))}
           </nav>

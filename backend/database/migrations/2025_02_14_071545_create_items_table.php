@@ -31,10 +31,10 @@ return new class extends Migration
             $table->decimal('total_price', 15, 2)->default(0);
             $table->string('location')->nullable();
             $table->enum('condition', ['New', 'Used'])->default('New');
-            $table->string('image')->nullable(); // 🆕 Image column
+            $table->string('image')->nullable(); 
             $table->timestamps();
 
-            $table->engine = 'InnoDB'; // ✅ Ensure InnoDB
+            $table->engine = 'InnoDB'; 
         });
     }
 

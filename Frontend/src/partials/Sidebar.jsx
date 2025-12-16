@@ -374,14 +374,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                 </SidebarLinkGroup>
               )}
 
-              {/* 2. Store Request */}
-              {hasAccess("Store Request", "manage") && (
+              {/* 2. Goods Request */}
+              {hasAccess("Goods Request", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("store-request")}
                 >
                   {(handleClick, open) => (
                     <React.Fragment>
-                      {/* Main Menu Item: Store Request */}
+                      {/* Main Menu Item: Goods Request */}
                       <a
                         href="#0"
                         className={`block text-900 dark:text-gray-100 truncate transition duration-150 ${
@@ -397,7 +397,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
-                            {/* Icon for Store Request */}
+                            {/* Icon for Goods Request */}
                             <svg
                               className={`shrink-0 fill-green-500 ${
                                 pathname.includes("store-request")
@@ -412,7 +412,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM8 12h8v2H8zm0 4h8v2H8z" />
                             </svg>
                             <span className="text-sm font-medium ml-4 duration-200">
-                              Store Request
+                              Goods Request
                             </span>
                           </div>
                           {/* Dropdown Arrow */}
@@ -432,13 +432,13 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                       {/* Submenu Items */}
                       {open && (
                         <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
-                          {/* Create Store Request */}
-                          {hasAccess("Store Request", "create") && (
+                          {/* Create Goods Request */}
+                          {hasAccess("Goods Request", "create") && (
                             <li className="mb-1 last:mb-0 relative">
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
                               <NavLink
                                 end
-                                to="/store-request/create"
+                                to="/goods-request/create"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate pl-4 " +
                                   (isActive
@@ -447,18 +447,18 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium duration-200">
-                                  Create Store Request
+                                  Create Goods Request
                                 </span>
                               </NavLink>
                             </li>
                           )}
-                          {/* Manage Store Request */}
-                          {hasAccess("Store Request", "manage") && (
+                          {/* Manage Goods Request */}
+                          {hasAccess("Goods Request", "manage") && (
                             <li className="mb-1 last:mb-0 relative">
                               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-green-500 dark:bg-gray-600"></span>
                               <NavLink
                                 end
-                                to="/store-request/manager"
+                                to="/goods-request/manager"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate pl-4 " +
                                   (isActive
@@ -467,7 +467,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium duration-200">
-                                  Manage Store Request
+                                  Manage Goods Request
                                 </span>
                               </NavLink>
                             </li>
