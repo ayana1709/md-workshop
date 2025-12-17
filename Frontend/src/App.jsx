@@ -157,6 +157,8 @@ import StoreIssueForm from "./components/StoreIssue/StoreIssueForm";
 import GoodsRequestForm from "./components/GoodsRequest/GoodsRequestForm";
 import GoodsRequestManager from "./components/GoodsRequest/GoodsRequestManager";
 import GoodsRequestPrint from "./components/GoodsRequest/GoodsRequestPrint";
+import DepartmentList from "./components/Role/DepartmentList";
+import DepartmentForm from "./components/Role/DepartmentForm";
 
 function App() {
   const location = useLocation();
@@ -432,6 +434,11 @@ function App() {
         <Route path="/edit-permission/:roleId" element={<EditPermission />} />
         <Route path="/permission" element={<Permissions />} />
         <Route path="/edit-user/:id" element={<EditUser />} />
+
+        <Route path="/departments" element={<DepartmentList />}/>
+        <Route path="/departments/create" element={<DepartmentForm />}/>
+        <Route path="/departments/edit/:id" element={<DepartmentForm />}/>
+        
       </Routes>
     </>
   );
