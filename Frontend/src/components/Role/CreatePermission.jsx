@@ -37,18 +37,22 @@ export default function CreatePermission() {
   });
 
   const features = [
-    "Job Order",
-    "Work Order",
-    "Inventory",
-    "Payment",
-    "Sales",
-    "Purchase",
-    "Proforma",
-    "Checklist",
-    "Setting",
-    "Staff Management",
-    "Income",
-    "Expense",
+      'Job Order',
+      'Work Order',
+      'Store Issue',
+      'Goods Request',
+      'Incoming Request',
+      'Approvals',
+      'Inventory',
+      'Payment',
+      'Sales',
+      'Purchase',
+      'Proforma',
+      'Checklist',
+      'Setting',
+      'Staff Management',
+      'Income',
+      'Expense',
   ];
 
   useEffect(() => {
