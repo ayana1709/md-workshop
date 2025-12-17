@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('goods_requests', function (Blueprint $table) {
             $table->id();
-            
+
             $table->date('date')->comment('Request Date')->index();
             $table->string('ref_no')->unique()->comment('Request Reference Number');
             $table->string('objective_for')->comment('Reason/Objective for the request');

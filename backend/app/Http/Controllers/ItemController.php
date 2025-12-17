@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\ItemOut;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
 
@@ -40,7 +41,7 @@ class ItemController extends Controller
             'type' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
             'manufacturing_date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240', 
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240',
         ]);
 
         if (empty($validated['code'])) {
@@ -53,14 +54,13 @@ class ItemController extends Controller
 
             if ($file->getSize() > 2 * 1024 * 1024) {
 
-                $image = Image::make($file)->encode('jpg', 70); 
+                $image = Image::make($file)->encode('jpg', 70);
 
                 $filename = 'items/'.uniqid().'.jpg';
 
-                \Storage::disk('public')->put($filename, (string) $image);
+                Storage::disk('public')->put($filename, (string) $image);
 
                 $validated['image'] = $filename;
-
             } else {
                 $validated['image'] = $file->store('items', 'public');
             }
@@ -80,8 +80,8 @@ class ItemController extends Controller
 
                 if (isset($validated['image'])) {
 
-                    if ($existingItem->image && \Storage::disk('public')->exists($existingItem->image)) {
-                        \Storage::disk('public')->delete($existingItem->image);
+                    if ($existingItem->image && Storage::disk('public')->exists($existingItem->image)) {
+                        Storage::disk('public')->delete($existingItem->image);
                     }
 
                     $existingItem->image = $validated['image'];
@@ -140,13 +140,13 @@ class ItemController extends Controller
             'shelf_number' => 'nullable|string|max:255',
             'manufacturer' => 'nullable|string|max:255',
             'manufacturing_date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240', 
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240',
         ]);
 
         if ($request->hasFile('image')) {
 
-            if ($item->image && \Storage::disk('public')->exists($item->image)) {
-                \Storage::disk('public')->delete($item->image);
+            if ($item->image && Storage::disk('public')->exists($item->image)) {
+                Storage::disk('public')->delete($item->image);
             }
 
             $path = $request->file('image')->store('items', 'public');
@@ -280,7 +280,7 @@ class ItemController extends Controller
     public function addMore(Request $request)
     {
         $validated = $request->validate([
-            'id' => 'required|integer|exists:items,id', 
+            'id' => 'required|integer|exists:items,id',
             'part_number' => 'nullable|string',
             'quantity' => 'nullable|integer|min:0',
             // 'unit_price' => 'nullable|numeric|min:0',
@@ -331,13 +331,14 @@ class ItemController extends Controller
     public function dashboardStats()
     {
         return response()->json([
-            'total_items' => Item::count(),                         
-            'total_quantity' => Item::sum('quantity'),                
-            'out_of_stock' => Item::where('quantity', 0)->count(),   
+            'total_items' => Item::count(),
+            'total_quantity' => Item::sum('quantity'),
+            'out_of_stock' => Item::where('quantity', 0)->count(),
             'low_stock' => Item::where('quantity', '<', 10)->count(),
         ]);
     }
-public function import(Request $request)
+
+    public function import(Request $request)
     {
         $rows = $request->input('items', []);
 
@@ -365,7 +366,6 @@ public function import(Request $request)
                         return null;
                     }
 
-
                     $item_name =
                         $normalized['item_name'] ??
                         $normalized['item name'] ??
@@ -373,17 +373,14 @@ public function import(Request $request)
                         null;
 
                     $quantity =
-                        isset($normalized['quantity']) && $normalized['quantity'] !== '' ? intval($normalized['quantity']) :
-                        (isset($normalized['qyt']) && $normalized['qyt'] !== '' ? intval($normalized['qyt']) :
-                        (isset($normalized['qty']) && $normalized['qty'] !== '' ? intval($normalized['qty']) : null));
-
+                        isset($normalized['quantity']) && $normalized['quantity'] !== '' ? intval($normalized['quantity']) : (isset($normalized['qyt']) && $normalized['qyt'] !== '' ? intval($normalized['qyt']) : (isset($normalized['qty']) && $normalized['qty'] !== '' ? intval($normalized['qty']) : null));
 
                     if (! $item_name) {
                         throw new \Exception('Row '.($index + 1).' is missing Item Name');
                     }
 
                     if ($quantity === null || $quantity === '') {
-                        $quantity = 0; 
+                        $quantity = 0;
                     }
 
                     return [
@@ -410,7 +407,7 @@ public function import(Request $request)
                         'location' => $normalized['location'] ?? null,
 
                         'shelf_number' => $normalized['shelf_number'] ?? $normalized['shalf no'] ?? null,
-                        
+
                     ];
                 })
                 ->filter()
@@ -442,7 +439,6 @@ public function import(Request $request)
                 $item['location'] = $item['location'] ?? 'Warehouse';
                 $item['shelf_number'] = $item['shelf_number'] ?? 'N/A';
 
-
                 if (empty($item['part_number'])) {
                     do {
                         $pn = 'PN-'.strtoupper(Str::random(8));
@@ -463,7 +459,7 @@ public function import(Request $request)
                     $created = Item::create($item);
                     $inserted[] = $created;
                 } catch (\Illuminate\Database\QueryException $e) {
-                    \Log::error("Import QueryException (Skipped): Item failed DB insert. Message: " . $e->getMessage(), ['item_data' => $item]);
+                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: '.$e->getMessage(), ['item_data' => $item]);
                 }
             }
 
@@ -473,7 +469,6 @@ public function import(Request $request)
                 'inserted' => count($inserted),
                 'updated' => count($updated),
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Import failed: '.$e->getMessage(),

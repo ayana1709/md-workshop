@@ -7,8 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class GoodsRequest extends Model
 {
-     use HasFactory;
-
+    use HasFactory;
     protected $fillable = [
         'ref_no',
         'date',
