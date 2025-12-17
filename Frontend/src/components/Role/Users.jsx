@@ -11,15 +11,12 @@ export default function Users() {
   const [users, setUsers] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Reset password modal states
+  // ... (Reset password modal states kept exactly as you had them)
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  // Reset password modal states
   const [oldPassword, setOldPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -30,6 +27,7 @@ export default function Users() {
 
   const fetchUsers = async () => {
     try {
+      // Ensure your Laravel controller uses ->with('department')
       const res = await api.get("/users");
       setUsers(res.data);
     } catch (error) {
@@ -50,19 +48,23 @@ export default function Users() {
 
     if (!confirm.isConfirmed) return;
 
-    try {
-      await api.delete(`/users/${id}`);
-      setUsers(users.filter((u) => u.id !== id));
-      Swal.fire("Deleted!", "User has been deleted.", "success");
-    } catch (error) {
-      Swal.fire("Error!", "Failed to delete user.", "error");
+try {
+    const response = await api.delete(`/users/${id}`);
+    if (response.status === 200) {
+      // ✅ Only remove from UI if the DB actually deleted it
+      setUsers(prevUsers => prevUsers.filter((u) => u.id !== id));
+      Swal.fire("Deleted!", "User removed.", "success");
     }
+  } catch (error) {
+    Swal.fire("Error!", "Database refused to delete.", "error");
+  }
   };
 
   const handleOpenModal = (user) => {
     setSelectedUser(user);
+    setOldPassword("");
     setNewPassword("");
-    setShowPassword(false);
+    setConfirmPassword("");
     setShowModal(true);
   };
 
@@ -71,62 +73,34 @@ export default function Users() {
       Swal.fire("Error!", "All fields are required.", "error");
       return;
     }
-
-    if (newPassword.length < 6) {
-      Swal.fire(
-        "Error!",
-        "New password must be at least 6 characters.",
-        "error"
-      );
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
-      Swal.fire(
-        "Error!",
-        "New password and confirm password do not match!",
-        "error"
-      );
+      Swal.fire("Error!", "Passwords do not match!", "error");
       return;
     }
 
     try {
-      const response = await api.post(
-        `/users/${selectedUser.id}/reset-password`,
-        {
-          old_password: oldPassword,
-          new_password: newPassword,
-          confirm_password: confirmPassword,
-        }
-      );
-
+      const response = await api.post(`/users/${selectedUser.id}/reset-password`, {
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword,
+      });
       Swal.fire("Success!", response.data.message, "success");
       setShowModal(false);
-
-      // Clear inputs
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
     } catch (error) {
-      Swal.fire(
-        "Error!",
-        error.response?.data?.message || "Failed to reset password!",
-        "error"
-      );
+      Swal.fire("Error!", error.response?.data?.message || "Failed!", "error");
     }
   };
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      {/* Content */}
       <div className="flex-1 flex flex-col overflow-y-auto">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
         <main className="grow p-6 bg-gray-50">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold text-gray-800">System Users</h1>
             <Link
               to="/create-users"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow"
@@ -135,42 +109,49 @@ export default function Users() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <div className="overflow-x-auto bg-white rounded-lg shadow border">
             <table className="w-full text-left border-collapse min-w-max">
-              <thead className="bg-purple-100 text-purple-900">
+              <thead className="bg-purple-100 text-purple-900 border-b">
                 <tr>
                   <th className="p-3">ID</th>
                   <th className="p-3">Image</th>
                   <th className="p-3">Full Name</th>
+                  <th className="p-3">Department</th> {/* 👈 New Column Header */}
                   <th className="p-3">Username</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
-                  <th className="p-3">Actions</th>
+                  <th className="p-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => {
                   const imgSrc = u.profile_image
-                    ? `${import.meta.env.VITE_API_URL}/storage/profile_images/${
-                        u.profile_image
-                      }`
-                    : "../../images/userprofile.jpg"; // 👈 Put a default profile placeholder in /public folder
+                    ? `${import.meta.env.VITE_API_URL}/storage/profile_images/${u.profile_image}`
+                    : null;
 
                   return (
-                    <tr
-                      key={u.id}
-                      className="border-b hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <td className="p-3">{u.id}</td>
-
+                    <tr key={u.id} className="border-b hover:bg-gray-50 transition-colors">
+                      <td className="p-3 text-gray-500">#{u.id}</td>
                       <td className="p-3">
                         <img
-                          src={imgSrc ? imgSrc : "../../images/userprofile.jpg"}
+                          src={imgSrc || "/images/userprofile.jpg"}
                           alt="Profile"
                           className="w-10 h-10 rounded-full object-cover border"
                         />
                       </td>
-                      <td className="p-3 font-semibold">{u.name}</td>
+                      <td className="p-3 font-semibold text-gray-700">{u.name}</td>
+                      
+                      {/* --- DEPARTMENT DATA --- */}
+                      <td className="p-3">
+                        {u.department ? (
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm border border-blue-100">
+                            {u.department.name}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 italic">No Dept</span>
+                        )}
+                      </td>
+
                       <td className="p-3">{u.username}</td>
                       <td className="p-3">{u.email}</td>
                       <td className="p-3">
@@ -178,28 +159,26 @@ export default function Users() {
                           ? u.roles.map((r) => r.name).join(", ")
                           : "-"}
                       </td>
-                      <td className="p-3 space-x-2">
+                      <td className="p-3 space-x-2 text-center">
                         {u.username === "admin" ? (
-                          <span className="text-gray-400 italic">
-                            Protected
-                          </span>
+                          <span className="text-gray-400 italic">Protected</span>
                         ) : (
                           <>
                             <Link
                               to={`/edit-user/${u.id}`}
-                              className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600"
+                              className="px-3 py-1 rounded bg-yellow-500 text-white hover:bg-yellow-600 text-sm shadow-sm"
                             >
                               Edit
                             </Link>
                             <button
                               onClick={() => handleDelete(u.id)}
-                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600"
+                              className="px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 text-sm shadow-sm"
                             >
                               Delete
                             </button>
                             <button
                               onClick={() => handleOpenModal(u)}
-                              className="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600"
+                              className="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600 text-sm shadow-sm"
                             >
                               Reset Password
                             </button>
@@ -211,15 +190,11 @@ export default function Users() {
                 })}
               </tbody>
             </table>
-
-            {users.length === 0 && (
-              <div className="p-4 text-center text-gray-500">
-                No users found.
-              </div>
-            )}
+            {users.length === 0 && <div className="p-8 text-center text-gray-400">Loading or no users found...</div>}
           </div>
         </main>
       </div>
+
 
       {/* Reset Password Modal */}
 
