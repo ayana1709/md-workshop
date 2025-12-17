@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\BolloController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DurinDriveTestController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GoodsRequestController;
 use App\Http\Controllers\InspectionController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\OutsourceController;
@@ -30,7 +32,6 @@ use App\Http\Controllers\SpareChangeController;
 use App\Http\Controllers\SpareRequestController;
 use App\Http\Controllers\StoreIssueController;
 use App\Http\Controllers\StoreItemController;
-use App\Http\Controllers\GoodsRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WheelAlignemntController;
@@ -57,13 +58,9 @@ use Illuminate\Support\Facades\Route;
 // });
 
 Route::apiResource('store-issues', StoreIssueController::class);
-
-Route::get('/goods-requests', [GoodsRequestController::class, 'index']);
-Route::post('/goods-requests', [GoodsRequestController::class, 'store']);
-Route::get('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'show']);
-Route::put('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'update']);
-Route::delete('/goods-requests/{GoodsRequest}', [GoodsRequestController::class, 'destroy']);
+Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
+Route::apiResource('/departments', DepartmentController::class);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -384,7 +381,7 @@ Route::prefix('users')->group(function () {
     Route::post('/', [UserController::class, 'store']); // Create user
     Route::get('/{id}', [UserController::class, 'show']); // Single user
     Route::put('/{id}', [UserController::class, 'update']); // Update user
-    Route::delete('/{id}', [UserController::class, 'destroy']); // Delete user
+    Route::delete('/{admin}', [UserController::class, 'destroy']); // Delete user
 });
 // routes/web.php OR routes/api.php
 Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
