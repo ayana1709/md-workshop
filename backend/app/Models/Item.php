@@ -45,6 +45,4 @@ class Item extends Model
 
         return $array;
     }
-
-
 }

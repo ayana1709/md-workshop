@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\Department;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,7 +17,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = Admin::with('roles')->get();
+        $users = Admin::with(['roles', 'department'])->get();
 
         return response()->json($users);
     }
@@ -44,11 +47,12 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
+            'department_id' => 'required|unique:admins,department_id',
         ]);
 
         $imageName = null;
         if ($request->hasFile('profile_image')) {
-            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
+            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
         }
 
@@ -89,11 +93,11 @@ class UserController extends Controller
 
         // Handle Image Change
         if ($request->hasFile('profile_image')) {
-            if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
-                Storage::disk('public')->delete('profile_images/'.$user->profile_image);
+            if ($user->profile_image && Storage::disk('public')->exists('profile_images/' . $user->profile_image)) {
+                Storage::disk('public')->delete('profile_images/' . $user->profile_image);
             }
 
-            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
+            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
             $user->profile_image = $imageName;
         }
@@ -117,18 +121,23 @@ class UserController extends Controller
     /**
      * Delete a user and their image.
      */
-    public function destroy($id)
-    {
-        $user = Admin::findOrFail($id);
+public function destroy(Admin $admin) // Name must match {admin}
+{
+    try {
+        return DB::transaction(function () use ($admin) {
+            // Break relationship using the object ID
+            DB::table('departments')
+                ->where('admin_id', $admin->id)
+                ->update(['admin_id' => null]);
 
-        if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
-            Storage::disk('public')->delete('profile_images/'.$user->profile_image);
-        }
+            $admin->delete();
 
-        $user->delete();
-
-        return response()->json(['message' => 'User deleted successfully']);
+            return response()->json(['message' => 'User deleted successfully']);
+        });
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
     public function resetPassword(Request $request, $id)
     {
