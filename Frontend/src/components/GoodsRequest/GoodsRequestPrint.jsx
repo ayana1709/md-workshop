@@ -44,6 +44,7 @@ const GoodsRequestPrint = () => {
       const requestData = response.data.data || response.data;
 
       const remark =  response.data.objective_for;
+      const requested_by = response.data.requested_by;
 
       setRequest(requestData);
     } catch (error) {
@@ -158,6 +159,24 @@ const GoodsRequestPrint = () => {
               <div className="flex-1 border-b border-gray-400 pb-1">
                 <p className="text-gray-800 inline">
                   {objective_for || "______________________________"}
+                </p>
+              </div>
+            </div>
+           <div className="flex items-start ms-10">
+              {/* Label Section */}
+              <div className="w-1/6 pt-1">
+                <div className="text-sm leading-tight">
+                  <p className="font-bold text-gray-800 text-lg">የጠየቀዉ</p>
+                  <p className="font-medium text-gray-600 text-lg mt-1">
+                    Requested By
+                  </p>
+                </div>
+              </div>
+
+              {/* Value with Line */}
+              <div className="flex-1 border-b border-gray-400 pb-1">
+                <p className="text-gray-800 inline">
+                  {requested_by || "______________________________"}
                 </p>
               </div>
             </div>
