@@ -17,7 +17,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import DescriptionModal from "./DescriptionModal";
 import StatusCell from "./StatusCell";
 import { useDateFormatter } from "./DateFormat/useDateFormatter";
-
+import DateInput from "./DateInput";
 
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -37,14 +37,10 @@ const JobOrderList = () => {
 
   const { formatGCDate, formatEthioDate } = useDateFormatter();
 
-
-
   const {
     setIsModalOpen,
     setSelectedRepairId,
     setType,
-    repairs,
-    setRepairs,
     printData,
     setPrintData,
     // dropdownOpen,
@@ -83,50 +79,47 @@ const JobOrderList = () => {
     status: "Status",
   };
 
-  useEffect(() => {
-    const fetchRepairs = async () => {
-      try {
-        const response = await api.get("/repairs");
-        console.log(response);
-        const repairs = Array.isArray(response.data.data)
-          ? response.data.data
-          : [];
-        // Sort in ascending order by `id`
-        repairs.sort((a, b) => b.id - a.id);
-        setRepairs(repairs);
-      } catch (error) {
-        console.error("Error fetching repair registrations:", error);
-        setRepairs([]);
-      }
-    };
+ // Inside JobOrderList component
+
+// Inside JobOrderList component
+const [repairs, setRepairs] = useState([]);
+const [totalPages, setTotalPages] = useState(1);
+const [isLoading, setIsLoading] = useState(false);
+
+const fetchRepairs = async () => {
+  setIsLoading(true);
+  try {
+    const response = await api.get("/repairs", {
+      params: {
+        search: searchTerm,
+        start_date: startDate,
+        end_date: endDate,
+        page: currentPage,
+        per_page: itemsPerPage,
+      },
+    });
+
+    if (response.data.status === "success") {
+      setRepairs(response.data.data);
+      setTotalPages(response.data.last_page);
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// Trigger fetch when search, dates, or pagination changes
+useEffect(() => {
+  const delayDebounceFn = setTimeout(() => {
     fetchRepairs();
-  }, [selectedRows]);
+  }, 400);
+  return () => clearTimeout(delayDebounceFn);
+}, [searchTerm, startDate, endDate, currentPage, itemsPerPage]);
 
-  const handleFilter = () => {
-    let filteredRepairs = repairs;
-    if (startDate && endDate) {
-      filteredRepairs = filteredRepairs.filter((repair) => {
-        const repairDate = new Date(repair.received_date);
-        return (
-          repairDate >= new Date(startDate) && repairDate <= new Date(endDate)
-        );
-      });
-    }
-    if (searchTerm) {
-      filteredRepairs = filteredRepairs.filter((repair) =>
-        repair.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    return filteredRepairs;
-  };
-
-  const filteredRepairs = handleFilter();
-  const totalPages = Math.ceil(filteredRepairs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const displayedRepairs = filteredRepairs.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+// IMPORTANT: displayedRepairs now just uses the raw state from the server
+const displayedRepairs = repairs || [];
 
   const navigate = useNavigate();
   const handleNavigation = (option, id) => {
@@ -377,43 +370,63 @@ const JobOrderList = () => {
             </select>
 
             {/* Start Date */}
-            <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
-              placeholder="Start Date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
-            />
+<div className="flex flex-col sm:flex-row gap-4 items-end bg-gray-50 dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+  
+  {/* Start Date Filter */}
+  <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+    <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 ml-1">
+      From Date
+    </label>
+    <DateInput
+      value={startDate}
+      onChange={(val) => {
+        setStartDate(val);
+        setCurrentPage(1); 
+      }}
+      className="w-full sm:w-44 px-3 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white transition focus:ring-2 focus:ring-green-400 outline-none"
+    />
+  </div>
 
-            {/* End Date */}
-            <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
-              placeholder="End Date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
-            />
+  {/* End Date Filter */}
+  <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+    <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 ml-1">
+      To Date
+    </label>
+    <DateInput
+      value={endDate}
+      onChange={(val) => {
+        setEndDate(val);
+        setCurrentPage(1);
+      }}
+      className="w-full sm:w-44 px-3 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white transition focus:ring-2 focus:ring-green-400 outline-none"
+    />
+  </div>
 
-            {/* Filter Button */}
-            <button
-              onClick={handleFilter}
-              className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-            >
-              Filter
-            </button>
-
+  {/* Optional: Clear Filters Button */}
+  {(startDate || endDate) && (
+    <button
+      onClick={() => {
+        setStartDate("");
+        setEndDate("");
+        setCurrentPage(1);
+      }}
+      className="text-sm text-red-500 hover:text-red-700 font-medium pb-2 transition"
+    >
+      Clear Dates
+    </button>
+  )}
+</div>
             {/* Search */}
             <div className="flex items-center w-full sm:w-auto px-2 border-2 border-green-500 rounded-lg dark:bg-gray-800">
               <FiSearch className="text-gray-600 dark:text-white" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search everything..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset pagination on new search
+                }}
                 className="w-full px-2 py-1 dark:bg-transparent border-none focus:ring-0 placeholder:dark:text-white"
               />
             </div>
@@ -580,22 +593,22 @@ const JobOrderList = () => {
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {formatGCDate(repair.received_date)}
                     <br />
-                     <span
-                          className="text-xs text-indigo-600 dark:text-indigo-400"
-                          title="Ethiopian Calendar"
-                        >
-                          {formatEthioDate(repair.received_date)}
+                    <span
+                      className="text-xs text-indigo-600 dark:text-indigo-400"
+                      title="Ethiopian Calendar"
+                    >
+                      {formatEthioDate(repair.received_date)}
                     </span>
                   </td>
                   {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {formatGCDate(repair.promise_date || "-")}
-                      <br />
-                     <span
-                          className="text-xs text-indigo-600 dark:text-indigo-400"
-                          title="Ethiopian Calendar"
-                        >
-                          {formatEthioDate(repair.promise_date || "-")}
+                    <br />
+                    <span
+                      className="text-xs text-indigo-600 dark:text-indigo-400"
+                      title="Ethiopian Calendar"
+                    >
+                      {formatEthioDate(repair.promise_date || "-")}
                     </span>
                   </td>
                   {/* Status */}

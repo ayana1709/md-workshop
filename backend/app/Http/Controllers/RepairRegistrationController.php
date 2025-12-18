@@ -8,26 +8,55 @@ use Illuminate\Http\Request;
 
 class RepairRegistrationController extends Controller
 {
-    public function index()
-    {
-        try {
-            $repairs = RepairRegistration::orderBy('created_at', 'desc')->get();
+    
+public function index(Request $request)
+{
+    try {
+        $search = $request->query('search');
+        $perPage = $request->query('per_page', 10);
 
-            return response()->json([
-                'status' => 'success',
-                'count' => $repairs->count(),
-                'data' => $repairs,
-            ], 200);
+        $query = RepairRegistration::query();
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error fetching repairs',
-                'error' => $e->getMessage(),
-            ], 500);
+        // 1. Global Search across ALL fields
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'LIKE', "%{$search}%")
+                  ->orWhere('mobile', 'LIKE', "%{$search}%")
+                  ->orWhere('serial_code', 'LIKE', "%{$search}%")
+                  ->orWhere('product_name', 'LIKE', "%{$search}%")
+                  ->orWhere('job_id', 'LIKE', "%{$search}%")
+                  ->orWhere('types_of_jobs', 'LIKE', "%{$search}%")
+                  ->orWhere('priority', 'LIKE', "%{$search}%")
+                  ->orWhere('status', 'LIKE', "%{$search}%");
+            });
         }
-    }
 
+            if ($request->filled('start_date')) {
+                $query->whereDate('received_date', '>=', $request->start_date);
+            }
+
+            if ($request->filled('end_date')) {
+                $query->whereDate('received_date', '<=', $request->end_date);
+            }
+
+        // 3. Finalizing and Pagination
+        $repairs = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'count' => $repairs->total(),
+            'last_page' => $repairs->lastPage(),
+            'current_page' => $repairs->currentPage(),
+            'data' => $repairs->items(),
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error fetching repairs: ' . $e->getMessage()
+        ], 500);
+    }
+}
     public function store(Request $request)
     {
         if (! $request->isMethod('post')) {

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
 class RepairRegistration extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $fillable = [
         'job_id',
@@ -51,5 +53,22 @@ class RepairRegistration extends Model
     public function details()
     {
         return $this->hasOne(RepairDetail::class, 'job_id', 'job_id');
+    }
+
+public function makeAllSearchableUsing($query)
+    {
+        return $query->with([]); // Ensure no heavy relations are loaded
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (int) $this->id,
+            'customer_name' => $this->customer_name,
+            'mobile' => (string) $this->mobile,
+            'serial_code' => $this->serial_code,
+            'product_name' => $this->product_name,
+            'job_id' => $this->job_id,
+        ];
     }
 }

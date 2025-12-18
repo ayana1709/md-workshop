@@ -207,4 +207,12 @@ return [
         'import_action' => env('TYPESENSE_IMPORT_ACTION', 'upsert'),
     ],
 
+    'database' => [
+    'searchable_columns' => [
+        'customer_name',
+        'mobile',
+        'serial_code',
+    ],
+],
+
 ];
