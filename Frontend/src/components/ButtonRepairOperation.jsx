@@ -322,54 +322,58 @@ function ButtonRepairOperation({
   };
 
   return (
-    <div className="phone:ml-6 tablet:ml-0 flex items-center gap-2">
-      <button
-        onClick={() => document.getElementById("importExcel").click()}
-        className="bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition"
-      >
-        Import
-      </button>
+<div className="flex flex-wrap gap-2 items-center phone:ml-6 tablet:ml-0">
+  <button
+    onClick={() => document.getElementById("importExcel").click()}
+    className="bg-green-600 text-white px-2 py-1 text-[11px] rounded-md hover:bg-green-700 transition"
+  >
+    Import
+  </button>
 
-      <input
-        id="importExcel"
-        type="file"
-        accept=".xlsx,.xls"
-        className="hidden"
-        onChange={handleImportExcel}
-      />
+  <input
+    id="importExcel"
+    type="file"
+    accept=".xlsx,.xls"
+    className="hidden"
+    onChange={handleImportExcel}
+  />
 
-      <button
-        onClick={handleExport}
-        className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600 transition"
-      >
-        PDF
-      </button>
-      <button
-        onClick={() => exportToExcel(filename, tableData)}
-        className="bg-orange-500 text-white px-3 py-2 rounded-md hover:bg-orange-600 transition"
-      >
-        Excel
-      </button>
-      <button
-        onClick={printTable}
-        className="bg-indigo-500 text-white px-3 py-2 rounded-md hover:bg-indigo-600 transition"
-      >
-        Print
-      </button>
-      <button
-        onClick={downloadTemplate}
-        className="bg-yellow-500 text-white px-3 py-2 rounded-md hover:bg-yellow-600 transition"
-      >
-        Template
-      </button>
+  <button
+    onClick={handleExport}
+    className="bg-blue-500 text-white px-2 py-1 text-[11px] rounded-md hover:bg-blue-600 transition"
+  >
+    PDF
+  </button>
 
-      <button
-        onClick={() => navigate("/step-1")}
-        className="bg-purple-600 text-white px-3 py-2 rounded-md hover:bg-purple-700 transition"
-      >
-        Create New Job
-      </button>
-    </div>
+  <button
+    onClick={() => exportToExcel(filename, tableData)}
+    className="bg-orange-500 text-white px-2 py-1 text-[11px] rounded-md hover:bg-orange-600 transition"
+  >
+    Excel
+  </button>
+
+  <button
+    onClick={printTable}
+    className="bg-indigo-500 text-white px-2 py-1 text-[11px] rounded-md hover:bg-indigo-600 transition"
+  >
+    Print
+  </button>
+
+  <button
+    onClick={downloadTemplate}
+    className="bg-yellow-500 text-white px-2 py-1 text-[11px] rounded-md hover:bg-yellow-600 transition"
+  >
+    Template
+  </button>
+
+  <button
+    onClick={() => navigate("/step-1")}
+    className="bg-purple-600 text-white px-2 py-1 text-[11px] rounded-md hover:bg-purple-700 transition"
+  >
+    Create New Job
+  </button>
+</div>
+
   );
 }
 
