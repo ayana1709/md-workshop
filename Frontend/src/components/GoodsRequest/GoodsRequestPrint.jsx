@@ -117,10 +117,10 @@ const GoodsRequestPrint = () => {
               <div className="text-center flex-1">
                 <div className="relative inline-block">
                   <h1 className="text-xl font-bold text-gray-900 mb-1">
-                    ከሰቶር የ ዕቃ ማውጫ ሰነድ
+                    የዕቃ መጠየቂያ
                   </h1>
                   <h2 className="text-lg font-bold text-gray-700">
-                    Goods Request Form
+                   Goods Requisitions
                   </h2>
                   <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
                 </div>

@@ -2,122 +2,90 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Admin;
 use App\Models\Department;
+use App\Models\Admin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DepartmentController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Get all departments
      */
     public function index()
     {
-        return response()->json(Department::with('admin')->get());
+        return response()->json(
+            Department::orderBy('name')->get()
+        );
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store new department
      */
     public function store(Request $request)
     {
-        // 1. Validation
         $validated = $request->validate([
-            'dept_name' => 'required|string|unique:departments,name',
+            'name' => 'required|string|unique:departments,name',
             'description' => 'nullable|string',
-            'admin_id' => 'required|exists:admins,id', // Matches your React form
-            'status' => 'required|string|in:active,inactive',
+            'status' => 'required|in:active,inactive',
         ]);
 
-        // 2. Execution via Transaction
-        try {
-            return DB::transaction(function () use ($validated) {
+        $department = Department::create($validated);
 
-                // Create the Department linked to the EXISTING Admin
-                $department = Department::create([
-                    'name' => $validated['dept_name'],
-                    'description' => $validated['description'],
-                    'admin_id' => $validated['admin_id'],
-                    'status' => $validated['status'],
-                ]);
-
-                // Link the Admin back to the Department (The Workspace link)
-                $admin = Admin::find($validated['admin_id']);
-                $admin->update(['department_id' => $department->id]);
-
-                return response()->json($department->load('admin'), 201);
-            });
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json($department, 201);
     }
 
     /**
-     * Display the specified resource.
+     * Show single department
      */
     public function show(Department $department)
     {
-        return response()->json($department->load('admin'));
+        return response()->json($department);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update department
      */
     public function update(Request $request, Department $department)
     {
-        try {
-            $validated = $request->validate([
-                'dept_name' => 'string|unique:departments,name,'.$department->id,
-                'description' => 'nullable|string',
-                'admin_id' => 'exists:admins,id',
-                'status' => 'string|in:active,inactive',
-            ]);
+        $validated = $request->validate([
+            'name' => 'sometimes|string|unique:departments,name,' . $department->id,
+            'description' => 'nullable|string',
+            'status' => 'sometimes|in:active,inactive',
+        ]);
 
-            return DB::transaction(function () use ($validated, $department) {
-                // 1. If the admin is changing, we need to clean up the OLD admin first
-                if (isset($validated['admin_id']) && $department->admin_id != $validated['admin_id']) {
-                    // Remove the department link from the old admin
-                    Admin::where('department_id', $department->id)
-                        ->update(['department_id' => null]);
-                }
+        $department->update($validated);
 
-                // 2. Update the department
-                $department->update([
-                    'name' => $validated['dept_name'] ?? $department->name,
-                    'description' => $validated['description'] ?? $department->description,
-                    'admin_id' => $validated['admin_id'] ?? $department->admin_id,
-                    'status' => $validated['status'] ?? $department->status,
-                ]);
-
-                // 3. Link the NEW admin to this department
-                Admin::where('id', $department->admin_id)
-                    ->update(['department_id' => $department->id]);
-
-                return response()->json($department->load('admin'));
-            });
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        return response()->json($department);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Delete department
      */
     public function destroy(Department $department)
     {
-        try {
-            return DB::transaction(function () use ($department) {
+        // Detach admins first (important)
+        Admin::where('department_id', $department->id)
+            ->update(['department_id' => null]);
 
-                Admin::where('department_id', $department->id)
-                    ->update(['department_id' => null]);
+        $department->delete();
 
-                $department->delete();
+        return response()->json([
+            'message' => 'Department deleted successfully'
+        ]);
+    }
 
-                return response()->json(['message' => 'Department deleted successfully']);
-            });
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Could not delete: '.$e->getMessage()], 500);
-        }
+    /**
+     * 🔹 Get all admins/users in this department
+     */
+    public function users(Department $department)
+    {
+        $admins = Admin::where('department_id', $department->id)
+            ->select('id', 'name', 'email', 'status','profile_image')
+            ->get();
+
+        return response()->json([
+            'department' => $department,
+            'users' => $admins
+        ]);
     }
 }

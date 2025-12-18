@@ -14,10 +14,6 @@ return new class extends Migration
         Schema::table('admins', function (Blueprint $table) {
             $table->foreign('department_id')->references('id')->on('departments');
         });
-
-        Schema::table('departments', function (Blueprint $table) {
-            $table->foreign('admin_id')->references('id')->on('admins');
-        });
     }
 
     /**

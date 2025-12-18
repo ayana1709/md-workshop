@@ -277,24 +277,26 @@ return (
                           {getPriorityBadge(request.priority)}
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium relative">
-                          <button
-                            onClick={() => toggleDropdown(request.id)}
-                            className="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 whitespace-nowrap"
-                            aria-expanded={openDropdownId === request.id}
-                          >
-                            Actions
-                            <ChevronDownIcon
-                              className="-mr-1 ml-1 h-4 w-4"
-                              aria-hidden="true"
-                            />
-                          </button>      
+<td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium relative z-10">
+  <div className="relative">
+    <button
+      onClick={() => toggleDropdown(request.id)}
+      className="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 whitespace-nowrap relative z-20"
+      aria-expanded={openDropdownId === request.id}
+    >
+      Actions
+      <ChevronDownIcon
+        className="-mr-1 ml-1 h-4 w-4"
+        aria-hidden="true"
+      />
+    </button>
 
-                          {openDropdownId === request.id && (
-                            <div
-                              className="origin-top-right absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[100] dark:bg-gray-700 dark:ring-gray-600"
-                              onMouseLeave={() => setOpenDropdownId(null)}
-                            >
+    {openDropdownId === request.id && (
+      <div
+        className="origin-top-right absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[1000] dark:bg-gray-700 dark:ring-gray-600"
+        style={{ position: 'fixed' }} // Change from absolute to fixed
+        onMouseLeave={() => setOpenDropdownId(null)}
+      >
                               <div className="py-1">
                                 <button
                                   onClick={() => {
@@ -333,6 +335,8 @@ return (
                               </div>
                             </div>
                           )}
+                            </div>
+
                         </td>
                       </tr>
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Admin;
 use App\Models\Department;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -27,7 +26,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = Admin::with('roles')->findOrFail($id);
+        $user = Admin::with('roles', 'department')->findOrFail($id);
 
         return response()->json($user);
     }
@@ -47,7 +46,7 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
-            'department_id' => 'required|unique:admins,department_id',
+            'department_id' => 'required|exists:departments,id',
         ]);
 
         $imageName = null;
@@ -65,6 +64,7 @@ class UserController extends Controller
             'status' => $request->status ?? 'active',
             'level' => $request->level,
             'profile_image' => $imageName,
+            'department_id' => $request->department_id,
         ]);
 
         $user->assignRole($request->role);
@@ -89,6 +89,7 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
+            'department_id' => 'required|exists:departments,id',
         ]);
 
         // Handle Image Change
@@ -110,6 +111,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'status' => $request->status ?? $user->status,
             'level' => $request->level ?? $user->level,
+            'department_id' => $request->department_id,
         ]);
 
         $user->syncRoles([$request->role]);
@@ -121,24 +123,26 @@ class UserController extends Controller
     /**
      * Delete a user and their image.
      */
-public function destroy(Admin $admin) // Name must match {admin}
-{
-    try {
-        return DB::transaction(function () use ($admin) {
-            // Break relationship using the object ID
-            DB::table('departments')
-                ->where('admin_id', $admin->id)
-                ->update(['admin_id' => null]);
+    public function destroy(Admin $admin)
+    {
+        try {
+
+            // Delete profile image if exists
+            if ($admin->profile_image && Storage::disk('public')->exists('profile_images/' . $admin->profile_image)) {
+                Storage::disk('public')->delete('profile_images/' . $admin->profile_image);
+            }
 
             $admin->delete();
 
             return response()->json(['message' => 'User deleted successfully']);
-        });
-    } catch (\Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-}
 
+    /**
+     * Reset a user's password.
+     */
     public function resetPassword(Request $request, $id)
     {
         $request->validate([
@@ -149,14 +153,12 @@ public function destroy(Admin $admin) // Name must match {admin}
 
         $user = Admin::findOrFail($id);
 
-        // Check if old password is correct
-        if (! Hash::check($request->old_password, $user->password)) {
+        if (!Hash::check($request->old_password, $user->password)) {
             return response()->json([
                 'message' => 'Old password is incorrect.',
             ], 422);
         }
 
-        // Save new password
         $user->password = Hash::make($request->new_password);
         $user->save();
 

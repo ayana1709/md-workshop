@@ -25,15 +25,10 @@ export default function CreateUser() {
 
   const navigate = useNavigate();
 
-useEffect(() => {
-  api.get("/roles").then((res) => setRoles(res.data));
-  
-  // Filter departments to only show those that DON'T have an admin yet
-  api.get("/departments").then((res) => {
-    const availableDepts = res.data.filter(dept => !dept.admin_id || dept.id === form.department_id);
-    setDepartments(availableDepts);
-  });
-}, []);
+  useEffect(() => {
+    api.get("/roles").then((res) => setRoles(res.data));
+    api.get("/departments").then((res) => setDepartments(res.data));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -284,7 +279,6 @@ useEffect(() => {
                 onChange={(e) =>
                   setForm({ ...form, department_id: e.target.value })
                 }
-                className="w-full border p-2 rounded focus:ring-2 focus:ring-purple-500 outline-none"
                 required
               >
                 <option value="">Select Department</option>

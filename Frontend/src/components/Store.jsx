@@ -45,7 +45,7 @@ const Store = () => {
     const fetchAllCounts = async () => {
       try {
         // *** UPDATED URL TO MATCH NEW API ROUTE ***
-        const response = await api.get("/items/stats"); 
+        const response = await api.get("/item/stats"); 
         
         const data = response.data;
 

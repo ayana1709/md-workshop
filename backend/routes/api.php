@@ -61,6 +61,7 @@ Route::apiResource('store-issues', StoreIssueController::class);
 Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
 Route::apiResource('/departments', DepartmentController::class);
+Route::get('departments/{department}/users', [DepartmentController::class, 'users']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -195,7 +196,6 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
 
-Route::get('/items/stats', [ItemController::class, 'dashboardStats']);
 
 // post drive test
 Route::post('/post-drive-tests', [PostDriveTestController::class, 'store']);
@@ -238,6 +238,7 @@ Route::post('/purchases', [PurchaseController::class, 'store']);
 Route::get('/purchases', [PurchaseController::class, 'index']);
 Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
 
+//Item route
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
@@ -251,6 +252,8 @@ Route::post('/items/add-more', [ItemController::class, 'addMore']);
 Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems']);
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
+Route::get('/item/stats', [ItemController::class, 'dashboardStats']);
+
 
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);

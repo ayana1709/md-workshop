@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('departments', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->unsignedBigInteger('admin_id')->nullable();
-            $table->string('status')->default('active');
-
-            $table->timestamps();
-        });
+Schema::create('departments', function (Blueprint $table) {
+    $table->id();
+    $table->string('name')->unique();
+    $table->text('description')->nullable();
+    $table->enum('status', ['active', 'inactive'])->default('active');
+    $table->timestamps();
+});
     }
 
     /**

@@ -14,11 +14,5 @@ class Department extends Model
         'name',
         'description',
         'status',
-        'admin_id',
-    ];
-
-    public function admin(): BelongsTo
-    {
-        return $this->belongsTo(Admin::class, 'admin_id');
-    }
+        ];
 }
