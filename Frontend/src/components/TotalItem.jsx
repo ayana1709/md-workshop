@@ -324,79 +324,124 @@ const TotalItem = () => {
       }
 
       // ===== PROGRESS MODAL (ANIMATED) =====
-      Swal.fire({
-        title: "Importing Items...",
-        html: `
-        <div style="font-size:14px;margin-bottom:6px">
-          <span id="import-percent">0%</span>
-        </div>
+Swal.fire({
+  title: "Importing Items",
+  html: `
+    <div style="text-align:left;font-size:13px">
 
-        <div style="background:#e5e7eb;height:12px;border-radius:8px;overflow:hidden">
-          <div id="import-bar" style="
-            height:100%;
-            width:0%;
-            background:#2563eb;
-            transition: width 0.4s ease;
-          "></div>
-        </div>
-      `,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-      });
+      <div id="import-status" style="margin-bottom:6px;color:#374151">
+        Preparing import…
+      </div>
 
-      const chunkSize = 100;
-      const failedChunks = [];
-      let totalInserted = 0;
-      let lastMessage = "Import completed";
-      let importedCount = 0;
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span id="import-count">0 / 0 items</span>
+        <span id="import-percent">0%</span>
+      </div>
 
-      for (let i = 0; i < cleaned.length; i += chunkSize) {
-        const chunk = cleaned.slice(i, i + chunkSize);
+      <div style="
+        background:#e5e7eb;
+        height:12px;
+        border-radius:8px;
+        overflow:hidden;
+      ">
+        <div id="import-bar" style="
+          height:100%;
+          width:0%;
+          background:linear-gradient(45deg,#2563eb,#3b82f6);
+          background-size:200% 100%;
+          animation: moveBg 1.5s linear infinite;
+          transition: width 0.35s ease;
+        "></div>
+      </div>
 
-        try {
-          const res = await api.post("/items/import", { items: chunk });
+      <div style="margin-top:8px;font-size:12px;color:#6b7280">
+        Please don’t close this window
+      </div>
 
-          const message = res.data?.message || "Import completed";
-          const inserted = res.data?.inserted ?? 0;
-
-          totalInserted += inserted;
-          importedCount += inserted;
-        } catch (err) {
-          console.error("Failed to import chunk:", chunk, err);
-          failedChunks.push(chunk);
+      <style>
+        @keyframes moveBg {
+          0% { background-position:0% 50%; }
+          100% { background-position:100% 50%; }
         }
+      </style>
 
-        // Update progress bar based on attempted import
-        const percent = Math.min(
-          Math.round((importedCount / cleaned.length) * 100),
-          100
-        );
-
-        const bar = document.getElementById("import-bar");
-        const text = document.getElementById("import-percent");
-
-        if (bar && text) {
-          bar.style.width = percent + "%";
-          text.innerText = percent + "%";
-        }
-      }
-
-      await new Promise((r) => setTimeout(r, 400));
-
-      Swal.fire({
-        icon: "success",
-        title: "Import Result",
-        html: `
-    <p>✅ ${lastMessage}</p>
-    <hr/>
-    <p>You Imported Total Items Of: <b>${totalInserted}</b></p>
-
+    </div>
   `,
-      });
+  allowOutsideClick: false,
+  showConfirmButton: false,
+});
+
+// Import logic
+const chunkSize = 100;
+const failedChunks = [];
+let totalInserted = 0;
+let processed = 0;
+const total = cleaned.length;
+
+for (let i = 0; i < total; i += chunkSize) {
+  const chunk = cleaned.slice(i, i + chunkSize);
+
+  updateUI(`Importing items ${i + 1} – ${Math.min(i + chunkSize, total)}`);
+
+  try {
+    const res = await api.post("/items/import", { items: chunk });
+
+    const inserted = res.data?.inserted ?? chunk.length;
+    totalInserted += inserted;
+    processed += chunk.length;
+
+  } catch (err) {
+    console.error("Import chunk failed", err);
+    failedChunks.push(chunk);
+    processed += chunk.length;
+  }
+
+  updateUI("Processing…");
+}
+
+// Small delay for smooth UX
+await new Promise(r => setTimeout(r, 500));
+
+// Final result
+Swal.fire({
+  icon: failedChunks.length ? "warning" : "success",
+  title: "Import Completed",
+  html: `
+    <div style="text-align:left;font-size:14px">
+      <p>✅ Imported: <b>${totalInserted}</b> items</p>
+      ${
+        failedChunks.length
+          ? `<p style="color:#b91c1c">
+               ⚠️ Failed Chunks: ${failedChunks.length}
+             </p>`
+          : ""
+      }
+      <hr/>
+      <p style="font-size:12px;color:#6b7280">
+        You can safely continue working now.
+      </p>
+    </div>
+  `,
+});
+
+// UI updater
+function updateUI(status) {
+  const percent = Math.min(Math.round((processed / total) * 100), 100);
+
+  const bar = document.getElementById("import-bar");
+  const percentEl = document.getElementById("import-percent");
+  const countEl = document.getElementById("import-count");
+  const statusEl = document.getElementById("import-status");
+
+  if (bar) bar.style.width = percent + "%";
+  if (percentEl) percentEl.innerText = percent + "%";
+  if (countEl) countEl.innerText = `${processed} / ${total} items`;
+  if (statusEl) statusEl.innerText = status;
+}
+
 
       fetchItems();
 
-      fetchItems();
     } catch (err) {
       Swal.close();
       toast.error(
