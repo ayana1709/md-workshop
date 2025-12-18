@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\ItemSearchController;
 use App\Http\Controllers\BolloController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
@@ -61,7 +62,14 @@ Route::apiResource('store-issues', StoreIssueController::class);
 Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
 Route::apiResource('/departments', DepartmentController::class);
-Route::get('departments/{department}/users', [DepartmentController::class, 'users']);
+Route::post('/settings/verify-passcode', function (Request $request) {
+    $validPasscode = env('RESET_PASSCODE'); 
+    
+    return response()->json([
+        'verified' => $request->passcode === $validPasscode
+    ]);
+});
+Route::post('/verify-admin', [AdminAuthController::class, 'verify']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -172,7 +180,6 @@ Route::delete('/delete-wheel/{id}', [WheelAlignemntController::class, 'destroy']
 // delete work order
 Route::delete('/delete-work/{id}', [WorkOrderController::class, 'destroy']);
 // store-item
-// Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::get('/store-items', [StoreItemController::class, 'index']);
 Route::get('/store-items/count', [StoreItemController::class, 'getItemCount']);
@@ -180,6 +187,10 @@ Route::put('/store-items/bulk-update', [StoreItemController::class, 'bulkUpdate'
 Route::patch('/store-items/{code}/item-out', [StoreItemController::class, 'itemOut']);
 Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
+});
+Route::prefix('items')->group(function () {
+    Route::get('/search', [ItemSearchController::class, 'search']);
+    Route::get('/autocomplete', [ItemSearchController::class, 'autocomplete']);
 });
 
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
