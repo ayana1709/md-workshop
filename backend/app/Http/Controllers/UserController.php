@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,7 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = Admin::with('roles')->get();
+        $users = Admin::with(['roles', 'department'])->get();
 
         return response()->json($users);
     }
@@ -24,7 +26,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = Admin::with('roles')->findOrFail($id);
+        $user = Admin::with('roles', 'department')->findOrFail($id);
 
         return response()->json($user);
     }
@@ -44,11 +46,12 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
+            'department_id' => 'required|exists:departments,id',
         ]);
 
         $imageName = null;
         if ($request->hasFile('profile_image')) {
-            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
+            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
         }
 
@@ -61,6 +64,7 @@ class UserController extends Controller
             'status' => $request->status ?? 'active',
             'level' => $request->level,
             'profile_image' => $imageName,
+            'department_id' => $request->department_id,
         ]);
 
         $user->assignRole($request->role);
@@ -85,15 +89,16 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
+            'department_id' => 'required|exists:departments,id',
         ]);
 
         // Handle Image Change
         if ($request->hasFile('profile_image')) {
-            if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
-                Storage::disk('public')->delete('profile_images/'.$user->profile_image);
+            if ($user->profile_image && Storage::disk('public')->exists('profile_images/' . $user->profile_image)) {
+                Storage::disk('public')->delete('profile_images/' . $user->profile_image);
             }
 
-            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
+            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
             $user->profile_image = $imageName;
         }
@@ -106,6 +111,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'status' => $request->status ?? $user->status,
             'level' => $request->level ?? $user->level,
+            'department_id' => $request->department_id,
         ]);
 
         $user->syncRoles([$request->role]);
@@ -117,19 +123,26 @@ class UserController extends Controller
     /**
      * Delete a user and their image.
      */
-    public function destroy($id)
+    public function destroy(Admin $admin)
     {
-        $user = Admin::findOrFail($id);
+        try {
 
-        if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
-            Storage::disk('public')->delete('profile_images/'.$user->profile_image);
+            // Delete profile image if exists
+            if ($admin->profile_image && Storage::disk('public')->exists('profile_images/' . $admin->profile_image)) {
+                Storage::disk('public')->delete('profile_images/' . $admin->profile_image);
+            }
+
+            $admin->delete();
+
+            return response()->json(['message' => 'User deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $user->delete();
-
-        return response()->json(['message' => 'User deleted successfully']);
     }
 
+    /**
+     * Reset a user's password.
+     */
     public function resetPassword(Request $request, $id)
     {
         $request->validate([
@@ -140,14 +153,12 @@ class UserController extends Controller
 
         $user = Admin::findOrFail($id);
 
-        // Check if old password is correct
-        if (! Hash::check($request->old_password, $user->password)) {
+        if (!Hash::check($request->old_password, $user->password)) {
             return response()->json([
                 'message' => 'Old password is incorrect.',
             ], 422);
         }
 
-        // Save new password
         $user->password = Hash::make($request->new_password);
         $user->save();
 

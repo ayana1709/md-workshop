@@ -18,7 +18,7 @@ function DashboardStatics() {
 
   useEffect(() => {
     // Fetch your backend dashboard stats
-    api.get("/items/stats").then((res) => {
+    api.get("/item/stats").then((res) => {
       setStats((prev) => ({
         ...prev,
         total_items: res.data.total_items,

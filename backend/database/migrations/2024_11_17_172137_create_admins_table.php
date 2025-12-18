@@ -18,6 +18,9 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->integer('level')->nullable();
             $table->string('profile_image')->nullable();
+
+            $table->unsignedBigInteger('department_id')->nullable();
+
             $table->rememberToken();
             $table->timestamps();
         });

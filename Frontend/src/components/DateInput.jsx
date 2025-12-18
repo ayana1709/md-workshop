@@ -1,42 +1,50 @@
 import React, { useState, useEffect } from "react";
+import api from "@/api";
 
 function DateInput({
   value,
   onChange,
-  placeholder = "DD/MM/YYYY",
   className = "",
-  format = "DD/MM/YYYY", // new prop for format
 }) {
   const [displayValue, setDisplayValue] = useState("");
   const [error, setError] = useState("");
+  const [format, setFormat] = useState("DD/MM/YYYY"); // fallback
 
-  // Normalize incoming value → display according to format
+  // 🔹 Load date format from settings
+  useEffect(() => {
+    api.get("/settings").then(res => {
+      if (res.data?.date_format) {
+        setFormat(res.data.date_format);
+      }
+    }).catch(() => {});
+  }, []);
+
+  // 🔹 Normalize ISO → display format
   useEffect(() => {
     if (!value) {
       setDisplayValue("");
       return;
     }
 
-    // Matches full ISO timestamp: YYYY-MM-DDTHH:mm:ss.000Z
-    const timestampMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-
-    if (timestampMatch) {
-      const [, year, month, day] = timestampMatch;
-      if (format === "DD/MM/YYYY") {
-        setDisplayValue(`${day}/${month}/${year}`);
-      } else {
-        setDisplayValue(`${month}/${day}/${year}`);
-      }
-      setError("");
-    } else {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) {
       setDisplayValue(value);
+      return;
     }
+
+    const [, y, m, d] = match;
+
+    setDisplayValue(
+      format === "DD/MM/YYYY"
+        ? `${d}/${m}/${y}`
+        : `${m}/${d}/${y}`
+    );
+    setError("");
   }, [value, format]);
 
   const handleInputChange = (e) => {
-    let input = e.target.value.replace(/\D/g, ""); // digits only
+    let input = e.target.value.replace(/\D/g, "");
 
-    // Auto-format depending on format
     if (input.length > 2 && input.length <= 4) {
       input = `${input.slice(0, 2)}/${input.slice(2)}`;
     } else if (input.length > 4) {
@@ -48,43 +56,26 @@ function DateInput({
     onChange(input);
 
     if (input.length === 10) {
-      let d, m, y;
       const parts = input.split("/").map(Number);
+      let d, m, y;
 
-      if (format === "DD/MM/YYYY") {
-        [d, m, y] = parts;
-      } else {
-        [m, d, y] = parts;
-      }
+      format === "DD/MM/YYYY"
+        ? ([d, m, y] = parts)
+        : ([m, d, y] = parts);
 
-      // Validate numbers
-      if (isNaN(d) || isNaN(m) || isNaN(y)) {
-        setError("Please enter valid numbers.");
-        return;
-      }
+      if (!y || y < 1000 || y > 9999)
+        return setError("Invalid year");
 
-      if (y < 1000 || y > 9999) {
-        setError("Year must be 4 digits.");
-        return;
-      }
-
-      if (m < 1 || m > 12) {
-        setError("Invalid month.");
-        return;
-      }
+      if (m < 1 || m > 12)
+        return setError("Invalid month");
 
       const lastDay = new Date(y, m, 0).getDate();
-      if (d < 1 || d > lastDay) {
-        setError("Invalid day for that month.");
-        return;
-      }
+      if (d < 1 || d > lastDay)
+        return setError("Invalid day");
 
-      // Return clean ISO format YYYY-MM-DD
-      const iso = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(
-        2,
-        "0"
-      )}`;
-      onChange(iso);
+      onChange(
+        `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+      );
       setError("");
     }
   };
@@ -93,13 +84,13 @@ function DateInput({
     <div className="flex flex-col">
       <input
         type="text"
-        placeholder={placeholder}
-        className={`w-full border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 ${className} ${
-          error ? "border-red-500" : "border-gray-300"
-        }`}
+        placeholder={format}
         value={displayValue}
         onChange={handleInputChange}
         maxLength={10}
+        className={`w-full border rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 ${
+          error ? "border-red-500" : "border-gray-300"
+        } ${className}`}
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>

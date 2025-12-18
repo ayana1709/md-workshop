@@ -73,41 +73,49 @@ export const columns = ({
     enableHiding: false,
   },
 
-  {
-    accessorKey: "image",
-    header: "Image",
-    cell: ({ row }) => {
-      const [openImage, setOpenImage] = useState(false);
+{
+  accessorKey: "image",
+  header: "Image",
+  cell: ({ row }) => {
+    const [openImage, setOpenImage] = useState(false);
 
-      // Build the full image URL (adjust base URL as needed)
-      const imageUrl = row.original.image
-        ? `${import.meta.env.VITE_API_URL}/storage/${row.original.image}`
-        : "../images/ac.jpg";
+    const apiBase = import.meta.env.VITE_API_URL;
 
-      return (
-        <>
-          {/* Small Thumbnail */}
-          <img
-            src={imageUrl}
-            alt={row.original.item_name}
-            className="w-12 h-12 object-cover rounded cursor-pointer border"
-            onClick={() => setOpenImage(true)}
-          />
+    const imageUrl = row.original.image
+      ? `${apiBase}/storage/${row.original.image}`
+      : "/images/default-item.png";
 
-          {/* Popup for Full Image */}
-          <Dialog open={openImage} onOpenChange={setOpenImage}>
-            <DialogContent className="p-0 bg-transparent border-none shadow-none">
-              <img
-                src={imageUrl}
-                alt={row.original.item_name}
-                className="max-w-full max-h-[80vh] object-contain rounded"
-              />
-            </DialogContent>
-          </Dialog>
-        </>
-      );
-    },
+    return (
+      <>
+        {/* Thumbnail */}
+        <img
+          src={imageUrl}
+          alt={row.original.item_name}
+          className="w-12 h-12 object-cover rounded cursor-pointer border"
+          onClick={() => setOpenImage(true)}
+          onError={(e) => {
+            e.currentTarget.src = "/images/defa.jpg";
+          }}
+        />
+
+        {/* Full Image Modal */}
+        <Dialog open={openImage} onOpenChange={setOpenImage}>
+          <DialogContent className="p-0 bg-transparent border-none shadow-none">
+            <img
+              src={imageUrl}
+              alt={row.original.item_name}
+              className="max-w-full max-h-[80vh] object-contain rounded"
+              onError={(e) => {
+                e.currentTarget.src = "/images/default-item.png";
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
   },
+},
+
 
   {
     accessorKey: "id",

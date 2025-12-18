@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\BolloController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DurinDriveTestController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\GoodsRequestController;
 use App\Http\Controllers\InspectionController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\OutsourceController;
@@ -30,7 +32,6 @@ use App\Http\Controllers\SpareChangeController;
 use App\Http\Controllers\SpareRequestController;
 use App\Http\Controllers\StoreIssueController;
 use App\Http\Controllers\StoreItemController;
-use App\Http\Controllers\StoreRequestController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WheelAlignemntController;
@@ -56,22 +57,11 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
-// store issue endpoints one by one
-
-// Route::get('/store-issues', [StoreIssueController::class, 'index']);
-// Route::post('/store-issues', [StoreIssueController::class, 'store']);
-// Route::get('/store-issues/{id}', [StoreIssueController::class, 'show']);
-// Route::put('/store-issues/{id}', [StoreIssueController::class, 'update']);
-// Route::delete('/store-issues/{id}', [StoreIssueController::class, 'destroy']);
-
-// or simply like below
 Route::apiResource('store-issues', StoreIssueController::class);
-// Route::apiResource('store-requests', StoreRequestController::class);
-Route::get('/store-requests', [StoreRequestController::class, 'index']);
-Route::post('/store-requests', [StoreRequestController::class, 'store']);
-Route::get('/store-requests/{id}', [StoreRequestController::class, 'show']);
-Route::put('/store-requests/{id}', [StoreRequestController::class, 'update']);
-Route::delete('/store-requests/{id}', [StoreRequestController::class, 'destroy']);
+Route::apiResource('goods-requests', GoodsRequestController::class);
+Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
+Route::apiResource('/departments', DepartmentController::class);
+Route::get('departments/{department}/users', [DepartmentController::class, 'users']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -191,6 +181,7 @@ Route::patch('/store-items/{code}/item-out', [StoreItemController::class, 'itemO
 Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
 });
+
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
 // total numberof items
 Route::get('/store-items/total', [StoreItemController::class, 'getTotalItems']);
@@ -205,7 +196,6 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
 
-Route::get('/items/stats', [ItemController::class, 'dashboardStats']);
 
 // post drive test
 Route::post('/post-drive-tests', [PostDriveTestController::class, 'store']);
@@ -248,6 +238,7 @@ Route::post('/purchases', [PurchaseController::class, 'store']);
 Route::get('/purchases', [PurchaseController::class, 'index']);
 Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
 
+//Item route
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
@@ -261,6 +252,8 @@ Route::post('/items/add-more', [ItemController::class, 'addMore']);
 Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems']);
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
+Route::get('/item/stats', [ItemController::class, 'dashboardStats']);
+
 
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
@@ -391,7 +384,7 @@ Route::prefix('users')->group(function () {
     Route::post('/', [UserController::class, 'store']); // Create user
     Route::get('/{id}', [UserController::class, 'show']); // Single user
     Route::put('/{id}', [UserController::class, 'update']); // Update user
-    Route::delete('/{id}', [UserController::class, 'destroy']); // Delete user
+    Route::delete('/{admin}', [UserController::class, 'destroy']); // Delete user
 });
 // routes/web.php OR routes/api.php
 Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);

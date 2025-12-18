@@ -12,7 +12,6 @@ import { toast } from "react-toastify";
 import api from "@/api";
 import Swal from "sweetalert2";
 
-
 const TotalItem = () => {
   const printRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -26,8 +25,8 @@ const TotalItem = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [importing, setImporting] = useState(false);
-const [progress, setProgress] = useState(0);
-const [total, setTotal] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [total, setTotal] = useState(0);
 
   const {
     items,
@@ -241,131 +240,170 @@ const [total, setTotal] = useState(0);
     printWindow.close();
   };
 
+  const handleImportClick = () => {
+    if (fileInputRef.current) fileInputRef.current.value = null;
+    fileInputRef.current?.click();
+  };
 
+  const toNumber = (val) => {
+    const n = parseFloat(val);
+    return isNaN(n) ? 0 : n;
+  };
 
-const handleImportClick = () => {
-  if (fileInputRef.current) fileInputRef.current.value = null;
-  fileInputRef.current?.click();
-};
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-const handleFileChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
 
-  try {
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data, { type: "array" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, {
+        defval: "",
+        raw: true,
+      });
 
-    const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: true });
+      if (!rows.length) {
+        toast.error("Import failed: No rows found.");
+        return;
+      }
 
-    if (!rows.length) {
-      toast.error("Import failed: No rows found.");
-      return;
-    }
+      const cleaned = rows
+        .map((row) => {
+          const normalized = {};
+          for (const key in row) {
+            normalized[key.trim().toLowerCase()] = row[key];
+          }
 
-    const cleaned = rows
-      .map((row) => {
-        const normalized = {};
-        for (const key in row) {
-          normalized[key.trim().toLowerCase()] = row[key];
-        }
+          if (Object.values(normalized).join("").trim() === "") return null;
 
-        if (Object.values(normalized).join("").trim() === "") return null;
-
-        const quantity =
-          normalized["quantity"] ||
-          normalized["qty"] ||
-          normalized["qnty"] ||
-          "";
-
-        return {
-          item_name:
+          const itemName =
             normalized["item name"] ||
             normalized["item_name"] ||
-            normalized["item"] ||
-            "",
-          part_number:
-            normalized["part number"] || normalized["part_number"] || null,
-          brand: normalized["brand"] || "",
-          unit: normalized["unit"] || "",
-          quantity: Number(quantity) || 0,
-          low_quantity:
-            normalized["low quantity"] || normalized["low_quantity"] || 0,
-          purchase_price:
-            normalized["purchase price"] || normalized["purchase_price"] || 0,
-          selling_price:
-            normalized["selling price"] || normalized["selling_price"] || 0,
-          least_price:
-            normalized["least price"] || normalized["least_price"] || 0,
-          image: normalized["image"] || "items/default.jpg",
-          condition: normalized["condition"] || "New",
-          type: normalized["type"] || "",
-          manufacturer: normalized["manufacturer"] || "",
-          location: normalized["location"] || "",
-          shelf_number:
-            normalized["shelf number"] || normalized["shelf_number"] || "",
-        };
-      })
-      .filter(Boolean);
+            normalized["item"];
 
-    // ---- OPEN PROGRESS SWAL ---- //
-    Swal.fire({
-      title: "Importing Items...",
-      html: `
+          if (!itemName) return null;
+
+          return {
+            item_name: itemName,
+            part_number:
+              normalized["part number"] || normalized["part_number"] || null,
+            brand: normalized["brand"] || "",
+            unit: normalized["unit"] || "",
+            quantity: toNumber(
+              normalized["quantity"] || normalized["qyt"] || normalized["qnty"]
+            ),
+            low_quantity: toNumber(
+              normalized["low quantity"] || normalized["low_quantity"]
+            ),
+            purchase_price: toNumber(
+              normalized["purchase price"] || normalized["purchase_price"]
+            ),
+            selling_price: toNumber(
+              normalized["selling price"] || normalized["selling_price"]
+            ),
+            least_price: toNumber(
+              normalized["least price"] || normalized["least_price"]
+            ),
+            image: normalized["image"] || "items/default.jpg",
+            condition: normalized["condition"] || "New",
+            type: normalized["type"] || "",
+            manufacturer: normalized["manufacturer"] || "",
+            location: normalized["location"] || "",
+            shelf_number:
+              normalized["shelf no"] || normalized["shelf_number"] || "",
+          };
+        })
+        .filter(Boolean);
+
+      if (!cleaned.length) {
+        toast.error("No valid items found to import.");
+        return;
+      }
+
+      // ===== PROGRESS MODAL (ANIMATED) =====
+      Swal.fire({
+        title: "Importing Items...",
+        html: `
         <div style="font-size:14px;margin-bottom:6px">
-          <span id="import-text">Starting...</span>
+          <span id="import-percent">0%</span>
         </div>
 
-        <div style="width:100%;background:#e5e7eb;height:10px;border-radius:6px;">
+        <div style="background:#e5e7eb;height:12px;border-radius:8px;overflow:hidden">
           <div id="import-bar" style="
-            height:10px;
+            height:100%;
             width:0%;
             background:#2563eb;
-            border-radius:6px;
-            transition: width 0.3s;
+            transition: width 0.4s ease;
           "></div>
         </div>
       `,
-      allowOutsideClick: false,
-      showConfirmButton: false,
-    });
+        allowOutsideClick: false,
+        showConfirmButton: false,
+      });
 
-    let importedCount = 0;
-    const chunkSize = 50;
+      const chunkSize = 100;
+      const failedChunks = [];
+      let totalInserted = 0;
+      let lastMessage = "Import completed";
+      let importedCount = 0;
 
-    for (let i = 0; i < cleaned.length; i += chunkSize) {
-      const chunk = cleaned.slice(i, i + chunkSize);
+      for (let i = 0; i < cleaned.length; i += chunkSize) {
+        const chunk = cleaned.slice(i, i + chunkSize);
 
-      await api.post("/items/import", { items: chunk });
+        try {
+          const res = await api.post("/items/import", { items: chunk });
 
-      importedCount += chunk.length;
-      const percent = Math.round(
-        (importedCount / cleaned.length) * 100
+          const message = res.data?.message || "Import completed";
+          const inserted = res.data?.inserted ?? 0;
+
+          totalInserted += inserted;
+          importedCount += inserted;
+        } catch (err) {
+          console.error("Failed to import chunk:", chunk, err);
+          failedChunks.push(chunk);
+        }
+
+        // Update progress bar based on attempted import
+        const percent = Math.min(
+          Math.round((importedCount / cleaned.length) * 100),
+          100
+        );
+
+        const bar = document.getElementById("import-bar");
+        const text = document.getElementById("import-percent");
+
+        if (bar && text) {
+          bar.style.width = percent + "%";
+          text.innerText = percent + "%";
+        }
+      }
+
+      await new Promise((r) => setTimeout(r, 400));
+
+      Swal.fire({
+        icon: "success",
+        title: "Import Result",
+        html: `
+    <p>✅ ${lastMessage}</p>
+    <hr/>
+    <p>You Imported Total Items Of: <b>${totalInserted}</b></p>
+
+  `,
+      });
+
+      fetchItems();
+
+      fetchItems();
+    } catch (err) {
+      Swal.close();
+      toast.error(
+        "Import failed: " + (err.response?.data?.message || err.message)
       );
-
-      // Update Swal UI
-      document.getElementById("import-text").innerHTML =
-        `Importing ${importedCount}/${cleaned.length} items...`;
-      document.getElementById("import-bar").style.width = percent + "%";
     }
-
-    Swal.fire({
-      icon: "success",
-      title: "Import Completed",
-      text: `Successfully imported ${importedCount} items!`,
-    });
-
-    await fetchItems();
-  } catch (error) {
-    Swal.close();
-    toast.error(
-      "Import failed: " + (error.response?.data?.message || error.message)
-    );
-  }
-};
-
+  };
 
   const fetchItems = async () => {
     try {
@@ -383,12 +421,12 @@ const handleFileChange = async (e) => {
     }
   };
 
-
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
         Store / ጠቅላላ የዕቃ ዝርዝር
       </h2>
+
 
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
@@ -422,18 +460,18 @@ const handleFileChange = async (e) => {
           <Button
             onClick={() => setShowModal(true)}
             className="
-    font-extrabold 
-    text-white 
-    bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 
-    px-6 py-2 
-    rounded-lg 
-    shadow-md 
-    hover:shadow-lg 
-    hover:scale-105 
-    transition-all 
-    duration-200 
-    flex items-center gap-2
-  "
+              font-extrabold 
+              text-white 
+              bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 
+              px-6 py-2 
+              rounded-lg 
+              shadow-md 
+              hover:shadow-lg 
+              hover:scale-105 
+              transition-all 
+              duration-200 
+              flex items-center gap-2
+            "
           >
             <span className="text-xl">+</span> Add Item
           </Button>

@@ -39,7 +39,7 @@ class AdminSeeder extends Seeder
             'Job Order',
             'Work Order',
             'Store Issue',
-            'Store Request',
+            'Goods Request',
             'Incoming Request',
             'Approvals',
             'Inventory',
