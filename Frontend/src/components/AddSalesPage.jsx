@@ -5,7 +5,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CiSquareMore } from "react-icons/ci";
 import { toast } from "react-toastify";
 import DateInput from "./DateInput";
-
+import ItemSearchInput from "./ItemSearchInput";
+import PartNumberSearch from "./PartNumberSearch";
 const AddSalesPage = () => {
   const location = useLocation();
   const { selectedIds } = location.state || {};
@@ -508,28 +509,50 @@ const AddSalesPage = () => {
                 <td className="px-2 sm:px-3 py-2">{index + 1}</td>
 
                 {/* Item name */}
-                <td className="px-2 sm:px-3 py-2 min-w-[140px] sm:min-w-[160px]">
-                  <input
-                    className="border rounded-md px-2 py-1 w-full text-xs sm:text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    value={item.item_name || ""}
-                    onChange={(e) =>
-                      handleItemChange(index, "item_name", e.target.value)
-                    }
-                  />
-                </td>
+<td className="px-2 sm:px-3 py-2 min-w-[160px]">
+  <ItemSearchInput
+    value={item.item_name}
+    onChange={(value) => handleItemChange(index, 'item_name', value)}
+    onItemSelect={(selectedItem) => {
+      const updatedItems = [...items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        id: selectedItem.id,
+        item_name: selectedItem.item_name,
+        part_number: selectedItem.part_number,
+        brand: selectedItem.brand,
+        unit: selectedItem.unit,
+        selling_price: selectedItem.selling_price,
+        quantity: selectedItem.quantity,
+        saleQty: updatedItems[index].saleQty || 1,
+      };
+      setItems(updatedItems);
+    }}
+  />
+</td>
 
                 {/* Part Number */}
-                <td className="px-2 sm:px-3 py-2 min-w-[140px] sm:min-w-[160px]">
-                  <input
-                    type="text"
-                    className="border rounded-md px-2 py-1 w-full text-xs sm:text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                    value={item.part_number || ""}
-                    onChange={(e) =>
-                      handlePartNumberChange(index, e.target.value)
-                    }
-                    placeholder="Enter Part Number"
-                  />
-                </td>
+            <td className="px-2 sm:px-3 py-2 min-w-[160px] relative">
+              <PartNumberSearch
+                value={item.part_number || ""}
+                onSelect={(selectedItem) => {
+                  const updatedItems = [...items];
+                  updatedItems[index] = {
+                    ...updatedItems[index],
+                    id: selectedItem.id,
+                    item_name: selectedItem.item_name,
+                    part_number: selectedItem.part_number,
+                    brand: selectedItem.brand,
+                    unit: selectedItem.unit,
+                    selling_price: selectedItem.selling_price,
+                    quantity: selectedItem.quantity,
+                    saleQty: updatedItems[index].saleQty || 1,
+                  };
+                  setItems(updatedItems);
+                }}
+                placeholder="Search part number..."
+              />
+            </td>
 
                 {/* Brand */}
                 <td className="px-2 sm:px-3 py-2 min-w-[120px] sm:min-w-[140px]">
