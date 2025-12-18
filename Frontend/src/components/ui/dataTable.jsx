@@ -5,7 +5,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import autoTable from "jspdf-autotable";
 import {
   DropdownMenu,
@@ -17,20 +17,44 @@ import { Button } from "@/components/ui/button";
 
 export function DataTable({ columns, data, onView, onEdit, onDelete }) {
   const [sorting, setSorting] = useState([]);
-  const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = useState({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const COLUMN_VISIBILITY_KEY = "datatable-column-visibility";
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  });
+  const [columnVisibility, setColumnVisibility] = useState(() => {
+  try {
+    const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+});
+
+
+useEffect(() => {
+  localStorage.setItem(
+    COLUMN_VISIBILITY_KEY,
+    JSON.stringify(columnVisibility)
+  );
+}, [columnVisibility]);
+
+
+const table = useReactTable({
+  data,
+  columns,
+  state: {
+    sorting,
+    pagination,
+    columnVisibility, 
+  },
+  onSortingChange: setSorting,
+  onPaginationChange: setPagination,
+  onColumnVisibilityChange: setColumnVisibility, 
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getPaginationRowModel: getPaginationRowModel(),
+});
+
 
   // const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
