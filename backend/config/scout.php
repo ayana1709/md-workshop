@@ -208,11 +208,7 @@ return [
     ],
 
     'database' => [
-    'searchable_columns' => [
-        'customer_name',
-        'mobile',
-        'serial_code',
+        'searchable_columns' => [], // Leave empty
     ],
-],
 
 ];
