@@ -13,9 +13,20 @@ use Intervention\Image\Facades\Image;
 class ItemController extends Controller
 {
     // Fetch all items
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Item::all());
+        $query = $request->query('search');
+
+        if ($query) {
+            // Use Scout exactly like your autocomplete does
+            $items = Item::search($query)->get();
+
+            // Return plain data so the React Table can map it immediately
+            return response()->json($items);
+        }
+
+        // Default load (No search)
+        return response()->json(Item::get());
     }
 
     public function store(Request $request)
