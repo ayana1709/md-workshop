@@ -1,158 +1,111 @@
-import React, { useState, useEffect, useRef } from 'react';
-import api from '@/api';
+import React, { useState, useEffect, useRef } from "react";
+import { useFloating, offset, flip, shift, autoUpdate } from "@floating-ui/react";
+import { createPortal } from "react-dom"; // Teleports the UI to the top layer
+import api from "@/api";
 
-const ItemSearchInput = ({ value, onChange, onItemSelect, disabled }) => {
-  const [searchTerm, setSearchTerm] = useState(value || '');
+const ItemSearchInput = ({ value, onChange, onItemSelect, disabled, placeholder, searchField }) => {
+  const [searchTerm, setSearchTerm] = useState(value || "");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const inputRef = useRef(null);
-  const dropdownRef = useRef(null);
-
-  // Debounce timer
   const debounceTimer = useRef(null);
 
-  useEffect(() => {
-    setSearchTerm(value || '');
-  }, [value]);
+  // Floating UI Logic: Handles scroll, resize, and positioning
+  const { refs, floatingStyles, context } = useFloating({
+    open: showDropdown,
+    onOpenChange: setShowDropdown,
+    middleware: [offset(6), flip(), shift()], // Flips up if no space below
+    whileElementsMounted: autoUpdate, // Moves with scroll
+  });
+
+  useEffect(() => { setSearchTerm(value || ""); }, [value]);
 
   const searchItems = async (query) => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
-
+    if (query.length < 2) return;
     setLoading(true);
     try {
-      const response = await api.get('/items/autocomplete', {
-        params: { q: query, limit: 8 }
-      });
-      
-      if (response.data.success) {
-        setResults(response.data.data);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
+      const { data } = await api.get("/items/autocomplete", { params: { q: query, limit: 8 } });
+      setResults(Array.isArray(data?.data) ? data.data : []);
+    } catch (err) { setResults([]); } finally { setLoading(false); }
   };
 
   const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    onChange(value);
-    
-    // Clear previous timer
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
-    
-    if (value.length >= 2) {
+    const val = e.target.value;
+    setSearchTerm(val);
+    onChange(val);
+    clearTimeout(debounceTimer.current);
+    if (val.length >= 2) {
       setShowDropdown(true);
-      // Set new debounce timer
-      debounceTimer.current = setTimeout(() => {
-        searchItems(value);
-      }, 300);
-    } else {
-      setResults([]);
-      setShowDropdown(false);
-    }
+      debounceTimer.current = setTimeout(() => searchItems(val), 300);
+    } else { setShowDropdown(false); }
   };
 
-  const handleSelect = (item) => {
-    setSearchTerm(item.item_name);
-    setShowDropdown(false);
-    setResults([]);
-    onItemSelect(item);
-  };
-
-  const handleFocus = () => {
-    if (searchTerm.length >= 2) {
-      setShowDropdown(true);
-      if (results.length === 0) {
-        searchItems(searchTerm);
-      }
-    }
-  };
-
-  // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (inputRef.current && !inputRef.current.contains(event.target) &&
-          dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handler = (e) => {
+      if (!refs.domReference.current?.contains(e.target) && !refs.floating.current?.contains(e.target)) {
         setShowDropdown(false);
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [refs]);
 
   return (
     <>
-      <div className="w-full" ref={inputRef}>
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleInputChange}
-          onFocus={handleFocus}
-          placeholder="Search item name..."
-          disabled={disabled}
-          className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
-        />
-      </div>
-      
-      {/* Dropdown positioned absolutely */}
-      {showDropdown && (
-        <div 
-          ref={dropdownRef}
-          className="fixed z-[9999] min-w-[350px] bg-white border border-gray-300 rounded-md shadow-lg max-h-72 overflow-y-auto"
-          style={{
-            // Position near the input field
-            left: inputRef.current?.getBoundingClientRect().left || 0,
-            top: (inputRef.current?.getBoundingClientRect().bottom || 0) + 5,
-          }}
+      {/* Target Input */}
+      <input
+        ref={refs.setReference}
+        type="text"
+        value={searchTerm}
+        onChange={handleInputChange}
+        onFocus={() => searchTerm.length >= 2 && setShowDropdown(true)}
+        disabled={disabled}
+        placeholder={placeholder}
+        className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm"
+      />
+
+      {/* The "Teleported" Dropdown */}
+      {showDropdown && createPortal(
+        <div
+          ref={refs.setFloating}
+          style={floatingStyles} // Injected by Floating UI to handle scroll
+          className="z-[9999] bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden w-[400px] animate-in fade-in zoom-in duration-100"
         >
-          {loading ? (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">Searching items...</p>
-            </div>
-          ) : results.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500">
-              {searchTerm.length < 2 ? 'Type at least 2 characters' : 'No items found'}
-            </div>
-          ) : (
-            <div className="py-1">
-              <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-                <p className="text-xs font-medium text-gray-600">
-                  Found {results.length} item{results.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              {results.map((item) => (
+          <div className="max-h-80 overflow-y-auto">
+            {loading ? (
+              <div className="p-6 text-center text-gray-500 text-sm">Searching...</div>
+            ) : results.length === 0 ? (
+              <div className="p-4 text-center text-gray-400 text-sm italic">No items found</div>
+            ) : (
+              results.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => handleSelect(item)}
-                  className="px-3 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                  onClick={() => {
+                    if (item.quantity > 0) {
+                        onItemSelect(item);
+                        setSearchTerm(item[searchField] || item.item_name);
+                        setShowDropdown(false);
+                    }
+                  }}
+                  className={`px-4 py-3 border-b border-gray-50 flex justify-between items-center transition-colors
+                    ${item.quantity <= 0 ? "opacity-50 bg-gray-50 cursor-not-allowed" : "hover:bg-blue-50 cursor-pointer"}`}
                 >
-                  <div className="font-medium text-gray-900 text-sm">
-                    {item.item_name}
+                  <div>
+                    <div className="font-bold text-sm text-gray-800">{item.item_name}</div>
+                    <div className="text-[11px] text-gray-500">{item.part_number} • {item.brand}</div>
                   </div>
-                  <div className="text-xs text-gray-600 mt-1">
-                    Part: {item.part_number} | Brand: {item.brand}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1 flex justify-between">
-                    <span>Unit: {item.unit}</span>
-                    <span>Stock: {item.quantity}</span>
-                    <span className="font-medium">${parseFloat(item.selling_price || 0).toFixed(2)}</span>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-blue-600">ETB {item.selling_price}</div>
+                    <div className={`text-[10px] font-bold ${item.quantity <= 0 ? "text-red-500" : "text-green-600"}`}>
+                        {item.quantity <= 0 ? "OUT OF STOCK" : `STOCK: ${item.quantity}`}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        </div>,
+        document.body // This puts the dropdown outside your table/page containers
       )}
     </>
   );
