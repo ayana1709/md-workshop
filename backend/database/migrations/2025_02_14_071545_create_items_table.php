@@ -34,6 +34,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->timestamps();
 
+            $table->index(['item_name', 'part_number']);
             $table->engine = 'InnoDB';
         });
     }
