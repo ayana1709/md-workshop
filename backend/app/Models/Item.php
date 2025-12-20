@@ -33,31 +33,25 @@ class Item extends Model
         'condition',
         'image',
     ];
-    
+
     /**
      * Get the indexable data array for the model.
      */
     public function toSearchableArray()
     {
         return [
-            'id' => $this->id,
             'item_name' => $this->item_name,
             'part_number' => $this->part_number,
             'brand' => $this->brand,
-            'unit' => $this->unit ?? '',
-            // Add other fields you want to search
+            'manufacturer' => $this->manufacturer,
+            'condition' => $this->condition,
+            'quantity' => $this->quantity,
+            'location' => $this->location,
+            'type' => $this->type,
+            'unit' => $this->unit,
         ];
     }
-    
-    /**
-     * Determine which fields should be used for searching.
-     * This helps the database driver know which columns to index.
-     */
-    public function searchableFields()
-    {
-        return ['item_name', 'part_number', 'brand'];
-    }
-    // In Item model
+
     public function toArray()
     {
         $array = parent::toArray();
