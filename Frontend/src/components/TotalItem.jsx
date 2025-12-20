@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStores } from "../contexts/storeContext";
 import { Button } from "../components/ui/button";
@@ -27,7 +27,7 @@ const TotalItem = () => {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
-
+  const [isLoading, setIsLoading] = useState(false);
   const {
     items,
     setItems,
@@ -39,27 +39,7 @@ const TotalItem = () => {
   const filteredItems = useMemo(() => {
     let data = items;
 
-    if (searchItem) {
-      const keyword = searchItem.toLowerCase();
-
-      data = data.filter((item) =>
-        [
-          item.item_name,
-          item.part_number,
-          item.brand,
-          item.type,
-          item.condition,
-          item.location,
-          item.shelf_number,
-          item.purchase_price?.toString(),
-          item.selling_price?.toString(),
-          item.quantity?.toString(),
-        ]
-          .filter(Boolean) // remove null/undefined
-          .some((field) => field.toLowerCase().includes(keyword))
-      );
-    }
-
+    // We only handle Date filtering locally now
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -70,7 +50,7 @@ const TotalItem = () => {
       });
     }
     return data;
-  }, [items, searchItem, startDate, endDate]);
+  }, [items, startDate, endDate]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const paginatedItems = useMemo(() => {
@@ -324,9 +304,9 @@ const TotalItem = () => {
       }
 
       // ===== PROGRESS MODAL (ANIMATED) =====
-Swal.fire({
-  title: "Importing Items",
-  html: `
+      Swal.fire({
+        title: "Importing Items",
+        html: `
     <div style="text-align:left;font-size:13px">
 
       <div id="import-status" style="margin-bottom:6px;color:#374151">
@@ -367,46 +347,47 @@ Swal.fire({
 
     </div>
   `,
-  allowOutsideClick: false,
-  showConfirmButton: false,
-});
+        allowOutsideClick: false,
+        showConfirmButton: false,
+      });
 
-// Import logic
-const chunkSize = 100;
-const failedChunks = [];
-let totalInserted = 0;
-let processed = 0;
-const total = cleaned.length;
+      // Import logic
+      const chunkSize = 100;
+      const failedChunks = [];
+      let totalInserted = 0;
+      let processed = 0;
+      const total = cleaned.length;
 
-for (let i = 0; i < total; i += chunkSize) {
-  const chunk = cleaned.slice(i, i + chunkSize);
+      for (let i = 0; i < total; i += chunkSize) {
+        const chunk = cleaned.slice(i, i + chunkSize);
 
-  updateUI(`Importing items ${i + 1} – ${Math.min(i + chunkSize, total)}`);
+        updateUI(
+          `Importing items ${i + 1} – ${Math.min(i + chunkSize, total)}`
+        );
 
-  try {
-    const res = await api.post("/items/import", { items: chunk });
+        try {
+          const res = await api.post("/items/import", { items: chunk });
 
-    const inserted = res.data?.inserted ?? chunk.length;
-    totalInserted += inserted;
-    processed += chunk.length;
+          const inserted = res.data?.inserted ?? chunk.length;
+          totalInserted += inserted;
+          processed += chunk.length;
+        } catch (err) {
+          console.error("Import chunk failed", err);
+          failedChunks.push(chunk);
+          processed += chunk.length;
+        }
 
-  } catch (err) {
-    console.error("Import chunk failed", err);
-    failedChunks.push(chunk);
-    processed += chunk.length;
-  }
+        updateUI("Processing…");
+      }
 
-  updateUI("Processing…");
-}
+      // Small delay for smooth UX
+      await new Promise((r) => setTimeout(r, 500));
 
-// Small delay for smooth UX
-await new Promise(r => setTimeout(r, 500));
-
-// Final result
-Swal.fire({
-  icon: failedChunks.length ? "warning" : "success",
-  title: "Import Completed",
-  html: `
+      // Final result
+      Swal.fire({
+        icon: failedChunks.length ? "warning" : "success",
+        title: "Import Completed",
+        html: `
     <div style="text-align:left;font-size:14px">
       <p>✅ Imported: <b>${totalInserted}</b> items</p>
       ${
@@ -422,26 +403,22 @@ Swal.fire({
       </p>
     </div>
   `,
-});
+      });
 
-// UI updater
-function updateUI(status) {
-  const percent = Math.min(Math.round((processed / total) * 100), 100);
+      // UI updater
+      function updateUI(status) {
+        const percent = Math.min(Math.round((processed / total) * 100), 100);
 
-  const bar = document.getElementById("import-bar");
-  const percentEl = document.getElementById("import-percent");
-  const countEl = document.getElementById("import-count");
-  const statusEl = document.getElementById("import-status");
+        const bar = document.getElementById("import-bar");
+        const percentEl = document.getElementById("import-percent");
+        const countEl = document.getElementById("import-count");
+        const statusEl = document.getElementById("import-status");
 
-  if (bar) bar.style.width = percent + "%";
-  if (percentEl) percentEl.innerText = percent + "%";
-  if (countEl) countEl.innerText = `${processed} / ${total} items`;
-  if (statusEl) statusEl.innerText = status;
-}
-
-
-      fetchItems();
-
+        if (bar) bar.style.width = percent + "%";
+        if (percentEl) percentEl.innerText = percent + "%";
+        if (countEl) countEl.innerText = `${processed} / ${total} items`;
+        if (statusEl) statusEl.innerText = status;
+      }
     } catch (err) {
       Swal.close();
       toast.error(
@@ -450,40 +427,52 @@ function updateUI(status) {
     }
   };
 
-  const fetchItems = async () => {
+  const fetchItems = async (query = "") => {
+    setIsLoading(true);
     try {
-      const res = await api.get("/items");
-      console.log("FETCH RESPONSE:", res.data);
+      const res = await api.get(`/items?search=${encodeURIComponent(query)}`);
 
-      // FIX: If backend returns plain array
       if (Array.isArray(res.data)) {
         setItems(res.data);
       } else {
         setItems(res.data.items || []);
       }
     } catch (err) {
-      console.log("Failed to fetch items", err);
+      console.error("Scout search failed", err);
+      toast.error("Failed to load items");
+    } finally {
+      setIsLoading(false);
     }
   };
+  useEffect(() => {
+    const scoutTimer = setTimeout(() => {
+      fetchItems(searchItem);
+    }, 500);
 
+    return () => clearTimeout(scoutTimer);
+  }, [searchItem]);
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
         Store / ጠቅላላ የዕቃ ዝርዝር
       </h2>
 
-
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
         {/* Search & Quick Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-          <Input
-            type="text"
-            placeholder="Search ..."
-            value={searchItem}
-            onChange={(e) => setSearchItem(e.target.value)}
-            className="w-full sm:w-64"
-          />
+          {/* Search Input with Spinner */}
+<div className="relative">
+            <Input
+              placeholder="Scout inventory..."
+              value={searchItem}
+              onChange={(e) => setSearchItem(e.target.value)}
+              className="w-64 pr-10"
+            />
+            {searchItem && !isLoading && (
+              <button onClick={() => setSearchItem("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400 text-lg">✕</button>
+            )}
+          </div>
           <div className="flex gap-2 flex-wrap">
             <Button
               className="bg-green-500 text-white hover:bg-green-600 w-full sm:w-auto"
@@ -534,7 +523,7 @@ function updateUI(status) {
               className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
               onClick={handleImportClick}
             >
-              Import
+              Imp1997-12ort
             </Button>
 
             <Button

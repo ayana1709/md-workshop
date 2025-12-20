@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
 use App\Models\Admin;
+use App\Models\Department;
 use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
@@ -48,7 +48,7 @@ class DepartmentController extends Controller
     public function update(Request $request, Department $department)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|string|unique:departments,name,' . $department->id,
+            'name' => 'sometimes|string|unique:departments,name,'.$department->id,
             'description' => 'nullable|string',
             'status' => 'sometimes|in:active,inactive',
         ]);
@@ -70,7 +70,7 @@ class DepartmentController extends Controller
         $department->delete();
 
         return response()->json([
-            'message' => 'Department deleted successfully'
+            'message' => 'Department deleted successfully',
         ]);
     }
 
@@ -80,12 +80,12 @@ class DepartmentController extends Controller
     public function users(Department $department)
     {
         $admins = Admin::where('department_id', $department->id)
-            ->select('id', 'name', 'email', 'status','profile_image')
+            ->select('id', 'name', 'email', 'status', 'profile_image')
             ->get();
 
         return response()->json([
             'department' => $department,
-            'users' => $admins
+            'users' => $admins,
         ]);
     }
 }

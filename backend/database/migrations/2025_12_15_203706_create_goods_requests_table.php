@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('requested_department')->comment('Department making the request');
 
             $table->json('requested_items')->comment('Array of items requested with required qty, specifications, etc.');
-            $table->enum('status', ['pending', 'approved','rejected','in_stock','issued'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'in_stock', 'issued'])->default('pending');
             $table->timestamps();
         });
     }

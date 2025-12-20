@@ -3,9 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
-use App\Models\Department;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -51,7 +49,7 @@ class UserController extends Controller
 
         $imageName = null;
         if ($request->hasFile('profile_image')) {
-            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
+            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
         }
 
@@ -94,11 +92,11 @@ class UserController extends Controller
 
         // Handle Image Change
         if ($request->hasFile('profile_image')) {
-            if ($user->profile_image && Storage::disk('public')->exists('profile_images/' . $user->profile_image)) {
-                Storage::disk('public')->delete('profile_images/' . $user->profile_image);
+            if ($user->profile_image && Storage::disk('public')->exists('profile_images/'.$user->profile_image)) {
+                Storage::disk('public')->delete('profile_images/'.$user->profile_image);
             }
 
-            $imageName = time() . '_' . $request->profile_image->getClientOriginalName();
+            $imageName = time().'_'.$request->profile_image->getClientOriginalName();
             $request->profile_image->storeAs('profile_images', $imageName, 'public');
             $user->profile_image = $imageName;
         }
@@ -128,8 +126,8 @@ class UserController extends Controller
         try {
 
             // Delete profile image if exists
-            if ($admin->profile_image && Storage::disk('public')->exists('profile_images/' . $admin->profile_image)) {
-                Storage::disk('public')->delete('profile_images/' . $admin->profile_image);
+            if ($admin->profile_image && Storage::disk('public')->exists('profile_images/'.$admin->profile_image)) {
+                Storage::disk('public')->delete('profile_images/'.$admin->profile_image);
             }
 
             $admin->delete();
@@ -153,7 +151,7 @@ class UserController extends Controller
 
         $user = Admin::findOrFail($id);
 
-        if (!Hash::check($request->old_password, $user->password)) {
+        if (! Hash::check($request->old_password, $user->password)) {
             return response()->json([
                 'message' => 'Old password is incorrect.',
             ], 422);

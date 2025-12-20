@@ -53,7 +53,7 @@ class AdminAuthController extends Controller
         ], 200);
     }
 
-        public function verify(Request $request)
+    public function verify(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'password' => 'required|string',

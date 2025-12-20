@@ -95,7 +95,7 @@ const ItemSearchInput = ({ value, onChange, onItemSelect, disabled, placeholder,
                     <div className="text-[11px] text-gray-500">{item.part_number} • {item.brand}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-bold text-blue-600">ETB {item.selling_price}</div>
+                    <div className="text-sm font-bold text-blue-600">{item.quantity > 0 &&  "ETB "+ item.selling_price}</div>
                     <div className={`text-[10px] font-bold ${item.quantity <= 0 ? "text-red-500" : "text-green-600"}`}>
                         {item.quantity <= 0 ? "OUT OF STOCK" : `STOCK: ${item.quantity}`}
                     </div>

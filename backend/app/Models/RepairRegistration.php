@@ -55,7 +55,7 @@ class RepairRegistration extends Model
         return $this->hasOne(RepairDetail::class, 'job_id', 'job_id');
     }
 
-public function makeAllSearchableUsing($query)
+    public function makeAllSearchableUsing($query)
     {
         return $query->with([]); // Ensure no heavy relations are loaded
     }
