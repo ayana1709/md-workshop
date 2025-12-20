@@ -5,7 +5,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import autoTable from "jspdf-autotable";
 import {
   DropdownMenu,
@@ -22,39 +22,36 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
   const COLUMN_VISIBILITY_KEY = "datatable-column-visibility";
 
   const [columnVisibility, setColumnVisibility] = useState(() => {
-  try {
-    const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
-    return saved ? JSON.parse(saved) : {};
-  } catch {
-    return {};
-  }
-});
+    try {
+      const saved = localStorage.getItem(COLUMN_VISIBILITY_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
+  useEffect(() => {
+    localStorage.setItem(
+      COLUMN_VISIBILITY_KEY,
+      JSON.stringify(columnVisibility)
+    );
+  }, [columnVisibility]);
 
-useEffect(() => {
-  localStorage.setItem(
-    COLUMN_VISIBILITY_KEY,
-    JSON.stringify(columnVisibility)
-  );
-}, [columnVisibility]);
-
-
-const table = useReactTable({
-  data,
-  columns,
-  state: {
-    sorting,
-    pagination,
-    columnVisibility, 
-  },
-  onSortingChange: setSorting,
-  onPaginationChange: setPagination,
-  onColumnVisibilityChange: setColumnVisibility, 
-  getCoreRowModel: getCoreRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
-});
-
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      pagination,
+      columnVisibility,
+    },
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
 
   // const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
@@ -79,20 +76,55 @@ const table = useReactTable({
                 Toggle Columns
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {table.getAllColumns().map((column) =>
-                column.getCanHide() ? (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.columnDef.header}
-                  </DropdownMenuCheckboxItem>
-                ) : null
-              )}
+            <DropdownMenuContent align="end" className="w-56">
+              {/* Header Actions */}
+              <div className="px-2 py-2 flex justify-between border-b border-gray-100 mb-1">
+                <button
+                  className="text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:underline"
+                  onClick={(e) => {
+                    // Prevent menu from closing on click
+                    e.stopPropagation();
+                    table
+                      .getAllColumns()
+                      .forEach((col) => col.toggleVisibility(true));
+                  }}
+                >
+                  Show All
+                </button>
+                <button
+                  className="text-[10px] font-bold uppercase tracking-wider text-red-600 hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    table
+                      .getAllColumns()
+                      .forEach((col) => col.toggleVisibility(false));
+                  }}
+                >
+                  Hide All
+                </button>
+              </div>
+
+              {/* Column List */}
+              <div className="max-h-[300px] overflow-y-auto">
+                {table.getAllColumns().map((column) =>
+                  column.getCanHide() ? (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      // This is the key: prevent the menu from closing
+                      onSelect={(e) => e.preventDefault()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {typeof column.columnDef.header === "string"
+                        ? column.columnDef.header
+                        : column.id}
+                    </DropdownMenuCheckboxItem>
+                  ) : null
+                )}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
