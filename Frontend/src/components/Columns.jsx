@@ -46,86 +46,98 @@ export const columns = ({
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (selectedRows.length > 0 &&
-            selectedRows.length === table.getRowModel().rows.length)
+          table.getRowModel().rows.length > 0 &&
+          table
+            .getRowModel()
+            .rows.filter((row) => row.original.quantity > 0)
+            .every((row) => selectedRows.includes(row.original.id))
         }
         onCheckedChange={(value) => {
-          const ids = table.getRowModel().rows.map((row) => row.original.id);
-          setSelectedRows(value ? ids : []);
+          if (value) {
+            const validIds = table
+              .getRowModel()
+              .rows.map((row) => row.original)
+              .filter((item) => item.quantity > 0)
+              .map((item) => item.id);
+            setSelectedRows((prev) => [...new Set([...prev, ...validIds])]);
+          } else {
+            const currentPageIds = table
+              .getRowModel()
+              .rows.map((row) => row.original.id);
+            setSelectedRows((prev) =>
+              prev.filter((id) => !currentPageIds.includes(id))
+            );
+          }
         }}
-        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={selectedRows.includes(row.original.id)}
-        onCheckedChange={() => {
-          const id = row.original.id;
-          setSelectedRows((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-          );
-        }}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-
-{
-  accessorKey: "image",
-  header: "Image",
-  cell: ({ row }) => {
-    const [openImage, setOpenImage] = useState(false);
-
-    const apiBase = import.meta.env.VITE_API_URL;
-
-    const imageUrl = row.original.image
-      ? `${apiBase}/storage/${row.original.image}`
-      : "/images/default-item.png";
-
-    return (
-      <>
-        {/* Thumbnail */}
-        <img
-          src={imageUrl}
-          alt={row.original.item_name}
-          className="w-12 h-12 object-cover rounded cursor-pointer border"
-          onClick={() => setOpenImage(true)}
-          onError={(e) => {
-            e.currentTarget.src = "/images/defa.jpg";
+      /* Wrap in a div to ensure the tooltip (title) works even if the checkbox is disabled */
+      <div
+        title={row.original.quantity <= 0 ? "This item is out of stock" : ""}
+      >
+        <Checkbox
+          disabled={row.original.quantity <= 0}
+          checked={selectedRows.includes(row.original.id)}
+          onCheckedChange={(value) => {
+            if (value) {
+              setSelectedRows((prev) => [...prev, row.original.id]);
+            } else {
+              setSelectedRows((prev) =>
+                prev.filter((id) => id !== row.original.id)
+              );
+            }
           }}
+          className={
+            row.original.quantity <= 0 ? "opacity-40 cursor-not-allowed" : ""
+          }
         />
-
-        {/* Full Image Modal */}
-        <Dialog open={openImage} onOpenChange={setOpenImage}>
-          <DialogContent className="p-0 bg-transparent border-none shadow-none">
-            <img
-              src={imageUrl}
-              alt={row.original.item_name}
-              className="max-w-full max-h-[80vh] object-contain rounded"
-              onError={(e) => {
-                e.currentTarget.src = "/images/default-item.png";
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      </>
-    );
+      </div>
+    ),
   },
-},
-
 
   {
-    accessorKey: "id",
-    header: "Item Code",
+    accessorKey: "image",
+    header: "Image",
     cell: ({ row }) => {
-      const paddedId = String(row.original.id).padStart(4, "0");
-      return <span>{paddedId}</span>;
+      const [openImage, setOpenImage] = useState(false);
+
+      const apiBase = import.meta.env.VITE_API_URL;
+
+      const imageUrl = row.original.image
+        ? `${apiBase}/storage/${row.original.image}`
+        : "/images/default-item.png";
+
+      return (
+        <>
+          {/* Thumbnail */}
+          <img
+            src={imageUrl}
+            alt={row.original.item_name}
+            className="w-12 h-12 object-cover rounded cursor-pointer border"
+            onClick={() => setOpenImage(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/images/defa.jpg";
+            }}
+          />
+
+          {/* Full Image Modal */}
+          <Dialog open={openImage} onOpenChange={setOpenImage}>
+            <DialogContent className="p-0 bg-transparent border-none shadow-none">
+              <img
+                src={imageUrl}
+                alt={row.original.item_name}
+                className="max-w-full max-h-[80vh] object-contain rounded"
+                onError={(e) => {
+                  e.currentTarget.src = "/images/default-item.png";
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      );
     },
   },
-
   {
     accessorKey: "item_name",
     header: "Item Name",
@@ -217,11 +229,6 @@ export const columns = ({
     accessorKey: "unit",
     header: "Unit",
   },
-  // {
-  //   accessorKey: "description",
-  //   header: "Description",
-  // },
-
   {
     accessorKey: "purchase_price",
     header: "Pr Price",
@@ -369,16 +376,41 @@ export const columns = ({
     header: "Quantity",
     cell: ({ row }) => {
       const [openModal, setOpenModal] = useState(false);
+      const qty = row.original.quantity;
+      const lowStockThreshold = 10;
+
       return (
-        <div className="relative flex items-center gap-2">
-          {row.original.quantity}
+        <div className="relative flex items-center gap-3">
+          {/* Visual Badge for Quantity */}
+          <span
+            className={`px-2.5 py-1 rounded-md text-xs font-bold min-w-[40px] text-center ${
+              qty <= 0
+                ? "bg-red-100 text-red-700 border border-red-200"
+                : qty <= lowStockThreshold
+                ? "bg-orange-100 text-orange-700 border border-orange-200 animate-pulse"
+                : "bg-green-100 text-green-700 border border-green-200"
+            }`}
+          >
+            {qty <= 0 ? "Out" : qty}
+          </span>
+
+          {/* Edit Button */}
           <Button
-            size="icon"
-            variant="outline"
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:bg-gray-100"
             onClick={() => setOpenModal(true)}
           >
-            <IoMdArrowDropdown />
+            <IoMdArrowDropdown className="h-4 w-4 text-gray-500" />
           </Button>
+
+          {/* Low Stock Warning Text */}
+          {qty > 0 && qty <= lowStockThreshold && (
+            <span className="absolute -top-4 left-2 text-[10px] font-bold text-orange-600 uppercase tracking-tighter">
+              Low
+            </span>
+          )}
+
           {openModal && (
             <div className="absolute z-[9999]">
               <EditFieldModal
