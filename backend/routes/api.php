@@ -63,10 +63,10 @@ Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
 Route::apiResource('/departments', DepartmentController::class);
 Route::post('/settings/verify-passcode', function (Request $request) {
-    $validPasscode = env('RESET_PASSCODE'); 
-    
+    $validPasscode = env('RESET_PASSCODE');
+
     return response()->json([
-        'verified' => $request->passcode === $validPasscode
+        'verified' => $request->passcode === $validPasscode,
     ]);
 });
 Route::post('/verify-admin', [AdminAuthController::class, 'verify']);
@@ -207,7 +207,6 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
 
-
 // post drive test
 Route::post('/post-drive-tests', [PostDriveTestController::class, 'store']);
 Route::get('/post-drive-tests/{id}', [PostDriveTestController::class, 'show']);
@@ -244,12 +243,11 @@ Route::patch('/repairs/{id}', [RepairRegistrationController::class, 'updateStat'
 Route::post('/bulk-work-order', [WorkOrderController::class, 'BulkStore']); // Store multiple work orders
 
 // purchase route
-
 Route::post('/purchases', [PurchaseController::class, 'store']);
 Route::get('/purchases', [PurchaseController::class, 'index']);
 Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
 
-//Item route
+// Item route
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
@@ -264,7 +262,6 @@ Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
 Route::get('/item/stats', [ItemController::class, 'dashboardStats']);
-
 
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);
