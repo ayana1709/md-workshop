@@ -24,7 +24,7 @@ const ItemSearchInput = ({ value, onChange, onItemSelect, disabled, placeholder,
     if (query.length < 2) return;
     setLoading(true);
     try {
-      const { data } = await api.get("/items/autocomplete", { params: { q: query, limit: 8 } });
+      const { data } = await api.get("/items", { params: { q: query, limit: 8 } });
       setResults(Array.isArray(data?.data) ? data.data : []);
     } catch (err) { setResults([]); } finally { setLoading(false); }
   };
