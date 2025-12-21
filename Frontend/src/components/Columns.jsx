@@ -41,36 +41,28 @@ export const columns = ({
   setIsItemModalOpen,
   setSelectedRepairId,
 }) => [
+{
+  header: "#",
+  cell: ({ row }) => row.index + 1,
+},
   {
     id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getRowModel().rows.length > 0 &&
-          table
-            .getRowModel()
-            .rows.filter((row) => row.original.quantity > 0)
-            .every((row) => selectedRows.includes(row.original.id))
-        }
-        onCheckedChange={(value) => {
-          if (value) {
-            const validIds = table
-              .getRowModel()
-              .rows.map((row) => row.original)
-              .filter((item) => item.quantity > 0)
-              .map((item) => item.id);
-            setSelectedRows((prev) => [...new Set([...prev, ...validIds])]);
-          } else {
-            const currentPageIds = table
-              .getRowModel()
-              .rows.map((row) => row.original.id);
-            setSelectedRows((prev) =>
-              prev.filter((id) => !currentPageIds.includes(id))
-            );
-          }
-        }}
-      />
-    ),
+header: ({ table }) => (
+  <Checkbox
+    checked={
+      table.getRowModel().rows.length > 0 &&
+      table.getRowModel().rows.every((row) => selectedRows.includes(row.original.id))
+    }
+    onCheckedChange={(value) => {
+      const currentPageIds = table.getRowModel().rows.map((row) => row.original.id);
+      if (value) {
+        setSelectedRows((prev) => [...new Set([...prev, ...currentPageIds])]);
+      } else {
+        setSelectedRows((prev) => prev.filter((id) => !currentPageIds.includes(id)));
+      }
+    }}
+  />
+),
     cell: ({ row }) => (
       /* Wrap in a div to ensure the tooltip (title) works even if the checkbox is disabled */
       <div
@@ -229,7 +221,7 @@ export const columns = ({
     accessorKey: "unit",
     header: "Unit",
   },
-  {
+{
     accessorKey: "purchase_price",
     header: "Pr Price",
     cell: ({ row }) => {
@@ -237,10 +229,8 @@ export const columns = ({
 
       return (
         <div className="relative flex items-center gap-2">
-          {/* Display price */}
           {row.original.purchase_price}
 
-          {/* Edit button */}
           <Button
             size="icon"
             variant="outline"
@@ -249,120 +239,13 @@ export const columns = ({
             <IoMdArrowDropdown />
           </Button>
 
-          {/* Edit Modal */}
           {openModal && (
-            <EditFieldModal
-              item={row.original}
-              field="purchase_price"
-              onClose={() => setOpenModal(false)}
-              setItems={(updatedItem) => {
-                // Update parent items array state
-                setItems((prev) =>
-                  prev.map((i) =>
-                    i.id === row.original.id
-                      ? { ...i, purchase_price: updatedItem.purchase_price }
-                      : i
-                  )
-                );
-                setOpenModal(false); // close modal after saving
-              }}
-            />
-          )}
-        </div>
-      );
-    },
-  },
-
-  {
-    accessorKey: "selling_price",
-    header: "Sp Price",
-    cell: ({ row }) => {
-      const [openPopover, setOpenPopover] = useState(false);
-      const [showEditModal, setShowEditModal] = useState(false);
-      const [priceHistory, setPriceHistory] = useState([
-        {
-          date: new Date().toISOString().split("T")[0],
-          value: row.original.selling_price,
-        },
-      ]);
-      const formatNumber = (value) => {
-        const num = Number(value);
-
-        if (isNaN(num)) return "0"; // fallback for invalid input
-
-        return new Intl.NumberFormat("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        }).format(num);
-      };
-
-      const rawUnitPrice = Number(row.original.selling_price || 0);
-      const rawQuantity = Number(row.original.quantity || 0);
-
-      const vat = rawUnitPrice * 0.15;
-      const unitWithVat = rawUnitPrice + vat;
-      const totalWithVat = unitWithVat * rawQuantity;
-
-      // Only format when displaying
-      // console.log("Unit Price:", formatNumber(rawUnitPrice));
-      // console.log("VAT:", formatNumber(vat));
-      // console.log("Unit + VAT:", formatNumber(unitWithVat));
-      // console.log("Total with VAT:", formatNumber(totalWithVat));
-
-      const handleNewPrice = (newPrice) => {
-        setPriceHistory((prev) => [
-          { date: new Date().toISOString().split("T")[0], value: newPrice },
-          ...prev,
-        ]);
-        setShowEditModal(false);
-      };
-
-      // Usage:
-
-      return (
-        <div>
-          <Popover open={openPopover} onOpenChange={setOpenPopover}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                {row.original.selling_price}{" "}
-                <IoMdArrowDropdown className="ml-1" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px]">
-              <div className="text-sm space-y-1">
-                <div> Selling Price : {row.original.selling_price}</div>
-                <div>Unit VAT: {vat}</div>
-                <div>Unit Price with VAT: {unitWithVat}</div>
-                <div>Total Price with VAT: {totalWithVat}</div>
-              </div>
-              <Separator className="my-2" />
-              <div className="text-sm font-semibold">
-                Standard Price History:
-              </div>
-              {priceHistory.map((entry, idx) => (
-                <div key={idx} className="text-sm">
-                  Date: {entry.date} ----- {entry.value} (SP)
-                </div>
-              ))}
-              <Separator className="my-2" />
-              <Button
-                variant="ghost"
-                className="border p-4 text-left text-blue-600 mt-1"
-                onClick={() => setShowEditModal(true)}
-              >
-                ✏️ Set New Price
-              </Button>
-            </PopoverContent>
-          </Popover>
-          {showEditModal && (
             <div className="absolute z-[9999]">
               <EditFieldModal
                 item={row.original}
-                field="selling_price"
-                onClose={() => setShowEditModal(false)}
-                setItems={(updatedItem) =>
-                  handleNewPrice(updatedItem.selling_price)
-                }
+                field="purchase_price" // The modal uses this to know what to update
+                onClose={() => setOpenModal(false)}
+                setItems={setItems}   // 👈 Just pass the function directly like the first one
               />
             </div>
           )}
@@ -370,7 +253,78 @@ export const columns = ({
       );
     },
   },
+{
+  accessorKey: "selling_price",
+  header: "Sp Price",
+  cell: ({ row }) => {
+    const [openPopover, setOpenPopover] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
 
+    // This ensures calculations use the latest data from the row
+    const currentItem = row.original;
+    const rawUnitPrice = Number(currentItem.selling_price || 0);
+    const rawQuantity = Number(currentItem.quantity || 0);
+    
+    const vat = rawUnitPrice * 0.15;
+    const unitWithVat = rawUnitPrice + vat;
+    const totalWithVat = unitWithVat * rawQuantity;
+
+    return (
+      <div className="relative">
+        <Popover open={openPopover} onOpenChange={setOpenPopover}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="font-mono">
+              {currentItem.selling_price}
+              <IoMdArrowDropdown className="ml-1" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] z-[50]">
+            <div className="text-sm space-y-1">
+              <div className="font-bold text-blue-600 mb-2">Live Pricing (ETB)</div>
+              <div className="flex justify-between">
+                <span>Unit Price:</span> <span>{rawUnitPrice.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-500">
+                <span>VAT (15%):</span> <span>{vat.toLocaleString()}</span>
+              </div>
+              <Separator className="my-1" />
+              <div className="flex justify-between font-bold">
+                <span>Unit + VAT:</span> <span>{unitWithVat.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-400">
+                <span>Total for {rawQuantity} pcs:</span> 
+                <span>{totalWithVat.toLocaleString()}</span>
+              </div>
+            </div>
+            
+            <Button
+              variant="outline"
+              className="w-full mt-4 text-blue-600 border-blue-200 hover:bg-blue-50"
+              onClick={() => {
+                setShowEditModal(true);
+                setOpenPopover(false); // Close popover when opening modal
+              }}
+            >
+              ✏️ Set New Price
+            </Button>
+          </PopoverContent>
+        </Popover>
+
+        {showEditModal && (
+          <div className="absolute z-[9999] top-0 left-0">
+            <EditFieldModal
+              item={currentItem}
+              field="selling_price"
+              onClose={() => setShowEditModal(false)}
+              // Passing setItems directly like your working Part Number column
+              setItems={setItems} 
+            />
+          </div>
+        )}
+      </div>
+    );
+  },
+},
   {
     accessorKey: "quantity",
     header: "Quantity",
