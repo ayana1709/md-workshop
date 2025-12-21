@@ -188,11 +188,6 @@ Route::patch('/store-items/{code}/item-out', [StoreItemController::class, 'itemO
 Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
 });
-Route::prefix('items')->group(function () {
-    Route::get('/search', [ItemSearchController::class, 'search']);
-    Route::get('/autocomplete', [ItemSearchController::class, 'autocomplete']);
-});
-
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
 // total numberof items
 Route::get('/store-items/total', [StoreItemController::class, 'getTotalItems']);
@@ -250,6 +245,7 @@ Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
 // Item route
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
+Route::get('/items/out-of-stock',[ItemController::class,'getOutOfStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
 Route::get('/items/{item}', [ItemController::class, 'show']);   // GET /api/items/{id} - Show a single item
 Route::post('/items', [ItemController::class, 'store']);       // POST /api/items - Create a new item
