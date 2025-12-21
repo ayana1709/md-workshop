@@ -12,23 +12,23 @@ use Intervention\Image\Facades\Image;
 
 class ItemController extends Controller
 {
-    // Fetch all items
-    public function index(Request $request)
-    {
-        $query = $request->query('search');
 
-        if ($query) {
-            // Use Scout exactly like your autocomplete does
-            $items = Item::search($query)->get();
 
-            // Return plain data so the React Table can map it immediately
-            return response()->json($items);
-        }
+public function index(Request $request)
+{
+    $query = $request->query('search');
+    $perPage = $request->query('limit', 10);
 
-        // Default load (No search)
-        return response()->json(Item::get());
+    if ($query && $query !== 'undefined') {
+        // Scout search with pagination
+        $items = Item::search($query)->paginate($perPage);
+    } else {
+        // Regular Eloquent pagination
+        $items = Item::orderBy('created_at', 'desc')->paginate($perPage);
     }
 
+    return response()->json($items);
+}
     public function store(Request $request)
     {
         // Validate fields
@@ -67,7 +67,7 @@ class ItemController extends Controller
 
                 $image = Image::make($file)->encode('jpg', 70);
 
-                $filename = 'items/'.uniqid().'.jpg';
+                $filename = 'items/' . uniqid() . '.jpg';
 
                 Storage::disk('public')->put($filename, (string) $image);
 
@@ -224,7 +224,7 @@ class ItemController extends Controller
         $item->save();
 
         return response()->json([
-            'message' => ucfirst($request->field).' updated successfully',
+            'message' => ucfirst($request->field) . ' updated successfully',
             'item' => $item,
         ], 200);
     }
@@ -263,23 +263,42 @@ class ItemController extends Controller
         return response()->json(['message' => 'Item successfully moved out', 'updated_quantity' => $item->quantity]);
     }
 
-    public function getOutOfStockItems()
-    {
-        $items = Item::where('quantity', 0)->get();
+public function getOutOfStockItems(Request $request)
+{
+    $query = $request->query('search');
+    $perPage = $request->query('limit', 10);
 
-        return response()->json($items->isEmpty() ? [] : $items);
+    // We MUST use paginate() here to get "Type B" response
+    if ($query && $query !== 'undefined') {
+        $items = Item::search($query)
+            ->where('quantity', '<=', 0)
+            ->paginate($perPage);
+    } else {
+        $items = Item::where('quantity', '<=', 0)->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
-    public function getLowStockItems()
-    {
-        $items = Item::where('quantity', '<', 10)->get();
+    return response()->json($items);
+}
 
-        if ($items->isEmpty()) {
-            return response()->json(['message' => 'No low-stock items found', 'items' => []], 200);
-        }
+public function getLowStockItems(Request $request)
+{
+    $query = $request->query('search');
+    $perPage = $request->query('limit', 10);
 
-        return response()->json($items);
+    if ($query && $query !== 'undefined') {
+        // Search specifically within low stock (1-9)
+        $items = Item::search($query)
+            ->where('quantity', '>', 0)
+            ->where('quantity', '<=', 9)
+            ->paginate($perPage);
+    } else {
+        $items = Item::whereBetween('quantity', [1, 9])
+            ->orderBy('quantity', 'asc') // Helpful to see lowest stock first
+            ->paginate($perPage);
     }
+
+    return response()->json($items);
+}
 
     public function getItemOutRecords()
     {
@@ -387,7 +406,7 @@ class ItemController extends Controller
                         isset($normalized['quantity']) && $normalized['quantity'] !== '' ? intval($normalized['quantity']) : (isset($normalized['qyt']) && $normalized['qyt'] !== '' ? intval($normalized['qyt']) : (isset($normalized['qty']) && $normalized['qty'] !== '' ? intval($normalized['qty']) : null));
 
                     if (! $item_name) {
-                        throw new \Exception('Row '.($index + 1).' is missing Item Name');
+                        throw new \Exception('Row ' . ($index + 1) . ' is missing Item Name');
                     }
 
                     if ($quantity === null || $quantity === '') {
@@ -452,7 +471,7 @@ class ItemController extends Controller
 
                 if (empty($item['part_number'])) {
                     do {
-                        $pn = 'PN-'.strtoupper(Str::random(8));
+                        $pn = 'PN-' . strtoupper(Str::random(8));
                     } while (Item::where('part_number', $pn)->exists());
 
                     $item['part_number'] = $pn;
@@ -470,7 +489,7 @@ class ItemController extends Controller
                     $created = Item::create($item);
                     $inserted[] = $created;
                 } catch (\Illuminate\Database\QueryException $e) {
-                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: '.$e->getMessage(), ['item_data' => $item]);
+                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: ' . $e->getMessage(), ['item_data' => $item]);
                 }
             }
 
@@ -482,7 +501,7 @@ class ItemController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Import failed: '.$e->getMessage(),
+                'message' => 'Import failed: ' . $e->getMessage(),
             ], 400);
         }
     }
