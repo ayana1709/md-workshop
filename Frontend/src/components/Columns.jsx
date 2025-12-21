@@ -430,7 +430,7 @@ header: ({ table }) => (
             quantity > 0 ? "bg-green-500" : "bg-red-500"
           }`}
         >
-          {quantity > 0 ? "Available" : "Not Available"}
+          {quantity > 0 ? "Available" : "N/A"}
         </span>
       );
     },
@@ -462,9 +462,10 @@ header: ({ table }) => (
                 View
               </Button>
               <Button
+                variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
-                  setSelectedItem(row.original); // this could be row.original if you're using react-table
+                  setSelectedItem(row.original);
                   setIsEditOpen(true);
                 }}
               >
