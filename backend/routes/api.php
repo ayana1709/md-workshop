@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\ItemSearchController;
+use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\BolloController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;

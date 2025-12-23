@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
 import api from "@/api";
 import Swal from "sweetalert2";
+import confetti from "canvas-confetti";
 
 const TotalItem = () => {
   const {
@@ -154,123 +155,80 @@ const TotalItem = () => {
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-
-      const rows = XLSX.utils.sheet_to_json(worksheet, {
-        defval: "",
-        raw: true,
-      });
-
-      if (!rows.length) {
-        toast.error("Import failed: No rows found.");
-        return;
-      }
+      const rows = XLSX.utils.sheet_to_json(
+        workbook.Sheets[workbook.SheetNames[0]],
+        { defval: "", raw: true }
+      );
 
       const cleaned = rows
         .map((row) => {
-          const normalized = {};
-          for (const key in row) {
-            normalized[key.trim().toLowerCase()] = row[key];
-          }
-
-          if (Object.values(normalized).join("").trim() === "") return null;
-
-          const itemName =
-            normalized["item name"] ||
-            normalized["item_name"] ||
-            normalized["item"];
-
-          if (!itemName) return null;
+          const n = {};
+          for (const k in row) n[k.trim().toLowerCase()] = row[k];
+          const name = n["item name"] || n["item_name"] || n["item"];
+          if (!name) return null;
 
           return {
-            item_name: itemName,
-            part_number:
-              normalized["part number"] || normalized["part_number"] || null,
-            brand: normalized["brand"] || "",
-            unit: normalized["unit"] || "",
-            quantity: toNumber(
-              normalized["quantity"] || normalized["qyt"] || normalized["qnty"]
-            ),
-            low_quantity: toNumber(
-              normalized["low quantity"] || normalized["low_quantity"]
-            ),
+            item_name: name,
+            part_number: n["part number"] || n["part_number"] || null,
+            brand: n["brand"] || "",
+            unit: n["unit"] || "",
+            quantity: toNumber(n["quantity"] || n["qty"]),
+            low_quantity: toNumber(n["low quantity"] || n["low_quantity"]),
             purchase_price: toNumber(
-              normalized["purchase price"] || normalized["purchase_price"]
+              n["purchase price"] || n["purchase_price"]
             ),
-            selling_price: toNumber(
-              normalized["selling price"] || normalized["selling_price"]
-            ),
-            least_price: toNumber(
-              normalized["least price"] || normalized["least_price"]
-            ),
-            image: normalized["image"] || "items/default.jpg",
-            condition: normalized["condition"] || "New",
-            type: normalized["type"] || "",
-            manufacturer: normalized["manufacturer"] || "",
-            location: normalized["location"] || "",
-            shelf_number:
-              normalized["shelf no"] || normalized["shelf_number"] || "",
+            selling_price: toNumber(n["selling price"] || n["selling_price"]),
+            least_price: toNumber(n["least price"] || n["least_price"]),
+            image: n["image"] || "items/default.jpg",
+            condition: n["condition"] || "New",
+            type: n["type"] || "",
+            manufacturer: n["manufacturer"] || "",
+            location: n["location"] || "",
+            shelf_number: n["shelf no"] || n["shelf_number"] || "",
           };
         })
         .filter(Boolean);
 
       if (!cleaned.length) {
-        toast.error("No valid items found to import.");
+        toast.error("No valid data found in file.");
         return;
       }
 
-      // ===== PROGRESS MODAL (ANIMATED) =====
+      // ===== THE BEST CIRCULAR PROGRESS UI =====
       Swal.fire({
-        title: "Importing Items",
+        title:
+          '<span style="color:#1e293b; font-size:22px; font-weight:700;">Syncing Assets</span>',
         html: `
-    <div style="text-align:left;font-size:13px">
-
-      <div id="import-status" style="margin-bottom:6px;color:#374151">
-        Preparing import…
-      </div>
-
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-        <span id="import-count">0 / 0 items</span>
-        <span id="import-percent">0%</span>
-      </div>
-
-      <div style="
-        background:#e5e7eb;
-        height:12px;
-        border-radius:8px;
-        overflow:hidden;
-      ">
-        <div id="import-bar" style="
-          height:100%;
-          width:0%;
-          background:linear-gradient(45deg,#2563eb,#3b82f6);
-          background-size:200% 100%;
-          animation: moveBg 1.5s linear infinite;
-          transition: width 0.35s ease;
-        "></div>
-      </div>
-
-      <div style="margin-top:8px;font-size:12px;color:#6b7280">
-        Please don’t close this window
-      </div>
-
-      <style>
-        @keyframes moveBg {
-          0% { background-position:0% 50%; }
-          100% { background-position:100% 50%; }
-        }
-      </style>
-
-    </div>
-  `,
+        <div style="display:flex; flex-direction:column; align-items:center; padding: 15px 0;">
+          <div style="position:relative; width:150px; height:150px;">
+            <svg width="150" height="150" viewBox="0 0 120 120" style="transform: rotate(-90deg);">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#f1f5f9" stroke-width="8" />
+              <circle id="p-circle" cx="60" cy="60" r="52" fill="none" 
+                stroke="url(#neonGrad)" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);" />
+              <defs>
+                <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#3b82f6" />
+                  <stop offset="100%" style="stop-color:#8b5cf6" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div id="p-percent" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:26px; font-weight:800; color:#1e293b; font-family:sans-serif;">0%</div>
+          </div>
+          <div id="p-status" style="margin-top:25px; font-weight:600; color:#475569; font-size:15px;">Initializing upload...</div>
+          <div id="p-count" style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase; letter-spacing:1px;">Ready</div>
+        </div>
+      `,
         allowOutsideClick: false,
         showConfirmButton: false,
+        background: "#fff",
+        willOpen: () => {
+          Swal.getPopup().style.borderRadius = "28px";
+        },
       });
 
-      // Import logic
       const chunkSize = 100;
-      const failedChunks = [];
       let totalInserted = 0;
       let processed = 0;
       const total = cleaned.length;
@@ -278,70 +236,91 @@ const TotalItem = () => {
       for (let i = 0; i < total; i += chunkSize) {
         const chunk = cleaned.slice(i, i + chunkSize);
 
-        updateUI(
-          `Importing items ${i + 1} – ${Math.min(i + chunkSize, total)}`
-        );
-
         try {
           const res = await api.post("/items/import", { items: chunk });
-
-          const inserted = res.data?.inserted ?? chunk.length;
-          totalInserted += inserted;
-          processed += chunk.length;
+          totalInserted += res.data?.inserted ?? chunk.length;
         } catch (err) {
-          console.error("Import chunk failed", err);
-          failedChunks.push(chunk);
-          processed += chunk.length;
+          console.error("Batch failed", err);
         }
 
-        updateUI("Processing…");
+        processed = Math.min(i + chunkSize, total);
+
+        // Update UI
+        const percent = Math.round((processed / total) * 100);
+        const circle = document.getElementById("p-circle");
+        const percText = document.getElementById("p-percent");
+        const statusText = document.getElementById("p-status");
+        const countText = document.getElementById("p-count");
+
+        if (circle)
+          circle.style.strokeDashoffset = 326.7 - (percent / 100) * 326.7;
+        if (percText) percText.innerText = `${percent}%`;
+        if (countText) countText.innerText = `${processed} / ${total} items`;
+        if (statusText)
+          statusText.innerText =
+            percent === 100
+              ? "Finalizing database..."
+              : "Uploading inventory...";
       }
 
-      // Small delay for smooth UX
-      await new Promise((r) => setTimeout(r, 500));
+      // Success Burst & Refresh
+      triggerCelebration();
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      fetchItems();
 
-      // Final result
-      Swal.fire({
-        icon: failedChunks.length ? "warning" : "success",
-        title: "Import Completed",
-        html: `
-    <div style="text-align:left;font-size:14px">
-      <p>✅ Imported: <b>${totalInserted}</b> items</p>
-      ${
-        failedChunks.length
-          ? `<p style="color:#b91c1c">
-               ⚠️ Failed Chunks: ${failedChunks.length}
-             </p>`
-          : ""
-      }
-      <hr/>
-      <p style="font-size:12px;color:#6b7280">
-        You can safely continue working now.
-      </p>
-    </div>
-  `,
+      window.dispatchEvent(new Event("refreshInventoryStats"));
+      await Swal.fire({
+        icon: "success",
+        title: "Import Successful",
+        text: `Added ${totalInserted} items to your inventory.`,
+        confirmButtonText: "Great!",
+        confirmButtonColor: "#3b82f6",
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.getPopup().style.borderRadius = "28px";
+        },
+      });
+    } catch (err) {
+      Swal.fire("Error", "Import failed unexpectedly", "error");
+    }
+  };
+
+  /**
+   * Fires a high-end multi-directional confetti show
+   */
+  const triggerCelebration = () => {
+    const duration = 3 * 1000;
+    const animationEnd = Date.now() + duration;
+
+    const frame = () => {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) return;
+
+      const particleCount = 2;
+      // Left side
+      confetti({
+        particleCount,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.6 },
+        colors: ["#3b82f6", "#8b5cf6"],
+        zIndex: 10000,
+      });
+      // Right side
+      confetti({
+        particleCount,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.6 },
+        colors: ["#3b82f6", "#8b5cf6"],
+        zIndex: 10000,
       });
 
-      // UI updater
-      function updateUI(status) {
-        const percent = Math.min(Math.round((processed / total) * 100), 100);
-
-        const bar = document.getElementById("import-bar");
-        const percentEl = document.getElementById("import-percent");
-        const countEl = document.getElementById("import-count");
-        const statusEl = document.getElementById("import-status");
-
-        if (bar) bar.style.width = percent + "%";
-        if (percentEl) percentEl.innerText = percent + "%";
-        if (countEl) countEl.innerText = `${processed} / ${total} items`;
-        if (statusEl) statusEl.innerText = status;
-      }
-    } catch (err) {
-      Swal.close();
-      toast.error(
-        "Import failed: " + (err.response?.data?.message || err.message)
-      );
-    }
+      requestAnimationFrame(frame);
+    };
+    frame();
   };
 
   return (
@@ -405,10 +384,7 @@ const TotalItem = () => {
             className="hidden"
             onChange={handleFileChange}
           />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current.click()}
-          >
+          <Button variant="outline" onClick={handleImportClick}>
             Import
           </Button>
           <Button variant="outline" onClick={handlePrint}>
@@ -427,6 +403,34 @@ const TotalItem = () => {
       </div>
 
       <div id="printableTable" className="overflow-x-auto">
+        {isLoading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(255, 255, 255, 0.6)",
+              backdropFilter: "blur(2px)",
+              transition: "all 0.3s ease",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #3b82f6",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
         <DataTable
           columns={columns({
             selectedRows,
@@ -440,7 +444,7 @@ const TotalItem = () => {
             setIsItemModalOpen,
             setSelectedRepairId,
           })}
-          data={items} 
+          data={items}
           rowCount={totalItems}
           pagination={pagination}
           onPaginationChange={setPagination}

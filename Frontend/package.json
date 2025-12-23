@@ -32,6 +32,7 @@
     "and": "^0.0.3",
     "axios": "^1.7.7",
     "build": "^0.1.4",
+    "canvas-confetti": "^1.9.4",
     "chart.js": "^4.4.1",
     "chartjs-adapter-moment": "^1.0.1",
     "class-variance-authority": "^0.7.1",

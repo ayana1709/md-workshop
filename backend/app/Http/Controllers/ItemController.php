@@ -24,7 +24,7 @@ public function index(Request $request)
         $items = Item::search($query)->paginate($perPage);
     } else {
         // Regular Eloquent pagination
-        $items = Item::orderBy('created_at', 'desc')->paginate($perPage);
+        $items = Item::latest()->paginate($perPage);
     }
 
     return response()->json($items);

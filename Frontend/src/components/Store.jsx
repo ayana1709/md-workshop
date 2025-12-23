@@ -41,30 +41,30 @@ const Store = () => {
   const tabs = ["total-items", "out-of-store", "low-store"];
 
   // 1. Fetch ALL counts when the component mounts
+const fetchAllCounts = async () => {
+    try {
+      const response = await api.get("/item/stats"); 
+      const data = response.data;
+      setCounts({
+        "total-items": data.total_items || 0,
+        "out-of-store": data.out_of_stock || 0,
+        "low-store": data.low_stock || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching inventory counts:", error);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchAllCounts = async () => {
-      try {
-        // *** UPDATED URL TO MATCH NEW API ROUTE ***
-        const response = await api.get("/item/stats"); 
-        
-        const data = response.data;
-
-        setCounts({
-          // Map backend keys (snake_case) to frontend tab keys (kebab-case)
-          "total-items": data.total_items || 0,
-          "out-of-store": data.out_of_stock || 0, // Assuming Out-of-Store uses the out_of_stock count
-          "low-store": data.low_stock || 0,
-        });
-
-      } catch (error) {
-        console.error("Error fetching inventory counts:", error);
-        // Ensure you have `import { toast } from "react-toastify";` at the top
-        // toast.error("Failed to load inventory counts."); 
-      }
-    };
-
     fetchAllCounts();
-  }, []); // Run once on mount
+  }, []);
+
+  // Pro Tip: Listen for a custom event to refresh stats without complex prop drilling
+  useEffect(() => {
+    window.addEventListener("refreshInventoryStats", fetchAllCounts);
+    return () => window.removeEventListener("refreshInventoryStats", fetchAllCounts);
+  }, []);
 
 
   useLayoutEffect(() => {
