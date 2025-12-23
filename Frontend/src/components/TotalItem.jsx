@@ -443,7 +443,7 @@ const TotalItem = () => {
             setSelectedItem,
             setIsItemModalOpen,
             setSelectedRepairId,
-            pagination
+            pagination,
           })}
           data={items}
           rowCount={totalItems}

@@ -201,6 +201,7 @@ const fetchOutItems = async () => {
             setSelectedItem,
             setIsItemModalOpen,
             setSelectedRepairId,
+            pagination
           })}
           data={itemsList}
           rowCount={totalItems}

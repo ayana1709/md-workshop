@@ -159,6 +159,7 @@ const LowStore = () => {
             setSelectedItem,
             setIsItemModalOpen,
             setSelectedRepairId,
+            pagination,
           })}
           data={itemsList} 
           rowCount={totalItems}
