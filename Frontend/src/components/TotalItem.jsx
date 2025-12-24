@@ -11,7 +11,6 @@ import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
 import api from "@/api";
 import Swal from "sweetalert2";
-import confetti from "canvas-confetti";
 
 const TotalItem = () => {
   const {
@@ -291,7 +290,6 @@ const TotalItem = () => {
       }
 
       // Success Burst & Refresh
-      triggerCelebration();
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
       fetchItems();
 
@@ -313,43 +311,6 @@ const TotalItem = () => {
       Swal.fire("Error", "Import failed unexpectedly", "error");
     }
   };
-
-  /**
-   * Fires a high-end multi-directional confetti show
-   */
-  const triggerCelebration = () => {
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-
-    const frame = () => {
-      const timeLeft = animationEnd - Date.now();
-      if (timeLeft <= 0) return;
-
-      const particleCount = 2;
-      // Left side
-      confetti({
-        particleCount,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.6 },
-        colors: ["#3b82f6", "#8b5cf6"],
-        zIndex: 10000,
-      });
-      // Right side
-      confetti({
-        particleCount,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.6 },
-        colors: ["#3b82f6", "#8b5cf6"],
-        zIndex: 10000,
-      });
-
-      requestAnimationFrame(frame);
-    };
-    frame();
-  };
-
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
