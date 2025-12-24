@@ -111,6 +111,33 @@ const TotalItem = () => {
     XLSX.writeFile(wb, "store-items.xlsx");
   };
 
+  const handleExportTemplate = () => {
+    const template = [
+      {
+        "Item Name": "Brake Pad",
+        "Part Number": "BRK-123",
+        Brand: "Brembo",
+        Unit: "pcs",
+        Quantity: 10,
+        "Low Quantity": 2,
+        "Purchase Price": 50,
+        "Selling Price": 75,
+        "Least Price": 65,
+        Image: "items/default.jpg",
+        Condition: "New",
+        Type: "Spare",
+        Manufacturer: "OEM",
+        Location: "Aisle 3",
+        "Shelf No": "A3-12",
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(template);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "Inventory_Import_Template.xlsx");
+  };
+
   const handleAddToSales = () => {
     navigate("/inventory/add-to-sale", {
       state: { selectedIds: selectedRows },
@@ -384,6 +411,9 @@ const TotalItem = () => {
             className="hidden"
             onChange={handleFileChange}
           />
+          <Button variant="outline" onClick={handleExportTemplate}>
+            Download Template
+          </Button>
           <Button variant="outline" onClick={handleImportClick}>
             Import
           </Button>
