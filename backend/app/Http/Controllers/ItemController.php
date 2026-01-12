@@ -12,23 +12,22 @@ use Intervention\Image\Facades\Image;
 
 class ItemController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
 
+        if ($query && $query !== 'undefined') {
+            // Scout search with pagination
+            $items = Item::search($query)->paginate($perPage);
+        } else {
+            // Regular Eloquent pagination
+            $items = Item::latest()->paginate($perPage);
+        }
 
-public function index(Request $request)
-{
-    $query = $request->query('search');
-    $perPage = $request->query('limit', 10);
-
-    if ($query && $query !== 'undefined') {
-        // Scout search with pagination
-        $items = Item::search($query)->paginate($perPage);
-    } else {
-        // Regular Eloquent pagination
-        $items = Item::latest()->paginate($perPage);
+        return response()->json($items);
     }
 
-    return response()->json($items);
-}
     public function store(Request $request)
     {
         // Validate fields
@@ -67,7 +66,7 @@ public function index(Request $request)
 
                 $image = Image::make($file)->encode('jpg', 70);
 
-                $filename = 'items/' . uniqid() . '.jpg';
+                $filename = 'items/'.uniqid().'.jpg';
 
                 Storage::disk('public')->put($filename, (string) $image);
 
@@ -224,7 +223,7 @@ public function index(Request $request)
         $item->save();
 
         return response()->json([
-            'message' => ucfirst($request->field) . ' updated successfully',
+            'message' => ucfirst($request->field).' updated successfully',
             'item' => $item,
         ], 200);
     }
@@ -263,42 +262,42 @@ public function index(Request $request)
         return response()->json(['message' => 'Item successfully moved out', 'updated_quantity' => $item->quantity]);
     }
 
-public function getOutOfStockItems(Request $request)
-{
-    $query = $request->query('search');
-    $perPage = $request->query('limit', 10);
+    public function getOutOfStockItems(Request $request)
+    {
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
 
-    // We MUST use paginate() here to get "Type B" response
-    if ($query && $query !== 'undefined') {
-        $items = Item::search($query)
-            ->where('quantity', '<=', 0)
-            ->paginate($perPage);
-    } else {
-        $items = Item::where('quantity', '<=', 0)->orderBy('created_at', 'desc')->paginate($perPage);
+        // We MUST use paginate() here to get "Type B" response
+        if ($query && $query !== 'undefined') {
+            $items = Item::search($query)
+                ->where('quantity', '<=', 0)
+                ->paginate($perPage);
+        } else {
+            $items = Item::where('quantity', '<=', 0)->orderBy('created_at', 'desc')->paginate($perPage);
+        }
+
+        return response()->json($items);
     }
 
-    return response()->json($items);
-}
+    public function getLowStockItems(Request $request)
+    {
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
 
-public function getLowStockItems(Request $request)
-{
-    $query = $request->query('search');
-    $perPage = $request->query('limit', 10);
+        if ($query && $query !== 'undefined') {
+            // Search specifically within low stock (1-9)
+            $items = Item::search($query)
+                ->where('quantity', '>', 0)
+                ->where('quantity', '<=', 9)
+                ->paginate($perPage);
+        } else {
+            $items = Item::whereBetween('quantity', [1, 9])
+                ->orderBy('quantity', 'asc') // Helpful to see lowest stock first
+                ->paginate($perPage);
+        }
 
-    if ($query && $query !== 'undefined') {
-        // Search specifically within low stock (1-9)
-        $items = Item::search($query)
-            ->where('quantity', '>', 0)
-            ->where('quantity', '<=', 9)
-            ->paginate($perPage);
-    } else {
-        $items = Item::whereBetween('quantity', [1, 9])
-            ->orderBy('quantity', 'asc') // Helpful to see lowest stock first
-            ->paginate($perPage);
+        return response()->json($items);
     }
-
-    return response()->json($items);
-}
 
     public function getItemOutRecords()
     {
@@ -406,7 +405,7 @@ public function getLowStockItems(Request $request)
                         isset($normalized['quantity']) && $normalized['quantity'] !== '' ? intval($normalized['quantity']) : (isset($normalized['qyt']) && $normalized['qyt'] !== '' ? intval($normalized['qyt']) : (isset($normalized['qty']) && $normalized['qty'] !== '' ? intval($normalized['qty']) : null));
 
                     if (! $item_name) {
-                        throw new \Exception('Row ' . ($index + 1) . ' is missing Item Name');
+                        throw new \Exception('Row '.($index + 1).' is missing Item Name');
                     }
 
                     if ($quantity === null || $quantity === '') {
@@ -471,7 +470,7 @@ public function getLowStockItems(Request $request)
 
                 if (empty($item['part_number'])) {
                     do {
-                        $pn = 'PN-' . strtoupper(Str::random(8));
+                        $pn = 'PN-'.strtoupper(Str::random(8));
                     } while (Item::where('part_number', $pn)->exists());
 
                     $item['part_number'] = $pn;
@@ -489,7 +488,7 @@ public function getLowStockItems(Request $request)
                     $created = Item::create($item);
                     $inserted[] = $created;
                 } catch (\Illuminate\Database\QueryException $e) {
-                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: ' . $e->getMessage(), ['item_data' => $item]);
+                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: '.$e->getMessage(), ['item_data' => $item]);
                 }
             }
 
@@ -501,7 +500,7 @@ public function getLowStockItems(Request $request)
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Import failed: ' . $e->getMessage(),
+                'message' => 'Import failed: '.$e->getMessage(),
             ], 400);
         }
     }
