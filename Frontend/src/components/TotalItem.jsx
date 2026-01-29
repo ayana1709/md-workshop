@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStores } from "../contexts/storeContext";
 import { Button } from "../components/ui/button";
@@ -13,21 +13,6 @@ import api from "@/api";
 import Swal from "sweetalert2";
 
 const TotalItem = () => {
-  const printRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const navigate = useNavigate();
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchItem, setSearchItem] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [total, setTotal] = useState(0);
-
   const {
     items,
     setItems,
@@ -36,51 +21,61 @@ const TotalItem = () => {
     setSelectedRepairId,
   } = useStores();
 
-  const filteredItems = useMemo(() => {
-    let data = items;
+  const fileInputRef = useRef(null);
+  const printRef = useRef(null);
+  const navigate = useNavigate();
 
-    if (searchItem) {
-      const keyword = searchItem.toLowerCase();
+  const [searchItem, setSearchItem] = useState("");
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
-      data = data.filter((item) =>
-        [
-          item.item_name,
-          item.part_number,
-          item.brand,
-          item.type,
-          item.condition,
-          item.location,
-          item.shelf_number,
-          item.purchase_price?.toString(),
-          item.selling_price?.toString(),
-          item.quantity?.toString(),
-        ]
-          .filter(Boolean) // remove null/undefined
-          .some((field) => field.toLowerCase().includes(keyword))
-      );
-    }
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      data = data.filter((item) => {
-        const created = new Date(item.created_at);
-        return created >= start && created <= end;
+  const fetchItems = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        search: searchItem || "",
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
       });
-    }
-    return data;
-  }, [items, searchItem, startDate, endDate]);
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredItems.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredItems, currentPage, itemsPerPage]);
+      const res = await api.get(`/items?${params.toString()}`);
+
+      // Laravel standard: res.data.data for items, res.data.total for count
+      setItems(res.data.data || []);
+      setTotalItems(res.data.total || 0);
+    } catch (err) {
+      console.error("Fetch failed", err);
+      toast.error("Failed to load inventory");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset page when searching
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [searchItem]);
+
+  // Debounced Fetch
+  useEffect(() => {
+    const scoutTimer = setTimeout(() => {
+      fetchItems();
+    }, 500);
+    return () => clearTimeout(scoutTimer);
+  }, [searchItem, pagination.pageIndex, pagination.pageSize]);
+
+  // --- HANDLERS ---
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(14);
     doc.text("Store Items", 105, 20, { align: "center" });
     const headers = [
       [
@@ -88,156 +83,85 @@ const TotalItem = () => {
         "Item Name",
         "Part Number",
         "Brand",
-        // "Unit",
         "Quantity",
-        // "Low In  Qty",
-        "Purchase Price",
-        "Selling Price",
-        // "Least Price",
+        "Price",
         "Condition",
-        "Type",
-        // "Manufacturer",
         "Location",
-        "Shelf Number",
       ],
     ];
-    const data = filteredItems.map((item) => [
-      item.id || "",
-      item.item_name || "",
-      item.part_number || "",
-      item.brand || "",
-      // item.unit || "",
-      item.quantity || "",
-      // item.low_quantity || "",
-      item.purchase_price || "",
-      item.selling_price || "",
-      // item.least_price || "",
-      item.condition || "",
-      item.type || "",
-      // item.manufacturer || "",
-      item.location || "",
-      item.shelf_number || "",
+    const data = items.map((item) => [
+      item.id,
+      item.item_name,
+      item.part_number,
+      item.brand,
+      item.quantity,
+      item.selling_price,
+      item.condition,
+      item.location,
     ]);
-    doc.autoTable({
-      startY: 30,
-      head: headers,
-      body: data,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [0, 122, 102], textColor: [255, 255, 255] },
-    });
+    doc.autoTable({ startY: 30, head: headers, body: data });
     doc.save("store-items.pdf");
   };
 
   const handleExportExcel = () => {
-    const exportData = filteredItems.map((item) => ({
-      item_name: item.item_name || "",
-      part_number: item.part_number || "",
-      brand: item.brand || "",
-      unit: item.unit || "",
-      quantity: item.quantity || "",
-      low_quantity: item.low_quantity || "",
-      purchase_price: item.purchase_price || "",
-      selling_price: item.selling_price || "",
-      least_price: item.least_price || "",
-      condition: item.condition || "",
-      type: item.type || "",
-      manufacturer: item.manufacturer || "",
-      location: item.location || "",
-      shelf_number: item.shelf_number || "",
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(exportData);
+    const ws = XLSX.utils.json_to_sheet(items);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Store Items");
     XLSX.writeFile(wb, "store-items.xlsx");
   };
 
-  const handleAddToSales = () => {
-    const selectedIds = selectedRows.map((row) => row);
-    navigate("/inventory/add-to-sale", { state: { selectedIds } });
-  };
-
-  const handleAddToPurchase = () => {
-    const selectedIds = selectedRows.map((row) => row);
-    navigate("/inventory/order", { state: { selectedIds } });
-  };
-
-  const handleDownloadTemplate = () => {
-    const templateData = [
+  const handleExportTemplate = () => {
+    const template = [
       {
-        item_name: "",
-        part_number: "",
-        brand: "",
-        unit: "",
-        quantity: "",
-        low_quantity: "",
-        purchase_price: "",
-        selling_price: "",
-        least_price: "",
-        condition: "",
-        type: "",
-        manufacturer: "",
-        location: "",
-        shelf_number: "",
+        "Item Name": "Brake Pad",
+        "Part Number": "BRK-123",
+        Brand: "Brembo",
+        Unit: "pcs",
+        Quantity: 10,
+        "Low Quantity": 2,
+        "Purchase Price": 50,
+        "Selling Price": 75,
+        "Least Price": 65,
+        Image: "items/default.jpg",
+        Condition: "New",
+        Type: "Spare",
+        Manufacturer: "OEM",
+        Location: "Aisle 3",
+        "Shelf No": "A3-12",
       },
     ];
 
-    const ws = XLSX.utils.json_to_sheet(templateData, { skipHeader: false });
+    const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Store Template");
-    XLSX.writeFile(wb, "store_template.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "Inventory_Import_Template.xlsx");
+  };
+
+  const handleAddToSales = () => {
+    navigate("/inventory/add-to-sale", {
+      state: { selectedIds: selectedRows },
+    });
+  };
+
+  const handleAddToPurchase = () => {
+    navigate("/inventory/order", { state: { selectedIds: selectedRows } });
   };
 
   const handlePrint = () => {
-    const originalTable = document.querySelector("#printableTable table");
-    if (!originalTable) return alert("Table not found.");
-    const clonedTable = originalTable.cloneNode(true);
-    const headerCells = clonedTable.querySelectorAll("thead th");
-    let removeIndexes = [];
-    headerCells.forEach((th, index) => {
-      const text = th.textContent?.toLowerCase();
-      const hasCheckbox = th.querySelector("input[type='checkbox']");
-      const hasIcon = th.querySelector("svg");
-      if (
-        text.includes("action") ||
-        text.includes("options") ||
-        hasCheckbox ||
-        hasIcon ||
-        text.trim() === ""
-      ) {
-        removeIndexes.push(index);
-      }
-    });
-    clonedTable.querySelectorAll("tr").forEach((row) => {
-      const cells = Array.from(row.children);
-      removeIndexes.forEach((i) => {
-        if (cells[i]) row.removeChild(cells[i]);
-      });
-      cells.forEach((cell) => {
-        const elements = cell.querySelectorAll(
-          "button, svg, .dropdown, [role='button']"
-        );
-        elements.forEach((el) => el.remove());
-      });
-    });
-    const printWindow = window.open("", "", "height=600,width=800");
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Print Table</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          </style>
-        </head>
-        <body>${clonedTable.outerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
+    const content = document
+      .querySelector("#printableTable table")
+      .cloneNode(true);
+    // Remove action columns/buttons from clone before printing
+    content
+      .querySelectorAll("th:last-child, td:last-child, button, svg")
+      .forEach((el) => el.remove());
+
+    const win = window.open("", "", "height=600,width=800");
+    win.document.write(
+      `<html><head><title>Print</title><style>table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ccc;padding:8px;}</style></head><body>${content.outerHTML}</body></html>`
+    );
+    win.document.close();
+    win.print();
   };
 
   const handleImportClick = () => {
@@ -257,197 +181,176 @@ const TotalItem = () => {
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-
-      const rows = XLSX.utils.sheet_to_json(worksheet, {
-        defval: "",
-        raw: true,
-      });
-
-      if (!rows.length) {
-        toast.error("Import failed: No rows found.");
-        return;
-      }
+      const rows = XLSX.utils.sheet_to_json(
+        workbook.Sheets[workbook.SheetNames[0]],
+        { defval: "", raw: true }
+      );
 
       const cleaned = rows
         .map((row) => {
-          const normalized = {};
-          for (const key in row) {
-            normalized[key.trim().toLowerCase()] = row[key];
-          }
-
-          if (Object.values(normalized).join("").trim() === "") return null;
-
-          const itemName =
-            normalized["item name"] ||
-            normalized["item_name"] ||
-            normalized["item"];
-
-          if (!itemName) return null;
+          const n = {};
+          for (const k in row) n[k.trim().toLowerCase()] = row[k];
+          const name = n["item name"] || n["item_name"] || n["item"];
+          if (!name) return null;
 
           return {
-            item_name: itemName,
-            part_number:
-              normalized["part number"] || normalized["part_number"] || null,
-            brand: normalized["brand"] || "",
-            unit: normalized["unit"] || "",
-            quantity: toNumber(
-              normalized["quantity"] || normalized["qyt"] || normalized["qnty"]
-            ),
-            low_quantity: toNumber(
-              normalized["low quantity"] || normalized["low_quantity"]
-            ),
+            item_name: name,
+            part_number: n["part number"] || n["part_number"] || null,
+            brand: n["brand"] || "",
+            unit: n["unit"] || "",
+            quantity: toNumber(n["quantity"] || n["qty"]),
+            low_quantity: toNumber(n["low quantity"] || n["low_quantity"]),
             purchase_price: toNumber(
-              normalized["purchase price"] || normalized["purchase_price"]
+              n["purchase price"] || n["purchase_price"]
             ),
-            selling_price: toNumber(
-              normalized["selling price"] || normalized["selling_price"]
-            ),
-            least_price: toNumber(
-              normalized["least price"] || normalized["least_price"]
-            ),
-            image: normalized["image"] || "items/default.jpg",
-            condition: normalized["condition"] || "New",
-            type: normalized["type"] || "",
-            manufacturer: normalized["manufacturer"] || "",
-            location: normalized["location"] || "",
-            shelf_number:
-              normalized["shelf no"] || normalized["shelf_number"] || "",
+            selling_price: toNumber(n["selling price"] || n["selling_price"]),
+            least_price: toNumber(n["least price"] || n["least_price"]),
+            image: n["image"] || "items/default.jpg",
+            condition: n["condition"] || "New",
+            type: n["type"] || "",
+            manufacturer: n["manufacturer"] || "",
+            location: n["location"] || "",
+            shelf_number: n["shelf no"] || n["shelf_number"] || "",
           };
         })
         .filter(Boolean);
 
       if (!cleaned.length) {
-        toast.error("No valid items found to import.");
+        toast.error("No valid data found in file.");
         return;
       }
 
-      // ===== PROGRESS MODAL (ANIMATED) =====
+      // ===== THE BEST CIRCULAR PROGRESS UI =====
       Swal.fire({
-        title: "Importing Items...",
+        title:
+          '<span style="color:#1e293b; font-size:22px; font-weight:700;">Syncing Assets</span>',
         html: `
-        <div style="font-size:14px;margin-bottom:6px">
-          <span id="import-percent">0%</span>
-        </div>
-
-        <div style="background:#e5e7eb;height:12px;border-radius:8px;overflow:hidden">
-          <div id="import-bar" style="
-            height:100%;
-            width:0%;
-            background:#2563eb;
-            transition: width 0.4s ease;
-          "></div>
+        <div style="display:flex; flex-direction:column; align-items:center; padding: 15px 0;">
+          <div style="position:relative; width:150px; height:150px;">
+            <svg width="150" height="150" viewBox="0 0 120 120" style="transform: rotate(-90deg);">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#f1f5f9" stroke-width="8" />
+              <circle id="p-circle" cx="60" cy="60" r="52" fill="none" 
+                stroke="url(#neonGrad)" stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                style="transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);" />
+              <defs>
+                <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style="stop-color:#3b82f6" />
+                  <stop offset="100%" style="stop-color:#8b5cf6" />
+                </linearGradient>
+              </defs>
+            </svg>
+            <div id="p-percent" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:26px; font-weight:800; color:#1e293b; font-family:sans-serif;">0%</div>
+          </div>
+          <div id="p-status" style="margin-top:25px; font-weight:600; color:#475569; font-size:15px;">Initializing upload...</div>
+          <div id="p-count" style="font-size:12px; color:#94a3b8; margin-top:5px; text-transform:uppercase; letter-spacing:1px;">Ready</div>
         </div>
       `,
         allowOutsideClick: false,
         showConfirmButton: false,
+        background: "#fff",
+        willOpen: () => {
+          Swal.getPopup().style.borderRadius = "28px";
+        },
       });
 
       const chunkSize = 100;
-      const failedChunks = [];
       let totalInserted = 0;
-      let lastMessage = "Import completed";
-      let importedCount = 0;
+      let processed = 0;
+      const total = cleaned.length;
 
-      for (let i = 0; i < cleaned.length; i += chunkSize) {
+      for (let i = 0; i < total; i += chunkSize) {
         const chunk = cleaned.slice(i, i + chunkSize);
 
         try {
           const res = await api.post("/items/import", { items: chunk });
-
-          const message = res.data?.message || "Import completed";
-          const inserted = res.data?.inserted ?? 0;
-
-          totalInserted += inserted;
-          importedCount += inserted;
+          totalInserted += res.data?.inserted ?? chunk.length;
         } catch (err) {
-          console.error("Failed to import chunk:", chunk, err);
-          failedChunks.push(chunk);
+          console.error("Batch failed", err);
         }
 
-        // Update progress bar based on attempted import
-        const percent = Math.min(
-          Math.round((importedCount / cleaned.length) * 100),
-          100
-        );
+        processed = Math.min(i + chunkSize, total);
 
-        const bar = document.getElementById("import-bar");
-        const text = document.getElementById("import-percent");
+        // Update UI
+        const percent = Math.round((processed / total) * 100);
+        const circle = document.getElementById("p-circle");
+        const percText = document.getElementById("p-percent");
+        const statusText = document.getElementById("p-status");
+        const countText = document.getElementById("p-count");
 
-        if (bar && text) {
-          bar.style.width = percent + "%";
-          text.innerText = percent + "%";
-        }
+        if (circle)
+          circle.style.strokeDashoffset = 326.7 - (percent / 100) * 326.7;
+        if (percText) percText.innerText = `${percent}%`;
+        if (countText) countText.innerText = `${processed} / ${total} items`;
+        if (statusText)
+          statusText.innerText =
+            percent === 100
+              ? "Finalizing database..."
+              : "Uploading inventory...";
       }
 
-      await new Promise((r) => setTimeout(r, 400));
+      // Success Burst & Refresh
+      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      fetchItems();
 
-      Swal.fire({
+      window.dispatchEvent(new Event("refreshInventoryStats"));
+      await Swal.fire({
         icon: "success",
-        title: "Import Result",
-        html: `
-    <p>✅ ${lastMessage}</p>
-    <hr/>
-    <p>You Imported Total Items Of: <b>${totalInserted}</b></p>
-
-  `,
+        title: "Import Successful",
+        text: `Added ${totalInserted} items to your inventory.`,
+        confirmButtonText: "Great!",
+        confirmButtonColor: "#3b82f6",
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false,
+        willOpen: () => {
+          Swal.getPopup().style.borderRadius = "28px";
+        },
       });
-
-      fetchItems();
-
-      fetchItems();
     } catch (err) {
-      Swal.close();
-      toast.error(
-        "Import failed: " + (err.response?.data?.message || err.message)
-      );
+      Swal.fire("Error", "Import failed unexpectedly", "error");
     }
   };
-
-  const fetchItems = async () => {
-    try {
-      const res = await api.get("/items");
-      console.log("FETCH RESPONSE:", res.data);
-
-      // FIX: If backend returns plain array
-      if (Array.isArray(res.data)) {
-        setItems(res.data);
-      } else {
-        setItems(res.data.items || []);
-      }
-    } catch (err) {
-      console.log("Failed to fetch items", err);
-    }
-  };
-
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
         Store / ጠቅላላ የዕቃ ዝርዝር
       </h2>
 
-
-      {/* Top Controls */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-        {/* Search & Quick Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-          <Input
-            type="text"
-            placeholder="Search ..."
-            value={searchItem}
-            onChange={(e) => setSearchItem(e.target.value)}
-            className="w-full sm:w-64"
-          />
-          <div className="flex gap-2 flex-wrap">
+          <div className="relative">
+            <div className="relative">
+              <Input
+                placeholder="Search part number..."
+                value={searchItem}
+                onChange={(e) => setSearchItem(e.target.value)}
+                className="w-64"
+              />
+              {searchItem && !isLoading && (
+                <button
+                  onClick={() => setSearchItem("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-red-400"
+                >
+                  ✕
+                </button>
+              )}
+              {isLoading && (
+                <span className="absolute right-3 top-2.5 animate-spin">
+                  ⏳
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2">
             <Button
-              className="bg-green-500 text-white hover:bg-green-600 w-full sm:w-auto"
+              className="bg-green-500 text-white hover:bg-green-600"
               onClick={handleAddToSales}
             >
               Item Out
             </Button>
             <Button
-              className="bg-orange-500 text-white hover:bg-orange-600 w-full sm:w-auto"
+              className="bg-orange-500 text-white hover:bg-orange-600"
               onClick={handleAddToPurchase}
             >
               Request Purchase
@@ -455,68 +358,34 @@ const TotalItem = () => {
           </div>
         </div>
 
-        {/* Import / Export Controls */}
-        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => setShowModal(true)}
-            className="
-              font-extrabold 
-              text-white 
-              bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 
-              px-6 py-2 
-              rounded-lg 
-              shadow-md 
-              hover:shadow-lg 
-              hover:scale-105 
-              transition-all 
-              duration-200 
-              flex items-center gap-2
-            "
+            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white"
           >
-            <span className="text-xl">+</span> Add Item
+            + Add Item
           </Button>
-
           <input
             ref={fileInputRef}
             type="file"
             accept=".xlsx, .xls"
-            style={{ display: "none" }}
+            className="hidden"
             onChange={handleFileChange}
           />
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
-              onClick={handleImportClick}
-            >
-              Import
-            </Button>
-
-            <Button
-              variant="outline"
-              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-              onClick={handleDownloadTemplate}
-            >
-              Template
-            </Button>
-
-            <Button
-              variant="outline"
-              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-              onClick={handlePrint}
-            >
-              Print
-            </Button>
-          </div>
-
-          <Button
-            className="bg-green-500 text-white hover:bg-green-600"
-            onClick={handleExportPDF}
-          >
+          <Button variant="outline" onClick={handleExportTemplate}>
+            Download Template
+          </Button>
+          <Button variant="outline" onClick={handleImportClick}>
+            Import
+          </Button>
+          <Button variant="outline" onClick={handlePrint}>
+            Print
+          </Button>
+          <Button className="bg-green-500 text-white" onClick={handleExportPDF}>
             PDF
           </Button>
           <Button
-            className="bg-blue-500 text-white hover:bg-blue-600"
+            className="bg-blue-500 text-white"
             onClick={handleExportExcel}
           >
             Excel
@@ -524,8 +393,35 @@ const TotalItem = () => {
         </div>
       </div>
 
-      {/* Data Table */}
       <div id="printableTable" className="overflow-x-auto">
+        {isLoading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(255, 255, 255, 0.6)",
+              backdropFilter: "blur(2px)",
+              transition: "all 0.3s ease",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                border: "4px solid #f3f3f3",
+                borderTop: "4px solid #3b82f6",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          </div>
+        )}
         <DataTable
           columns={columns({
             selectedRows,
@@ -538,8 +434,12 @@ const TotalItem = () => {
             setSelectedItem,
             setIsItemModalOpen,
             setSelectedRepairId,
+            pagination,
           })}
-          data={filteredItems} // 👈 send all filtered items
+          data={items}
+          rowCount={totalItems}
+          pagination={pagination}
+          onPaginationChange={setPagination}
         />
       </div>
     </div>

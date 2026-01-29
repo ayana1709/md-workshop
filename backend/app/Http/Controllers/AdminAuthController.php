@@ -52,4 +52,31 @@ class AdminAuthController extends Controller
             'message' => 'Successfully logged out',
         ], 200);
     }
+
+    public function verify(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // First admin = super admin
+        $admin = Admin::orderBy('id')->first();
+
+        if (! $admin || ! Hash::check($request->password, $admin->password)) {
+            return response()->json([
+                'message' => 'Invalid admin password',
+            ], 401);
+        }
+
+        return response()->json([
+            'message' => 'Verified',
+        ]);
+    }
 }

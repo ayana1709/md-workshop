@@ -40,92 +40,106 @@ export const columns = ({
   setSelectedItem,
   setIsItemModalOpen,
   setSelectedRepairId,
+  pagination,
 }) => [
+  {
+    header: "#",
+    cell: ({ row }) =>
+      row.index + 1 + pagination.pageIndex * pagination.pageSize,
+  },
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
         checked={
-          table.getIsAllPageRowsSelected() ||
-          (selectedRows.length > 0 &&
-            selectedRows.length === table.getRowModel().rows.length)
+          table.getRowModel().rows.length > 0 &&
+          table
+            .getRowModel()
+            .rows.every((row) => selectedRows.includes(row.original.id))
         }
         onCheckedChange={(value) => {
-          const ids = table.getRowModel().rows.map((row) => row.original.id);
-          setSelectedRows(value ? ids : []);
+          const currentPageIds = table
+            .getRowModel()
+            .rows.map((row) => row.original.id);
+          if (value) {
+            setSelectedRows((prev) => [
+              ...new Set([...prev, ...currentPageIds]),
+            ]);
+          } else {
+            setSelectedRows((prev) =>
+              prev.filter((id) => !currentPageIds.includes(id))
+            );
+          }
         }}
-        aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={selectedRows.includes(row.original.id)}
-        onCheckedChange={() => {
-          const id = row.original.id;
-          setSelectedRows((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-          );
-        }}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-
-{
-  accessorKey: "image",
-  header: "Image",
-  cell: ({ row }) => {
-    const [openImage, setOpenImage] = useState(false);
-
-    const apiBase = import.meta.env.VITE_API_URL;
-
-    const imageUrl = row.original.image
-      ? `${apiBase}/storage/${row.original.image}`
-      : "/images/default-item.png";
-
-    return (
-      <>
-        {/* Thumbnail */}
-        <img
-          src={imageUrl}
-          alt={row.original.item_name}
-          className="w-12 h-12 object-cover rounded cursor-pointer border"
-          onClick={() => setOpenImage(true)}
-          onError={(e) => {
-            e.currentTarget.src = "/images/defa.jpg";
+      /* Wrap in a div to ensure the tooltip (title) works even if the checkbox is disabled */
+      <div
+        title={row.original.quantity <= 0 ? "This item is out of stock" : ""}
+      >
+        <Checkbox
+          disabled={row.original.quantity <= 0}
+          checked={selectedRows.includes(row.original.id)}
+          onCheckedChange={(value) => {
+            if (value) {
+              setSelectedRows((prev) => [...prev, row.original.id]);
+            } else {
+              setSelectedRows((prev) =>
+                prev.filter((id) => id !== row.original.id)
+              );
+            }
           }}
+          className={
+            row.original.quantity <= 0 ? "opacity-40 cursor-not-allowed" : ""
+          }
         />
-
-        {/* Full Image Modal */}
-        <Dialog open={openImage} onOpenChange={setOpenImage}>
-          <DialogContent className="p-0 bg-transparent border-none shadow-none">
-            <img
-              src={imageUrl}
-              alt={row.original.item_name}
-              className="max-w-full max-h-[80vh] object-contain rounded"
-              onError={(e) => {
-                e.currentTarget.src = "/images/default-item.png";
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      </>
-    );
+      </div>
+    ),
   },
-},
-
 
   {
-    accessorKey: "id",
-    header: "Item Code",
+    accessorKey: "image",
+    header: "Image",
     cell: ({ row }) => {
-      const paddedId = String(row.original.id).padStart(4, "0");
-      return <span>{paddedId}</span>;
+      const [openImage, setOpenImage] = useState(false);
+
+      const apiBase = import.meta.env.VITE_API_URL;
+
+      const imageUrl = row.original.image
+        ? `${apiBase}/storage/${row.original.image}`
+        : "/images/default-item.png";
+
+      return (
+        <>
+          {/* Thumbnail */}
+          <img
+            src={imageUrl}
+            alt={row.original.item_name}
+            className="w-12 h-12 object-cover rounded cursor-pointer border"
+            onClick={() => setOpenImage(true)}
+            onError={(e) => {
+              e.currentTarget.src = "/images/defa.jpg";
+            }}
+          />
+
+          {/* Full Image Modal */}
+          <Dialog open={openImage} onOpenChange={setOpenImage}>
+            <DialogContent className="p-0 bg-transparent border-none shadow-none">
+              <img
+                src={imageUrl}
+                alt={row.original.item_name}
+                className="max-w-full max-h-[80vh] object-contain rounded"
+                onError={(e) => {
+                  e.currentTarget.src = "/images/default-item.png";
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      );
     },
   },
-
   {
     accessorKey: "item_name",
     header: "Item Name",
@@ -217,11 +231,6 @@ export const columns = ({
     accessorKey: "unit",
     header: "Unit",
   },
-  // {
-  //   accessorKey: "description",
-  //   header: "Description",
-  // },
-
   {
     accessorKey: "purchase_price",
     header: "Pr Price",
@@ -230,10 +239,8 @@ export const columns = ({
 
       return (
         <div className="relative flex items-center gap-2">
-          {/* Display price */}
           {row.original.purchase_price}
 
-          {/* Edit button */}
           <Button
             size="icon"
             variant="outline"
@@ -242,120 +249,13 @@ export const columns = ({
             <IoMdArrowDropdown />
           </Button>
 
-          {/* Edit Modal */}
           {openModal && (
-            <EditFieldModal
-              item={row.original}
-              field="purchase_price"
-              onClose={() => setOpenModal(false)}
-              setItems={(updatedItem) => {
-                // Update parent items array state
-                setItems((prev) =>
-                  prev.map((i) =>
-                    i.id === row.original.id
-                      ? { ...i, purchase_price: updatedItem.purchase_price }
-                      : i
-                  )
-                );
-                setOpenModal(false); // close modal after saving
-              }}
-            />
-          )}
-        </div>
-      );
-    },
-  },
-
-  {
-    accessorKey: "selling_price",
-    header: "Sp Price",
-    cell: ({ row }) => {
-      const [openPopover, setOpenPopover] = useState(false);
-      const [showEditModal, setShowEditModal] = useState(false);
-      const [priceHistory, setPriceHistory] = useState([
-        {
-          date: new Date().toISOString().split("T")[0],
-          value: row.original.selling_price,
-        },
-      ]);
-      const formatNumber = (value) => {
-        const num = Number(value);
-
-        if (isNaN(num)) return "0"; // fallback for invalid input
-
-        return new Intl.NumberFormat("en-US", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2,
-        }).format(num);
-      };
-
-      const rawUnitPrice = Number(row.original.selling_price || 0);
-      const rawQuantity = Number(row.original.quantity || 0);
-
-      const vat = rawUnitPrice * 0.15;
-      const unitWithVat = rawUnitPrice + vat;
-      const totalWithVat = unitWithVat * rawQuantity;
-
-      // Only format when displaying
-      // console.log("Unit Price:", formatNumber(rawUnitPrice));
-      // console.log("VAT:", formatNumber(vat));
-      // console.log("Unit + VAT:", formatNumber(unitWithVat));
-      // console.log("Total with VAT:", formatNumber(totalWithVat));
-
-      const handleNewPrice = (newPrice) => {
-        setPriceHistory((prev) => [
-          { date: new Date().toISOString().split("T")[0], value: newPrice },
-          ...prev,
-        ]);
-        setShowEditModal(false);
-      };
-
-      // Usage:
-
-      return (
-        <div>
-          <Popover open={openPopover} onOpenChange={setOpenPopover}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm">
-                {row.original.selling_price}{" "}
-                <IoMdArrowDropdown className="ml-1" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px]">
-              <div className="text-sm space-y-1">
-                <div> Selling Price : {row.original.selling_price}</div>
-                <div>Unit VAT: {vat}</div>
-                <div>Unit Price with VAT: {unitWithVat}</div>
-                <div>Total Price with VAT: {totalWithVat}</div>
-              </div>
-              <Separator className="my-2" />
-              <div className="text-sm font-semibold">
-                Standard Price History:
-              </div>
-              {priceHistory.map((entry, idx) => (
-                <div key={idx} className="text-sm">
-                  Date: {entry.date} ----- {entry.value} (SP)
-                </div>
-              ))}
-              <Separator className="my-2" />
-              <Button
-                variant="ghost"
-                className="border p-4 text-left text-blue-600 mt-1"
-                onClick={() => setShowEditModal(true)}
-              >
-                ✏️ Set New Price
-              </Button>
-            </PopoverContent>
-          </Popover>
-          {showEditModal && (
             <div className="absolute z-[9999]">
               <EditFieldModal
                 item={row.original}
-                field="selling_price"
-                onClose={() => setShowEditModal(false)}
-                setItems={(updatedItem) =>
-                  handleNewPrice(updatedItem.selling_price)
-                }
+                field="purchase_price" // The modal uses this to know what to update
+                onClose={() => setOpenModal(false)}
+                setItems={setItems} // 👈 Just pass the function directly like the first one
               />
             </div>
           )}
@@ -363,22 +263,122 @@ export const columns = ({
       );
     },
   },
+  {
+    accessorKey: "selling_price",
+    header: "Sp Price",
+    cell: ({ row }) => {
+      const [openPopover, setOpenPopover] = useState(false);
+      const [showEditModal, setShowEditModal] = useState(false);
 
+      // This ensures calculations use the latest data from the row
+      const currentItem = row.original;
+      const rawUnitPrice = Number(currentItem.selling_price || 0);
+      const rawQuantity = Number(currentItem.quantity || 0);
+
+      const vat = rawUnitPrice * 0.15;
+      const unitWithVat = rawUnitPrice + vat;
+      const totalWithVat = unitWithVat * rawQuantity;
+
+      return (
+        <div className="relative">
+          <Popover open={openPopover} onOpenChange={setOpenPopover}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="font-mono">
+                {currentItem.selling_price}
+                <IoMdArrowDropdown className="ml-1" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] z-[50]">
+              <div className="text-sm space-y-1">
+                <div className="font-bold text-blue-600 mb-2">
+                  Live Pricing (ETB)
+                </div>
+                <div className="flex justify-between">
+                  <span>Unit Price:</span>{" "}
+                  <span>{rawUnitPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-gray-500">
+                  <span>VAT (15%):</span> <span>{vat.toLocaleString()}</span>
+                </div>
+                <Separator className="my-1" />
+                <div className="flex justify-between font-bold">
+                  <span>Unit + VAT:</span>{" "}
+                  <span>{unitWithVat.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Total for {rawQuantity} pcs:</span>
+                  <span>{totalWithVat.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full mt-4 text-blue-600 border-blue-200 hover:bg-blue-50"
+                onClick={() => {
+                  setShowEditModal(true);
+                  setOpenPopover(false); // Close popover when opening modal
+                }}
+              >
+                ✏️ Set New Price
+              </Button>
+            </PopoverContent>
+          </Popover>
+
+          {showEditModal && (
+            <div className="absolute z-[9999] top-0 left-0">
+              <EditFieldModal
+                item={currentItem}
+                field="selling_price"
+                onClose={() => setShowEditModal(false)}
+                // Passing setItems directly like your working Part Number column
+                setItems={setItems}
+              />
+            </div>
+          )}
+        </div>
+      );
+    },
+  },
   {
     accessorKey: "quantity",
     header: "Quantity",
     cell: ({ row }) => {
       const [openModal, setOpenModal] = useState(false);
+      const qty = row.original.quantity;
+      const lowStockThreshold = 10;
+
       return (
-        <div className="relative flex items-center gap-2">
-          {row.original.quantity}
+        <div className="relative flex items-center gap-3">
+          {/* Visual Badge for Quantity */}
+          <span
+            className={`px-2.5 py-1 rounded-md text-xs font-bold min-w-[40px] text-center ${
+              qty <= 0
+                ? "bg-red-100 text-red-700 border border-red-200"
+                : qty <= lowStockThreshold
+                ? "bg-orange-100 text-orange-700 border border-orange-200 animate-pulse"
+                : "bg-green-100 text-green-700 border border-green-200"
+            }`}
+          >
+            {qty <= 0 ? "Out" : qty}
+          </span>
+
+          {/* Edit Button */}
           <Button
-            size="icon"
-            variant="outline"
+            size="sm"
+            variant="ghost"
+            className="h-8 w-8 p-0 hover:bg-gray-100"
             onClick={() => setOpenModal(true)}
           >
-            <IoMdArrowDropdown />
+            <IoMdArrowDropdown className="h-4 w-4 text-gray-500" />
           </Button>
+
+          {/* Low Stock Warning Text */}
+          {qty > 0 && qty <= lowStockThreshold && (
+            <span className="absolute -top-4 left-2 text-[10px] font-bold text-orange-600 uppercase tracking-tighter">
+              Low
+            </span>
+          )}
+
           {openModal && (
             <div className="absolute z-[9999]">
               <EditFieldModal
@@ -444,7 +444,7 @@ export const columns = ({
             quantity > 0 ? "bg-green-500" : "bg-red-500"
           }`}
         >
-          {quantity > 0 ? "Available" : "Not Available"}
+          {quantity > 0 ? "Available" : "N/A"}
         </span>
       );
     },
@@ -476,9 +476,10 @@ export const columns = ({
                 View
               </Button>
               <Button
+                variant="ghost"
                 className="w-full justify-start"
                 onClick={() => {
-                  setSelectedItem(row.original); // this could be row.original if you're using react-table
+                  setSelectedItem(row.original);
                   setIsEditOpen(true);
                 }}
               >

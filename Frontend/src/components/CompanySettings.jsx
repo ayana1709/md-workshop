@@ -95,10 +95,64 @@ const CompanySettings = () => {
   }, []);
 
   // Handler to toggle editing state
-  const handleEditToggle = () => {
-    setIsEditing((prev) => !prev);
-    setErrors({}); // Clear errors when toggling mode
-  };
+const handleEditToggle = async () => {
+  if (isEditing) {
+    setIsEditing(false);
+    setErrors({});
+    return;
+  }
+
+  let forceLogout = false;
+
+  const { isConfirmed } = await Swal.fire({
+    title: "Admin Verification",
+    input: "password",
+    inputPlaceholder: "xxxxxxxx",
+    showCancelButton: true,
+    confirmButtonText: "Verify",
+    confirmButtonColor: "#2563eb",
+    allowOutsideClick: false,
+
+    preConfirm: async (password) => {
+      if (!password) {
+        Swal.showValidationMessage("Password is required");
+        return false;
+      }
+
+      try {
+        await api.post("/verify-admin", { password });
+        return true;
+      } catch (err) {
+        forceLogout = true;
+
+
+
+        // Small delay so user sees the message
+        setTimeout(() => {
+          Swal.close();
+        }, 1200);
+
+        return false;
+      }
+    },
+  });
+
+  if (!isConfirmed && forceLogout) {
+    await Swal.fire({
+      icon: "error",
+      title: "Access Denied",
+      text: "Unauthenticated...",
+      timer: 500,
+    });
+  }
+
+  if (!isConfirmed) return;
+
+  setIsEditing(true);
+  setErrors({});
+};
+
+
 
   // Handler to cancel editing and revert changes
   const handleCancel = () => {
@@ -111,14 +165,7 @@ const CompanySettings = () => {
     if (initialForm.logo) {
       setLogoPreview(`${baseURL}/storage/${initialForm.logo}`);
     } else {
-      // Re-fetch the preview from the stored company data if it exists
-      // The logic here is slightly complex as `initialForm.logo` is null.
-      // A better way is to store the image URLs in a separate state.
-      // For simplicity, we rely on the component's original `fetchCompanyData`
-      // logic which handles the image URLs from the API response.
-      // Since we don't have access to the original URL without another API call
-      // or storing it, we'll keep the existing preview unless the user
-      // specifically selects a new file.
+      
     }
   };
 
@@ -192,6 +239,31 @@ const CompanySettings = () => {
   };
 
   const handleReset = async () => {
+      const { value: enteredPasscode } = await Swal.fire({
+    title: "Security Verification",
+    text: "Enter administrator passcode:",
+    icon: "lock",
+    input: "password",
+    inputPlaceholder: "Enter security passcode...",
+    showCancelButton: true,
+    confirmButtonText: "Verify",
+    cancelButtonText: "Cancel",
+    inputValidator: (value) => {
+      if (!value) return "Passcode is required!";
+    }
+  });
+
+  if (!enteredPasscode) return;
+
+  // Verify passcode with backend
+  try {
+    const verifyRes = await api.post("/settings/verify-passcode", {
+      passcode: enteredPasscode
+    });
+
+    if (!verifyRes.data.verified) {
+      throw new Error("Invalid passcode");
+    }
     Swal.fire({
       title: "Export Before Reset?",
       text: "Do you want to export all system data before resetting?",
@@ -288,7 +360,17 @@ const CompanySettings = () => {
         }
       });
     });
-  };
+    } catch (error) {
+    await Swal.fire({
+      icon: "error",
+      title: "Access Denied",
+      text: "Invalid security passcode.",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+    return;
+  }
+};
 
   return (
     <div className="flex h-screen overflow-hidden">

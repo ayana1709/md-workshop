@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\ItemSearchController;
+use App\Http\Controllers\Api\StudentController;
 use App\Http\Controllers\BolloController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
@@ -61,7 +63,14 @@ Route::apiResource('store-issues', StoreIssueController::class);
 Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
 Route::apiResource('/departments', DepartmentController::class);
-Route::get('departments/{department}/users', [DepartmentController::class, 'users']);
+Route::post('/settings/verify-passcode', function (Request $request) {
+    $validPasscode = env('RESET_PASSCODE');
+
+    return response()->json([
+        'verified' => $request->passcode === $validPasscode,
+    ]);
+});
+Route::post('/verify-admin', [AdminAuthController::class, 'verify']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -172,7 +181,6 @@ Route::delete('/delete-wheel/{id}', [WheelAlignemntController::class, 'destroy']
 // delete work order
 Route::delete('/delete-work/{id}', [WorkOrderController::class, 'destroy']);
 // store-item
-// Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::post('/store-items', [StoreItemController::class, 'store']);
 Route::get('/store-items', [StoreItemController::class, 'index']);
 Route::get('/store-items/count', [StoreItemController::class, 'getItemCount']);
@@ -181,7 +189,6 @@ Route::patch('/store-items/{code}/item-out', [StoreItemController::class, 'itemO
 Route::get('/items-out', function () {
     return response()->json(['items' => ItemOut::all()]);
 });
-
 Route::get('/items/history/{code}', [StoreItemController::class, 'getHistory']);
 // total numberof items
 Route::get('/store-items/total', [StoreItemController::class, 'getTotalItems']);
@@ -195,7 +202,6 @@ Route::get('/pre-drive-tests/{id}', [PreDriveTestController::class, 'show']);
 
 Route::post('/work-progress', [WorkProgressController::class, 'store']);
 Route::get('/work-progress/{job_card_no}', [WorkProgressController::class, 'index']);
-
 
 // post drive test
 Route::post('/post-drive-tests', [PostDriveTestController::class, 'store']);
@@ -233,14 +239,14 @@ Route::patch('/repairs/{id}', [RepairRegistrationController::class, 'updateStat'
 Route::post('/bulk-work-order', [WorkOrderController::class, 'BulkStore']); // Store multiple work orders
 
 // purchase route
-
 Route::post('/purchases', [PurchaseController::class, 'store']);
 Route::get('/purchases', [PurchaseController::class, 'index']);
 Route::get('/purchase-items', [PurchaseItemController::class, 'index']);
 
-//Item route
+// Item route
 Route::get('/items/out', [ItemController::class, 'getItemOutRecords']);
 Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
+Route::get('/items/out-of-stock',[ItemController::class,'getOutOfStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
 Route::get('/items/{item}', [ItemController::class, 'show']);   // GET /api/items/{id} - Show a single item
 Route::post('/items', [ItemController::class, 'store']);       // POST /api/items - Create a new item
@@ -253,7 +259,6 @@ Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
 Route::get('/item/stats', [ItemController::class, 'dashboardStats']);
-
 
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
 Route::post('/request-item-out', [RequestItemOutController::class, 'store']);

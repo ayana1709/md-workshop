@@ -207,4 +207,8 @@ return [
         'import_action' => env('TYPESENSE_IMPORT_ACTION', 'upsert'),
     ],
 
+    'database' => [
+        'searchable_columns' => [], // Leave empty
+    ],
+
 ];

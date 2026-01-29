@@ -2,11 +2,9 @@
 
 // app/Console/Commands/StoreSimpleDailyProgress.php
 
-namespace App\Console\Commands;
+namespace App\Http\Controllers;
 
-use Illuminate\Console\Command;
-
-class StoreSimpleDailyProgress extends Command
+class DailyProgressController extends Controller
 {
     protected $signature = 'progress:store-simple';
 

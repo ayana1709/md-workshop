@@ -49,7 +49,7 @@ const GoodsRequestManager = () => {
           ...request,
           requested_items: itemsWithUrls,
           gregorian_date: request.date ? request.date.split("T")[0] : null, // <-- here
-          ethio_date: (request.date),
+          ethio_date: request.date,
         };
       });
 
@@ -145,7 +145,51 @@ const GoodsRequestManager = () => {
       }
     }
   };
-
+const getStatusBadge = (status) => {
+  switch (status) {
+    case 'pending':
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+          Pending
+        </span>
+      );
+    
+    case 'approved':
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          Approved
+        </span>
+      );
+    
+    case 'rejected':
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+          Rejected
+        </span>
+      );
+    
+    case 'in_stock':
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+          In Stock
+        </span>
+      );
+    
+    case 'issued':
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
+          Issued
+        </span>
+      );
+    
+    default:
+      return (
+        <span className="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+          Unknown
+        </span>
+      );
+  }
+};
   if (loading)
     return (
       <div className="flex justify-center items-center h-screen text-xl dark:bg-gray-900 dark:text-white">
@@ -173,7 +217,7 @@ const GoodsRequestManager = () => {
       </div>
     );
 
-return (
+  return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden bg-gray-100 dark:bg-gray-900">
@@ -215,6 +259,9 @@ return (
                     Priority
                   </th>
                   <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300 whitespace-nowrap">
+                    Status
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider dark:text-gray-300 whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -234,7 +281,10 @@ return (
                     <React.Fragment key={request.id}>
                       <tr className="hover:bg-gray-50 transition duration-150 dark:hover:bg-gray-700">
                         <td className="px-3 py-2 text-center">
-                          <button onClick={() => toggleRow(request.id)} className="p-1">
+                          <button
+                            onClick={() => toggleRow(request.id)}
+                            className="p-1"
+                          >
                             {expandedRows[request.id] ? (
                               <ChevronUpIcon className="h-4 w-4 text-indigo-600" />
                             ) : (
@@ -276,67 +326,69 @@ return (
                         <td className="px-3 py-2 whitespace-nowrap text-center">
                           {getPriorityBadge(request.priority)}
                         </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-center">
+                          {getStatusBadge(request.status)}
+                        </td>  
+                        <td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium relative z-10">
+                          <div className="relative">
+                            <button
+                              onClick={() => toggleDropdown(request.id)}
+                              onMouseOver={() => toggleRow(request.id)}
+                              className="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 whitespace-nowrap relative z-0"
+                              aria-expanded={openDropdownId === request.id}
+                            >
+                              Actions
+                              <ChevronDownIcon
+                                className="-mr-1 ml-1 h-4 w-4"
+                                aria-hidden="true"
+                              />
+                            </button>
 
-<td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium relative z-10">
-  <div className="relative">
-    <button
-      onClick={() => toggleDropdown(request.id)}
-      className="inline-flex justify-center items-center rounded-md border border-gray-300 shadow-sm px-3 py-1.5 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 whitespace-nowrap relative z-20"
-      aria-expanded={openDropdownId === request.id}
-    >
-      Actions
-      <ChevronDownIcon
-        className="-mr-1 ml-1 h-4 w-4"
-        aria-hidden="true"
-      />
-    </button>
-
-    {openDropdownId === request.id && (
-      <div
-        className="origin-top-right absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[1000] dark:bg-gray-700 dark:ring-gray-600"
-        style={{ position: 'fixed' }} // Change from absolute to fixed
-        onMouseLeave={() => setOpenDropdownId(null)}
-      >
-                              <div className="py-1">
-                                <button
-                                  onClick={() => {
-                                    navigate(
-                                      `/goods-request/edit/${request.id}`
-                                    );
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
-                                >
-                                  <PencilSquareIcon className="h-3.5 w-3.5 mr-2" />
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    navigate(
-                                      `/goods-request/print/${request.id}`
-                                    );
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
-                                >
-                                  <EyeIcon className="h-3.5 w-3.5 mr-2" />
-                                  Print
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    handleDelete(request.id);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-600"
-                                >
-                                  <TrashIcon className="h-3.5 w-3.5 mr-2" />
-                                  Delete
-                                </button>
+                            {openDropdownId === request.id && (
+                              <div
+                                className="origin-top-right absolute right-0 mt-1 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[1000] dark:bg-gray-700 dark:ring-gray-600"
+                                style={{ position: "fixed" }}
+                                onMouseLeave={() => setOpenDropdownId(null)}
+                              >
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      navigate(
+                                        `/goods-request/edit/${request.id}`
+                                      );
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  >
+                                    <PencilSquareIcon className="h-3.5 w-3.5 mr-2" />
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      navigate(
+                                        `/goods-request/print/${request.id}`
+                                      );
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+                                  >
+                                    <EyeIcon className="h-3.5 w-3.5 mr-2" />
+                                    Print
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleDelete(request.id);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-gray-600"
+                                  >
+                                    <TrashIcon className="h-3.5 w-3.5 mr-2" />
+                                    Delete
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                            </div>
-
+                            )}
+                          </div>
                         </td>
                       </tr>
 

@@ -17,6 +17,7 @@ class GoodsRequest extends Model
         'requested_by',
         'requested_department',
         'request_remark',
+        'status',
         'requested_items',
     ];
 

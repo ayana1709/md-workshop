@@ -17,7 +17,7 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import DescriptionModal from "./DescriptionModal";
 import StatusCell from "./StatusCell";
 import { useDateFormatter } from "./DateFormat/useDateFormatter";
-
+import DateInput from "./DateInput";
 
 const JobOrderList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -37,14 +37,10 @@ const JobOrderList = () => {
 
   const { formatGCDate, formatEthioDate } = useDateFormatter();
 
-
-
   const {
     setIsModalOpen,
     setSelectedRepairId,
     setType,
-    repairs,
-    setRepairs,
     printData,
     setPrintData,
     // dropdownOpen,
@@ -83,50 +79,47 @@ const JobOrderList = () => {
     status: "Status",
   };
 
-  useEffect(() => {
-    const fetchRepairs = async () => {
-      try {
-        const response = await api.get("/repairs");
-        console.log(response);
-        const repairs = Array.isArray(response.data.data)
-          ? response.data.data
-          : [];
-        // Sort in ascending order by `id`
-        repairs.sort((a, b) => b.id - a.id);
-        setRepairs(repairs);
-      } catch (error) {
-        console.error("Error fetching repair registrations:", error);
-        setRepairs([]);
-      }
-    };
-    fetchRepairs();
-  }, [selectedRows]);
+  // Inside JobOrderList component
 
-  const handleFilter = () => {
-    let filteredRepairs = repairs;
-    if (startDate && endDate) {
-      filteredRepairs = filteredRepairs.filter((repair) => {
-        const repairDate = new Date(repair.received_date);
-        return (
-          repairDate >= new Date(startDate) && repairDate <= new Date(endDate)
-        );
+  // Inside JobOrderList component
+  const [repairs, setRepairs] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchRepairs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get("/repairs", {
+        params: {
+          search: searchTerm,
+          start_date: startDate,
+          end_date: endDate,
+          page: currentPage,
+          per_page: itemsPerPage,
+        },
       });
+
+      if (response.data.status === "success") {
+        setRepairs(response.data.data);
+        setTotalPages(response.data.last_page);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
     }
-    if (searchTerm) {
-      filteredRepairs = filteredRepairs.filter((repair) =>
-        repair.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    return filteredRepairs;
   };
 
-  const filteredRepairs = handleFilter();
-  const totalPages = Math.ceil(filteredRepairs.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const displayedRepairs = filteredRepairs.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  // Trigger fetch when search, dates, or pagination changes
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchRepairs();
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, startDate, endDate, currentPage, itemsPerPage]);
+
+  // IMPORTANT: displayedRepairs now just uses the raw state from the server
+  const displayedRepairs = repairs || [];
 
   const navigate = useNavigate();
   const handleNavigation = (option, id) => {
@@ -333,102 +326,112 @@ const JobOrderList = () => {
 
   return (
     <div className="relative z-0 p-6 bg-white dark:bg-gray-700 shadow-lg rounded-lg dark:text-white">
-      <div className="flex flex-col laptop:flex-row gap-4 mb-4">
-        {selectedRows.length > 0 ? (
-          // Bulk Action Buttons
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() =>
-                navigate("/bulk-add-to-work-order", {
-                  state: { selectedRows },
-                })
-              }
-              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-            >
-              Add to Work
-            </button>
-            <button
-              onClick={() => handleAction("Pending")}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-            >
-              Request Spare
-            </button>
-            <button
-              onClick={() => deleteSelectedRows(selectedRows)}
-              className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-            >
-              Delete
-            </button>
-          </div>
-        ) : (
-          // Filters & Search
-          <div className="w-full space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
-            {/* Items per Page */}
-            <select
-              value={itemsPerPage}
-              onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
-              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-md dark:bg-gray-800 dark:text-white transition"
-            >
-              {[5, 10, 20, 50].map((num) => (
-                <option key={num} value={num}>
-                  View {num}
-                </option>
-              ))}
-            </select>
+<div className="flex flex-col laptop:flex-row gap-2 mb-3">
+  {selectedRows.length > 0 ? (
+    /* Bulk Actions (Compact & Wrapping) */
+    <div className="flex flex-wrap gap-1 items-center">
+      <button
+        onClick={() =>
+          navigate("/bulk-add-to-work-order", { state: { selectedRows } })
+        }
+        className="px-2 py-1 bg-green-500 text-white text-[11px] rounded hover:bg-green-600"
+      >
+        Add to Work
+      </button>
 
-            {/* Start Date */}
-            <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
-              placeholder="Start Date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
-            />
+      <button
+        onClick={() => handleAction("Pending")}
+        className="px-2 py-1 bg-blue-500 text-white text-[11px] rounded hover:bg-blue-600"
+      >
+        Request Spare
+      </button>
 
-            {/* End Date */}
-            <input
-              type="text"
-              onFocus={(e) => (e.target.type = "date")}
-              onBlur={(e) => (e.target.type = e.target.value ? "date" : "text")}
-              placeholder="End Date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full sm:w-auto px-2 py-2 border-2 border-green-500 rounded-lg dark:bg-gray-800 dark:text-white placeholder:dark:text-white transition"
-            />
+      <button
+        onClick={() => deleteSelectedRows(selectedRows)}
+        className="px-2 py-1 bg-red-500 text-white text-[11px] rounded hover:bg-red-600"
+      >
+        Delete
+      </button>
+    </div>
+  ) : (
+    /* Filters */
+    <div className="w-full flex flex-col gap-1.5 sm:flex-row sm:items-center sm:flex-wrap">
 
-            {/* Filter Button */}
-            <button
-              onClick={handleFilter}
-              className="w-full sm:w-auto px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-            >
-              Filter
-            </button>
+      {/* Items per page + Search */}
+      <div className="flex gap-1.5 w-full sm:w-auto items-center">
+        <select
+          value={itemsPerPage}
+          onChange={(e) => setItemsPerPage(+e.target.value)}
+          className="h-10 w-14 px-1 text-[14px] border border-green-500 rounded dark:bg-gray-800 dark:text-white"
+        >
+          {[5, 10, 20, 50].map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
 
-            {/* Search */}
-            <div className="flex items-center w-full sm:w-auto px-2 border-2 border-green-500 rounded-lg dark:bg-gray-800">
-              <FiSearch className="text-gray-600 dark:text-white" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-2 py-1 dark:bg-transparent border-none focus:ring-0 placeholder:dark:text-white"
-              />
-            </div>
+        <div className="flex items-center flex-1 sm:w-44 px-1.5 border border-green-500 rounded dark:bg-gray-800 h-8">
+          <FiSearch className="text-gray-400" size={12} />
+          <input
+            type="text"
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-1 text-[11px] bg-transparent border-none focus:ring-0 dark:text-white"
+          />
+        </div>
+      </div>
 
-            {/* Export / Actions */}
-            <ButtonRepairOperation
-              tableData={repairs}
-              headers={headers}
-              filename="repair"
-              headerMappings={headerMappings}
-              className="w-full sm:w-auto"
-            />
-          </div>
+      {/* Date Range */}
+      <div className="flex items-center gap-1 p-1 rounded border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
+        <DateInput
+          value={startDate}
+          onChange={(v) => {
+            setStartDate(v);
+            setCurrentPage(1);
+          }}
+          className="w-full sm:w-28 h-7 px-1 text-[10px] border border-green-500 rounded dark:bg-gray-800 dark:text-white"
+        />
+
+        <DateInput
+          value={endDate}
+          onChange={(v) => {
+            setEndDate(v);
+            setCurrentPage(1);
+          }}
+          className="w-full sm:w-28 h-7 px-1 text-[10px] border border-green-500 rounded dark:bg-gray-800 dark:text-white"
+        />
+
+        {(startDate || endDate) && (
+          <button
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+              setCurrentPage(1);
+            }}
+            className="text-red-500 text-xs px-1"
+          >
+            ✕
+          </button>
         )}
       </div>
+
+      {/* Export / Action Button */}
+      <div className="w-full sm:w-auto">
+        <ButtonRepairOperation
+          tableData={repairs}
+          headers={headers}
+          filename="repair"
+          headerMappings={headerMappings}
+          className="w-full h-8 text-[11px] py-0 flex items-center justify-center"
+        />
+      </div>
+    </div>
+  )}
+</div>
+
 
       <div className="w-full overflow-x-auto phone:mt-20 tablet:mt-0">
         <table className="min-w-[900px] w-full table-fixed border-collapse border border-table-border">
@@ -580,22 +583,22 @@ const JobOrderList = () => {
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {formatGCDate(repair.received_date)}
                     <br />
-                     <span
-                          className="text-xs text-indigo-600 dark:text-indigo-400"
-                          title="Ethiopian Calendar"
-                        >
-                          {formatEthioDate(repair.received_date)}
+                    <span
+                      className="text-xs text-indigo-600 dark:text-indigo-400"
+                      title="Ethiopian Calendar"
+                    >
+                      {formatEthioDate(repair.received_date)}
                     </span>
                   </td>
                   {/* End Date */}
                   <td className="border border-table-border px-2 py-3 text-sm text-center">
                     {formatGCDate(repair.promise_date || "-")}
-                      <br />
-                     <span
-                          className="text-xs text-indigo-600 dark:text-indigo-400"
-                          title="Ethiopian Calendar"
-                        >
-                          {formatEthioDate(repair.promise_date || "-")}
+                    <br />
+                    <span
+                      className="text-xs text-indigo-600 dark:text-indigo-400"
+                      title="Ethiopian Calendar"
+                    >
+                      {formatEthioDate(repair.promise_date || "-")}
                     </span>
                   </td>
                   {/* Status */}

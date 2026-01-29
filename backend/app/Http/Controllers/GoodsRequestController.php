@@ -28,6 +28,7 @@ class GoodsRequestController extends Controller
             'priority' => 'required|integer|min:1',
             'requested_by' => 'required|string|max:255',
             'requested_department' => 'required|string|max:255',
+            'status' => 'string|max:255',
 
             // Validation for the nested array items
             'requested_items' => 'required|array|min:1',
@@ -68,6 +69,7 @@ class GoodsRequestController extends Controller
             'priority' => 'required|integer|min:1',
             'requested_by' => 'required|string|max:255',
             'requested_department' => 'required|string|max:255',
+            'status' => 'string|max:255',
 
             // Full validation for item array on update
             'requested_items' => 'required|array|min:1',

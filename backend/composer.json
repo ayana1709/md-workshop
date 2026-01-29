@@ -17,6 +17,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/scout": "^10.23",
         "laravel/tinker": "^2.8",
+        "lunarphp/scout-database-engine": "^0.8.2",
         "maatwebsite/excel": "*",
         "meilisearch/meilisearch-php": "^1.16",
         "spatie/laravel-permission": "^6.21"

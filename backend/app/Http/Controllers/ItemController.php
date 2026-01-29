@@ -12,10 +12,20 @@ use Intervention\Image\Facades\Image;
 
 class ItemController extends Controller
 {
-    // Fetch all items
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Item::all());
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
+
+        if ($query && $query !== 'undefined') {
+            // Scout search with pagination
+            $items = Item::search($query)->paginate($perPage);
+        } else {
+            // Regular Eloquent pagination
+            $items = Item::latest()->paginate($perPage);
+        }
+
+        return response()->json($items);
     }
 
     public function store(Request $request)
@@ -252,19 +262,38 @@ class ItemController extends Controller
         return response()->json(['message' => 'Item successfully moved out', 'updated_quantity' => $item->quantity]);
     }
 
-    public function getOutOfStockItems()
+    public function getOutOfStockItems(Request $request)
     {
-        $items = Item::where('quantity', 0)->get();
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
 
-        return response()->json($items->isEmpty() ? [] : $items);
+        // We MUST use paginate() here to get "Type B" response
+        if ($query && $query !== 'undefined') {
+            $items = Item::search($query)
+                ->where('quantity', '<=', 0)
+                ->paginate($perPage);
+        } else {
+            $items = Item::where('quantity', '<=', 0)->orderBy('created_at', 'desc')->paginate($perPage);
+        }
+
+        return response()->json($items);
     }
 
-    public function getLowStockItems()
+    public function getLowStockItems(Request $request)
     {
-        $items = Item::where('quantity', '<', 10)->get();
+        $query = $request->query('search');
+        $perPage = $request->query('limit', 10);
 
-        if ($items->isEmpty()) {
-            return response()->json(['message' => 'No low-stock items found', 'items' => []], 200);
+        if ($query && $query !== 'undefined') {
+            // Search specifically within low stock (1-9)
+            $items = Item::search($query)
+                ->where('quantity', '>', 0)
+                ->where('quantity', '<=', 9)
+                ->paginate($perPage);
+        } else {
+            $items = Item::whereBetween('quantity', [1, 9])
+                ->orderBy('quantity', 'asc') // Helpful to see lowest stock first
+                ->paginate($perPage);
         }
 
         return response()->json($items);
