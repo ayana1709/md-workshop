@@ -116,7 +116,7 @@ try {
                   <th className="p-3">ID</th>
                   <th className="p-3">Image</th>
                   <th className="p-3">Full Name</th>
-                  <th className="p-3">Department</th> {/* 👈 New Column Header */}
+                  <th className="p-3">Branch</th> {/* 👈 New Column Header */}
                   <th className="p-3">Username</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>

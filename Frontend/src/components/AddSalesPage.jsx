@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CiSquareMore } from "react-icons/ci";
 import { toast } from "react-toastify";
 import DateInput from "./DateInput";
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 const AddSalesPage = () => {
   const location = useLocation();
@@ -56,6 +57,7 @@ const AddSalesPage = () => {
 
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState("Requested");
+ 
 
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
@@ -169,6 +171,9 @@ const AddSalesPage = () => {
   const vatAmount = (vatRate / 100) * subTotal;
   const totalAmount = subTotal + vatAmount;
   const grandTotal = subTotal + vatAmount - discount;
+  const [showQrScanner, setShowQrScanner] = useState(false);
+const [scanning, setScanning] = useState(false);
+
 
   const PaidAmount = grandTotal;
 
@@ -321,11 +326,38 @@ const AddSalesPage = () => {
 
     fetchRefNum();
   }, []);
+const handleQrResult = async ({ text }) => {
+  if (!text) return;
+
+  setShowQrScanner(false);
+
+  try {
+    const res = await api.get(`/items/by-qr/${text}`);
+    const item = res.data;
+
+    setItems((prev) => {
+      const existing = prev.find(i => i.id === item.id);
+
+      if (existing) {
+        return prev.map(i =>
+          i.id === item.id
+            ? { ...i, saleQty: i.saleQty + 1 }
+            : i
+        );
+      }
+
+      return [...prev, { ...item, saleQty: 1 }];
+    });
+  } catch {
+    Swal.fire("Not Found", "No item linked to this QR", "error");
+  }
+};
+
 
   return (
     <div className="p-4 bg-white max-w-[90%] mx-auto rounded-md shadow">
       <h2 className="pl-4 text-xl font-semibold mb-4 text-gray-800 uppercase tracking-wider">
-        Store Out Form
+        Sales Page
       </h2>
 
       {/* Sales Info */}
@@ -463,6 +495,15 @@ const AddSalesPage = () => {
           </div>
         </div>
       </div>
+
+<div className="flex gap-2 mb-3">
+  <button
+    onClick={() => setShowQrScanner(true)}
+    className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+  >
+    📷 Scan QR
+  </button>
+</div>
 
       {/* Items Table */}
       {/* Items Table */}
@@ -636,94 +677,31 @@ const AddSalesPage = () => {
 
       {/* Totals and Payment Info */}
       {/* Totals and Payment Info */}
-      <div className="w-full max-w-5xl mx-auto bg-white shadow-md rounded-xl p-6 mt-6">
-        {/* Buttons */}
+    
 
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            From (Location)
-          </label>
-          <input
-            type="text"
-            placeholder=""
-            className="border ..."
-            value={customer.location}
-            onChange={(e) =>
-              setCustomer({ ...customer, location: e.target.value })
-            }
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Approved By
-          </label>
-          <input
-            type="text"
-            placeholder=""
-            className="border ..."
-            value={customer.approvedBy}
-            onChange={(e) =>
-              setCustomer({ ...customer, approvedBy: e.target.value })
-            }
-          />
-        </div>
+    {showQrScanner && (
+  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+    <div className="bg-white rounded-lg p-4 w-full max-w-sm">
+      <h3 className="text-lg font-semibold mb-2">Scan Item QR</h3>
 
-        {/* Requested Date */}
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Requested Date
-          </label>
-          <DateInput
-            value={customer.requestedDate}
-            onChange={(val) => setCustomer({ ...customer, requestedDate: val })}
-            placeholder="DD/MM/YYYY"
-            className="border rounded-lg px-3 py-2 text-sm w-full transition border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
-          />
-        </div>
+    <Scanner
+  onResult={(text, result) => {
+    if (text) handleQrResult({ text });
+  }}
+  constraints={{ facingMode: "environment" }}
+/>
 
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Delivered By
-          </label>
-          <input
-            type="text"
-            placeholder=""
-            className="border ..."
-            value={customer.deliveredBy}
-            onChange={(e) =>
-              setCustomer({ ...customer, deliveredBy: e.target.value })
-            }
-          />
-        </div>
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Status
-          </label>
+      <button
+        onClick={() => setShowQrScanner(false)}
+        className="mt-3 w-full border rounded py-1"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
 
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring focus:ring-blue-200"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="Requested">Requested</option>
-            <option value="Store Out">Store Out</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
-          </select>
-        </div>
 
-        <div className="mt-6 flex gap-4 justify-end py-4">
-          <button
-            onClick={handleSubmit}
-            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-          >
-            Save Changes
-          </button>
-          <button className="bg-gray-300 text-black px-6 py-2 rounded hover:bg-gray-400">
-            Reset
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

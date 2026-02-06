@@ -30,6 +30,7 @@ class Item extends Model
         'location',
         'condition',
         'image',
+        'qr_code'
     ];
 
     // In Item model

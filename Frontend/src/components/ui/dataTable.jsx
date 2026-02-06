@@ -32,7 +32,6 @@ export function DataTable({ columns, data, onView, onEdit, onDelete }) {
     getPaginationRowModel: getPaginationRowModel(),
   });
 
-  // const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   // const table = useReactTable({
   //   data,

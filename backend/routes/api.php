@@ -404,3 +404,6 @@ Route::get('/permissions/role/{roleId}', [PermissionController::class, 'getByRol
 // Update permissions for a role by role_id
 Route::put('/permissions/role/{roleId}', [PermissionController::class, 'updateByRole']);
 Route::get('/role-permissions/{roleId}', [PermissionController::class, 'getByRole']);
+
+
+Route::get('/items/by-qr/{code}', [ItemController::class, 'findByQr']);

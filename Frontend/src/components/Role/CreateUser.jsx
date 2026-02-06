@@ -272,7 +272,7 @@ export default function CreateUser() {
             {/* --- DEPARTMENT DROPDOWN --- */}
             <div>
               <label className="block font-medium mb-1 text-gray-700">
-                Department
+                Branch
               </label>
               <select
                 value={form.department_id}
@@ -281,7 +281,7 @@ export default function CreateUser() {
                 }
                 required
               >
-                <option value="">Select Department</option>
+                <option value="">Select Branch</option>
                 {departments.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}

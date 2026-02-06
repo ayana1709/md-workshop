@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import api from "../api";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import { useStores } from "../contexts/storeContext";
-import { IoAdd, IoChevronDown } from "react-icons/io5";
-import { FiPlus } from "react-icons/fi";
+import { IoAdd } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
 
@@ -23,35 +21,19 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-/**
- * NOTES:
- * - Add global CSS snippet (below) to hide number input spinners.
- * - Tailwind must be available.
- * - This uses react-hook-form to validate only mounted fields (shouldUnregister: true).
- */
-
 export default function AddStore() {
-  const navigate = useNavigate();
-  const { showModal, setItems, setShowModal, fetchItems } = useStores();
-
+  const { showModal, setShowModal, fetchItems } = useStores();
   const [loading, setLoading] = useState(false);
 
   const placeholderImage = "/images/default.jpg";
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(placeholderImage);
 
-  // UI toggles for collapsible sub-sections
-  const [showPriceExtras, setShowPriceExtras] = useState(false);
-  const [showLowQty, setShowLowQty] = useState(false);
-  const [showOther, setShowOther] = useState(false);
-
-  // react-hook-form
   const {
     register,
     handleSubmit,
@@ -60,524 +42,190 @@ export default function AddStore() {
     formState: { errors },
   } = useForm({
     mode: "onChange",
-    shouldUnregister: true, // IMPORTANT: unmounting fields unregisters them -> only visible fields validate
+    shouldUnregister: true,
     defaultValues: {
-      code: "",
+      item_code: "",
       item_name: "",
       part_number: "",
-      unit: "",
-      // unit_price: "",
-      purchase_price: "",
-      selling_price: "",
+      category: "",
+      brand: "",
+      unit: "pcs",
+      location: "",
       quantity: "",
       low_quantity: "",
-      least_price: "",
-      maximum_price: "",
-      location: "",
-      brand: "",
-      manufacturer: "",
-      shelf_number: "",
-      type: "",
-      manufacturing_date: new Date().toISOString().split("T")[0],
-      condition: "New",
+      purchase_type: "without_receipt",
+      purchase_price: "",
+      purchase_receipt_price: "",
+      selling_price: "",
     },
   });
 
-  // compute total live: total_price = unit_price * quantity
-  const watchedUnitPrice = watch("unit_price");
-  const watchedQuantity = watch("quantity");
   useEffect(() => {
-    const unit = Number(watchedUnitPrice) || 0;
-    const qty = Number(watchedQuantity) || 0;
-    const total = (unit * qty).toFixed(2);
-    setValue("total_price", total);
-  }, [watchedUnitPrice, watchedQuantity, setValue]);
+    setValue("item_code", uuidv4().slice(0, 8).toUpperCase());
+  }, [setValue]);
 
-  const handleImageChange = async (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Convert image to compressed blob
-    const compressImage = (file) =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const maxSize = 600; // max width/height
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-              if (width > maxSize) {
-                height *= maxSize / width;
-                width = maxSize;
-              }
-            } else {
-              if (height > maxSize) {
-                width *= maxSize / height;
-                height = maxSize;
-              }
-            }
-
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-
-            canvas.toBlob(
-              (blob) => {
-                if (!blob) return reject(new Error("Compression failed"));
-                const compressedFile = new File([blob], file.name, {
-                  type: "image/jpeg",
-                  lastModified: Date.now(),
-                });
-                resolve(compressedFile);
-              },
-              "image/jpeg",
-              0.7
-            );
-          };
-          img.onerror = reject;
-          img.src = event.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-    try {
-      const compressedFile = await compressImage(file);
-      setImageFile(compressedFile);
-      setImagePreview(URL.createObjectURL(compressedFile));
-    } catch (err) {
-      console.error("Image compression failed", err);
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
-  // assume your store has setItems or similar
-
-  const onSubmit = async (formDataRaw) => {
+  const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const generatedCode = uuidv4().slice(0, 8).toUpperCase();
       const fd = new FormData();
+      Object.entries(data).forEach(([k, v]) => fd.append(k, v || ""));
+      if (imageFile) fd.append("image", imageFile);
 
-      // Append all text fields
-      Object.entries({ ...formDataRaw, code: generatedCode }).forEach(
-        ([k, v]) => fd.append(k, v ?? "")
-      );
-
-      // Handle image: use uploaded file or default image
-      if (imageFile) {
-        fd.append("image", imageFile);
-      } else {
-        const defaultImagePath = "/images/default.jpg"; // public folder path
-        const response = await fetch(defaultImagePath);
-        const blob = await response.blob();
-        fd.append("image", blob, "default.jpg");
-      }
-
-      await api.post("/items", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      toast.success("Item Added!");
-      await fetchItems();
+      await api.post("/items", fd);
+      toast.success("Item added successfully");
+      fetchItems();
       setShowModal(false);
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "There was an error!");
+    } catch (err) {
+      toast.error("Failed to add item");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    setValue("manufacturing_date", new Date().toISOString().split("T")[0]);
-  }, [setValue]);
-
   return (
     <Dialog open={showModal} onOpenChange={setShowModal}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-        <motion.div
-          initial={{ y: -16, opacity: 0, scale: 0.995 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: -8, opacity: 0 }}
-          transition={{ duration: 0.18 }}
-        >
-          <Card className="rounded-xl shadow-lg overflow-hidden">
-            <CardHeader className="flex items-center justify-between px-6 py-4 border-b">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <Card>
+            <CardHeader className="border-b">
               <div className="flex items-center gap-3">
-                <IoAdd size={28} className="text-blue-600" />
-                <CardTitle className="text-lg font-extrabold uppercase">
-                  Add Store Item
-                </CardTitle>
+                <IoAdd size={24} />
+                <CardTitle>Add Item</CardTitle>
               </div>
             </CardHeader>
 
             <form onSubmit={handleSubmit(onSubmit)}>
-              <CardContent className="p-6 space-y-6 bg-white">
-                {/* Item Image */}
+              <CardContent className="space-y-5">
 
+                {/* IMAGE */}
                 <div>
-                  <Label className="mb-2 font-bold flex items-center gap-2">
-                    📷 Item Image
-                  </Label>
-
-                  <img
-                    src={imagePreview}
-                    alt="preview"
-                    className="w-36 h-36 object-cover rounded-md border border-gray-300"
-                  />
-
-                  <div className="flex gap-2 mt-3">
-                    <label className="cursor-pointer inline-flex items-center gap-2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700">
-                      📁 Upload
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-
-                    {(imagePreview || imageFile) && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setImageFile(null);
-                          setImagePreview(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
+                  <Label>Item Image</Label>
+                  <img src={imagePreview} className="w-32 h-32 rounded border" />
+                  <Input type="file" onChange={handleImageChange} />
                 </div>
 
-                {/* Item Code */}
+                {/* ITEM CODE */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    🏷️ Item Code
-                  </Label>
-                  <Input
-                    {...register("******")}
-                    placeholder="*******"
-                    disabled
-                    className="font-bold bg-gray-50 border-gray-700"
-                  />
+                  <Label>Item Code</Label>
+                  <Input disabled {...register("item_code")} />
                 </div>
 
-                {/* Item Name */}
+                {/* ITEM NAME */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    📝 Item Name
-                  </Label>
-                  <Input
-                    {...register("item_name", {
-                      required: "Item Name is required",
-                    })}
-                    placeholder="Enter item name"
-                    className={` ${
-                      errors.item_name ? "border-red-500" : "border-gray-700"
-                    }`}
-                  />
-
-                  {errors.item_name && (
-                    <p className="text-red-600 text-sm mt-1">
-                      {errors.item_name.message}
-                    </p>
-                  )}
+                  <Label>Item Name *</Label>
+                  <Input {...register("item_name", { required: true })} />
                 </div>
 
-                {/* Part Number */}
+                {/* PART NUMBER */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    🔢 Part Number
-                  </Label>
-                  <Input
-                    {...register("part_number")}
-                    placeholder="Enter part number"
-                    className="border-gray-700"
-                  />
+                  <Label>Part Number</Label>
+                  <Input {...register("part_number")} />
                 </div>
 
-                {/* Brand */}
+                {/* CATEGORY */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    🏭 Brand
-                  </Label>
-                  <Input
-                    {...register("brand")}
-                    placeholder="Brand name"
-                    className="border-gray-700"
-                  />
+                  <Label>Category (Group)</Label>
+                  <Input {...register("category")} />
                 </div>
 
-                {/* Unit */}
+                {/* BRAND */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    📦 Unit
-                  </Label>
+                  <Label>Brand</Label>
+                  <Input {...register("brand")} />
+                </div>
+
+                {/* UNIT */}
+                <div>
+                  <Label>Unit</Label>
                   <Select
-                    onValueChange={(value) => setValue("unit", value)} // set form value
-                    defaultValue={watch("unit") || "pcs"} // default to 'pcs' if no value
+                    defaultValue="pcs"
+                    onValueChange={(v) => setValue("unit", v)}
                   >
-                    <SelectTrigger className="border border-gray-700">
-                      <SelectValue placeholder="Select unit" />
+                    <SelectTrigger>
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pcs">pcs</SelectItem>
                       <SelectItem value="box">box</SelectItem>
-                      <SelectItem value="pack">pack</SelectItem>
-                      <SelectItem value="set">set</SelectItem>
                       <SelectItem value="kg">kg</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Unit Price */}
-                {/* <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    💰 Unit Price
-                  </Label>
-                  <Input
-                    type="number"
-                    {...register("unit_price", {
-                      required: "Unit price is required",
-                      min: { value: 0, message: "Unit price ≥ 0" },
-                    })}
-                    placeholder="0.00"
-                    className={`no-spinner ${
-                      errors.unit_price ? "border-red-500" : "border-gray-700"
-                    }`}
-                  />
-                  {errors.unit_price && (
-                    <p className="text-red-600 text-sm mt-1">
-                      {errors.unit_price.message}
-                    </p>
-                  )}
-                </div> */}
-
-                {/* Purchase Price */}
+                {/* LOCATION */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    🛒 Purchase Price
-                  </Label>
-                  <Input
-                    type="number"
-                    {...register("purchase_price")}
-                    placeholder="0.00"
-                    className="border-gray-700 no-spinner"
-                  />
+                  <Label>Location</Label>
+                  <Input {...register("location")} />
                 </div>
 
-                {/* Selling Price */}
+                {/* QUANTITY */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    💵 Selling Price
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      {...register("selling_price", {})}
-                      placeholder="0.00"
-                      className="flex-1 no-spinner"
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      onClick={() => setShowPriceExtras((s) => !s)}
-                    >
-                      <FiPlus />
-                    </Button>
-                  </div>
-                  <AnimatePresence>
-                    {showPriceExtras && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22 }}
-                        className="mt-3 grid grid-cols-2 gap-2"
-                      >
-                        <div>
-                          <Label className="mb-1 font-bold flex items-center gap-2">
-                            💲 Least Price
-                          </Label>
-                          <Input
-                            type="number"
-                            {...register("least_price")}
-                            placeholder="0.00"
-                            className="border-gray-700 no-spinner"
-                          />
-                        </div>
-                        <div>
-                          <Label className="mb-1 font-bold flex items-center gap-2">
-                            💲 Maximum Price
-                          </Label>
-                          <Input
-                            type="number"
-                            {...register("maximum_price")}
-                            placeholder="0.00"
-                            className="border-gray-700 no-spinner"
-                          />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <Label>Quantity (Stock)</Label>
+                  <Input type="number" {...register("quantity")} />
                 </div>
 
-                {/* Quantity */}
+                {/* LOW STOCK */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    🔢 Quantity
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      {...register("quantity", {
-                        required: "Quantity required",
-                        min: { value: 0, message: "Quantity ≥ 0" },
-                      })}
-                      placeholder="0"
-                      className={`no-spinner ${
-                        errors.quantity ? "border-red-500" : "border-gray-700"
-                      }`}
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      onClick={() => setShowLowQty((s) => !s)}
-                    >
-                      <FiPlus />
-                    </Button>
-                  </div>
-                  <AnimatePresence>
-                    {showLowQty && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22 }}
-                        className="mt-3"
-                      >
-                        <Label className="mb-1 font-bold flex items-center gap-2">
-                          ⚠️ Low Quantity
-                        </Label>
-                        <Input
-                          type="number"
-                          {...register("low_quantity")}
-                          placeholder="0"
-                          className="border-gray-700 no-spinner"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <Label>Low Stock</Label>
+                  <Input type="number" {...register("low_quantity")} />
                 </div>
 
-                {/* Location */}
+                {/* PURCHASE TYPE */}
                 <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    📍 Location
-                  </Label>
-                  <Input
-                    {...register("location")}
-                    placeholder="Location"
-                    className="border-gray-700"
-                  />
-                </div>
-                <div>
-                  <Label className="mb-1 font-bold flex items-center gap-2">
-                    Shelf
-                  </Label>
-                  <Input
-                    {...register("shelf_number")}
-                    placeholder="Shelf Number"
-                    className="border-gray-700"
-                  />
-                </div>
-
-                {/* Other collapsible */}
-                <div>
-                  <Label
-                    className="font-bold flex items-center justify-between cursor-pointer"
-                    onClick={() => setShowOther((s) => !s)}
+                  <Label>Purchase Type</Label>
+                  <Select
+                    defaultValue="without_receipt"
+                    onValueChange={(v) => setValue("purchase_type", v)}
                   >
-                    <span>⚙️ Other</span>
-                    <IoChevronDown
-                      className={`transition-transform ${
-                        showOther ? "rotate-180" : "border-gray-700"
-                      }`}
-                    />
-                  </Label>
-                  <AnimatePresence>
-                    {showOther && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22 }}
-                        className="mt-3 space-y-2"
-                      >
-                        <div>
-                          <Label className="mb-1 font-bold flex items-center gap-2">
-                            Condition
-                          </Label>
-                          <Select
-                            onValueChange={(value) =>
-                              setValue("condition", value)
-                            } // set form value
-                            defaultValue={watch("condition") || "New"} // default to 'pcs' if no value
-                          >
-                            <SelectTrigger className="border border-gray-700">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="New">new</SelectItem>
-                              <SelectItem value="Used">used</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="mb-1 font-bold flex items-center gap-2">
-                            Type
-                          </Label>
-                          <Input
-                            {...register("type")}
-                            placeholder="Type.."
-                            className="border-gray-700"
-                          />
-                        </div>
-                        <Input
-                          {...register("manufacturer")}
-                          placeholder="Manufacturer"
-                          className="border-gray-700"
-                        />
-                        {/* <Input
-                          {...register("model")}
-                          placeholder="Model"
-                          className="border-gray-700"
-                        /> */}
-                        <Input
-                          type="date"
-                          {...register("manufacturing_date")}
-                          defaultValue={new Date().toISOString().split("T")[0]} // set today's date
-                          className="border-gray-700 font-bold focus:ring-2 focus:ring-blue-500"
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="with_receipt">With Receipt</SelectItem>
+                      <SelectItem value="without_receipt">
+                        Without Receipt
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {/* PURCHASE PRICE */}
+                <div>
+                  <Label>Purchase Price(s)</Label>
+                  <Input type="number" {...register("purchase_price")} />
+                </div>
+
+                {/* PURCHASE RECEIPT PRICE */}
+                <AnimatePresence>
+                  {watch("purchase_type") === "with_receipt" && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      <Label>Purchase Receipt Price</Label>
+                      <Input
+                        type="number"
+                        {...register("purchase_receipt_price")}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* SELLING PRICE */}
+                <div>
+                  <Label>Selling Price</Label>
+                  <Input type="number" {...register("selling_price")} />
+                </div>
+
               </CardContent>
 
-              <CardFooter className="flex justify-center p-4">
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save"}
+              <CardFooter className="justify-end">
+                <Button disabled={loading}>
+                  {loading ? "Saving..." : "Save Item"}
                 </Button>
               </CardFooter>
             </form>

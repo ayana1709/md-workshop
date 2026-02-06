@@ -100,13 +100,13 @@ export default function Departments() {
           <div className="max-w-6xl mx-auto bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-700">
-                Departments
+                Branches and Warehouses
               </h2>
               <Link
                 to="/departments/create"
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow"
               >
-                + Add Department
+                + Add Branch
               </Link>
             </div>
 

@@ -428,101 +428,150 @@ const TotalItem = () => {
       </h2>
 
 
-      {/* Top Controls */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-        {/* Search & Quick Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-          <Input
-            type="text"
-            placeholder="Search ..."
-            value={searchItem}
-            onChange={(e) => setSearchItem(e.target.value)}
-            className="w-full sm:w-64"
-          />
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              className="bg-green-500 text-white hover:bg-green-600 w-full sm:w-auto"
-              onClick={handleAddToSales}
-            >
-              Item Out
-            </Button>
-            <Button
-              className="bg-orange-500 text-white hover:bg-orange-600 w-full sm:w-auto"
-              onClick={handleAddToPurchase}
-            >
-              Request Purchase
-            </Button>
-          </div>
-        </div>
 
-        {/* Import / Export Controls */}
-        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
-          <Button
-            onClick={() => setShowModal(true)}
-            className="
-              font-extrabold 
-              text-white 
-              bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 
-              px-6 py-2 
-              rounded-lg 
-              shadow-md 
-              hover:shadow-lg 
-              hover:scale-105 
-              transition-all 
-              duration-200 
-              flex items-center gap-2
-            "
-          >
-            <span className="text-xl">+</span> Add Item
-          </Button>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx, .xls"
-            style={{ display: "none" }}
-            onChange={handleFileChange}
-          />
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="border-green-500 text-green-600 hover:bg-green-50 hover:text-green-700"
-              onClick={handleImportClick}
-            >
-              Import
-            </Button>
+{/* Top Inventory Controls */}
+<div className="bg-white rounded-xl border shadow-sm px-4 py-3 mb-4">
+  <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 justify-between">
 
-            <Button
-              variant="outline"
-              className="border-blue-500 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-              onClick={handleDownloadTemplate}
-            >
-              Template
-            </Button>
+    {/* LEFT CONTROLS */}
+    <div className="flex flex-wrap xl:flex-nowrap items-center gap-2 w-full">
 
-            <Button
-              variant="outline"
-              className="border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
-              onClick={handlePrint}
-            >
-              Print
-            </Button>
-          </div>
+      {/* Branch Selector */}
+      <select
+        className="h-10 w-48 border rounded-lg px-3 text-sm focus:ring-2 focus:ring-blue-500"
+        onChange={(e) => setSelectedBranch(e.target.value)}
+      >
+        <option value="all">All Branches</option>
+        <option value="hq">Head Office</option>
+        <option value="b1">Branch 01</option>
+        <option value="b2">Branch 02</option>
+      </select>
 
-          <Button
-            className="bg-green-500 text-white hover:bg-green-600"
-            onClick={handleExportPDF}
-          >
-            PDF
-          </Button>
-          <Button
-            className="bg-blue-500 text-white hover:bg-blue-600"
-            onClick={handleExportExcel}
-          >
-            Excel
-          </Button>
+      {/* Search */}
+      <Input
+        type="text"
+        placeholder="Search item..."
+        value={searchItem}
+        onChange={(e) => setSearchItem(e.target.value)}
+        
+        className="h-10 w-64"
+      />
+
+      {/* Item Out */}
+      <Button className="h-10 bg-green-500 hover:bg-green-600 text-white"
+          onClick={handleAddToSales}>
+        Sale
+      </Button>
+
+      {/* Transfer */}
+      <Button className="h-10 bg-indigo-500 hover:bg-indigo-600 text-white">
+        Transfer
+      </Button>
+
+      {/* Send to Ecommerce */}
+      <Button className="h-10 bg-teal-500 hover:bg-teal-600 text-white">
+        Send to Ecommerce
+      </Button>
+
+      {/* Request Purchase */}
+      <Button className="h-10 bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={handleAddToPurchase}>
+        Request Purchase
+      </Button>
+
+      {/* Operation Dropdown */}
+      <div className="relative group">
+        <Button
+          variant="outline"
+          className="h-10 border-gray-400 text-gray-700"
+        >
+          Operation ▾
+        </Button>
+
+        <div className="absolute left-0 mt-2 w-44 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition z-50">
+          <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
+            🧱 Build Up
+          </button>
+          <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100">
+            🧨 Destructure
+          </button>
         </div>
       </div>
+    </div>
+
+    {/* RIGHT CONTROLS */}
+    <div className="flex flex-wrap xl:flex-nowrap items-center gap-2">
+
+      {/* Add Item */}
+      <Button
+        onClick={() => setShowModal(true)}
+        className="h-10 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-5 rounded-lg shadow hover:scale-105 transition"
+      >
+        + Add Item
+      </Button>
+
+      {/* Import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        hidden
+        onChange={handleFileChange}
+      />
+      <Button
+        variant="outline"
+        className="h-10 border-green-500 text-green-600"
+        onClick={handleImportClick}
+      >
+        Import
+      </Button>
+
+      {/* Export Dropdown */}
+      <div className="relative group">
+        <Button
+          variant="outline"
+          className="h-10 border-blue-500 text-blue-600"
+        >
+          Export ▾
+        </Button>
+
+        <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition z-50">
+          <button
+            onClick={handleDownloadTemplate}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            📄 Template
+          </button>
+          <button
+            onClick={handlePrint}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            🖨 Print
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            📕 Export PDF
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            📗 Export Excel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
 
       {/* Data Table */}
       <div id="printableTable" className="overflow-x-auto">

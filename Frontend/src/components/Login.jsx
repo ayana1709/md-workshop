@@ -86,7 +86,7 @@ const Login = ({ onLogin }) => {
   const { companyData } = useStores();
 
   // Default values before companyData arrives
-  const defaultNameEn = "WMS";
+  const defaultNameEn = "Inventory   Managemnt System  ";
   const defaultNameAm = "";
 
   // Use company data when available
@@ -225,19 +225,7 @@ const Login = ({ onLogin }) => {
         </form>
 
         {/* Footer Info */}
-        <div className="text-center text-gray-600 text-sm mt-6 font-semibold space-y-1">
-          <p>
-            Developed by{" "}
-            <span className="text-blue-500 font-bold">
-              Nile Source Ethiopia
-            </span>
-          </p>
-          <p>© 2025, NILEGMS. All rights reserved.</p>
-          <p className="text-xs text-gray-500">
-            Software Version <span className="font-bold">2.1</span> — Powered by{" "}
-            <span className="font-bold">NILEGMS</span>
-          </p>
-        </div>
+      
       </div>
     </div>
   );

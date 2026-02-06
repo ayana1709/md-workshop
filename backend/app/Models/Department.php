@@ -15,4 +15,10 @@ class Department extends Model
         'description',
         'status',
         ];
+
+
+    public function admins()
+    {
+        return $this->hasMany(Admin::class);
+    }
 }

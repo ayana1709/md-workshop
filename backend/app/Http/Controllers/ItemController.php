@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
-
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class ItemController extends Controller
 {
     // Fetch all items
@@ -17,7 +17,6 @@ class ItemController extends Controller
     {
         return response()->json(Item::all());
     }
-
     public function store(Request $request)
     {
         // Validate fields
@@ -43,82 +42,74 @@ class ItemController extends Controller
             'manufacturing_date' => 'nullable|date',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240',
         ]);
-
         if (empty($validated['code'])) {
             $validated['code'] = strtoupper(substr(uniqid(), -8));
         }
-
         if ($request->hasFile('image')) {
-
             $file = $request->file('image');
-
             if ($file->getSize() > 2 * 1024 * 1024) {
-
                 $image = Image::make($file)->encode('jpg', 70);
-
                 $filename = 'items/'.uniqid().'.jpg';
-
                 Storage::disk('public')->put($filename, (string) $image);
-
                 $validated['image'] = $filename;
             } else {
                 $validated['image'] = $file->store('items', 'public');
             }
         }
-
         $validated['purchase_price'] = $validated['purchase_price'] ?? 0;
         $validated['selling_price'] = $validated['selling_price'] ?? 0;
         $validated['quantity'] = $validated['quantity'] ?? 0;
         $validated['total_price'] = $validated['total_price'] ?? ($validated['quantity'] * $validated['purchase_price']);
-
         if (! empty($validated['part_number'])) {
             $existingItem = Item::where('part_number', $validated['part_number'])->first();
 
             if ($existingItem) {
                 $existingItem->quantity += $validated['quantity'];
                 $existingItem->total_price = $existingItem->quantity * ($existingItem->purchase_price ?? 0);
-
                 if (isset($validated['image'])) {
-
                     if ($existingItem->image && Storage::disk('public')->exists($existingItem->image)) {
                         Storage::disk('public')->delete($existingItem->image);
                     }
-
                     $existingItem->image = $validated['image'];
                 }
-
                 $existingItem->save();
-
                 return response()->json([
                     'message' => 'Quantity updated for existing item',
                     'item' => $existingItem,
                 ], 200);
             }
         }
-
-        $item = Item::create($validated);
-
-        return response()->json([
-            'message' => 'Item added successfully',
-            'item' => $item,
-        ], 201);
+$item = Item::create($validated);
+$qrData = json_encode([
+    'id' => $item->id,
+    'part_number' => $item->part_number,
+    'item_name' => $item->item_name,
+]);
+$qrFileName = 'qrcodes/item_'.$item->id.'.svg';
+$qrPath = storage_path('app/public/'.$qrFileName);
+QrCode::format('svg')
+    ->size(300)
+    ->margin(2)
+    ->generate($qrData, $qrPath);
+$item->qr_code = $qrFileName;
+$item->save();
+return response()->json([
+    'message' => 'Item added successfully',
+    'item' => $item,
+    'qr_url' => asset('storage/'.$item->qr_code),
+], 201);
     }
-
     public function getByPartNumber($part_number)
     {
         $item = Item::where('part_number', $part_number)->first();
-
         if (! $item) {
             return response()->json(['message' => 'Item not found'], 404);
         }
-
         return response()->json($item);
     }
-
     public function update(Request $request, $id)
     {
         $item = Item::findOrFail($id);
-
         $validated = $request->validate([
             'code' => 'nullable|string|max:20',
             'part_number' => 'nullable|string|max:255',
@@ -407,7 +398,6 @@ class ItemController extends Controller
                         'location' => $normalized['location'] ?? null,
 
                         'shelf_number' => $normalized['shelf_number'] ?? $normalized['shalf no'] ?? null,
-
                     ];
                 })
                 ->filter()
@@ -425,7 +415,6 @@ class ItemController extends Controller
                         $item[$key] = null;
                     }
                 }
-
                 $item['purchase_price'] = $item['purchase_price'] ?? 0;
                 $item['selling_price'] = $item['selling_price'] ?? 0;
                 $item['least_price'] = $item['least_price'] ?? 0;

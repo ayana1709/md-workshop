@@ -337,7 +337,7 @@ const NewAddSalesPage = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <div className="p-4 bg-white max-w-[90%] mx-auto rounded-md shadow">
               <h2 className="pl-4 text-xl font-semibold mb-4 text-gray-800 uppercase tracking-wider">
-                Store Out Form
+                Sales Page
               </h2>
 
               {/* Sales Info */}
