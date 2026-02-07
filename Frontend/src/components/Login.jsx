@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import api from "../api";
-import { useStores } from "../contexts/storeContext";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BsEyeSlash, BsEyeSlashFill } from "react-icons/bs";
 import { FaCog } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+
+import api from "../api";
+import { useStores } from "../contexts/storeContext";
 
 const backgrounds = [
   {
@@ -18,21 +19,35 @@ const backgrounds = [
     name: "Orange",
     class: "bg-gradient-to-br from-orange-400 via-yellow-500 to-red-500",
   },
-  { name: "Custom Image", class: "bg-gradient-bg bg-cover bg-center" },
+  {
+    name: "Custom Image",
+    class: "bg-gradient-bg bg-cover bg-center",
+  },
 ];
 
-const Login = ({ onLogin }) => {
+const Login = () => {
+  const navigate = useNavigate();
+
+  const {
+    showPassword,
+    setShowPassword,
+    fetchPermissions,
+    setPermissions,
+    setAdmin,
+    setUserBranchId,
+    setUserBranch,
+    companyData,
+  } = useStores();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { showPassword, setShowPassword, setPermissions, fetchPermissions } =
-    useStores();
+
   const [bgClass, setBgClass] = useState(
-    localStorage.getItem("loginBg") || backgrounds[0].class
+    localStorage.getItem("loginBg") || backgrounds[0].class,
   );
   const [showSettings, setShowSettings] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     localStorage.setItem("loginBg", bgClass);
@@ -44,72 +59,70 @@ const Login = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      const response = await api.post("/admin/login", { username, password });
+      const res = await api.post("/admin/login", { username, password });
+      const { token, admin } = res.data;
 
-      if (response.data.token) {
-        const { token, admin } = response.data;
-
-        localStorage.setItem("adminToken", token);
-        onLogin(admin);
-
-        let roleId = null;
-        if (admin?.roles && admin.roles.length > 0) {
-          roleId = admin.roles[0]?.pivot?.role_id;
-        }
-
-        if (roleId) {
-          const perms = await fetchPermissions(roleId);
-          localStorage.setItem("permissions", JSON.stringify(perms));
-        } else {
-          console.warn("No role found for this user");
-          setPermissions([]);
-        }
-
-        navigate("/dashboard");
-      } else {
-        setError("Login failed. No token received.");
+      if (!token || !admin) {
+        setError("Invalid login response");
+        return;
       }
+
+      // 🔐 Save auth
+      localStorage.setItem("adminToken", token);
+      setAdmin(admin);
+
+      // 🏢 Branch
+      if (admin.branch_id) {
+        setUserBranchId(admin.branch_id);
+        setUserBranch({
+          id: admin.branch_id,
+          name: admin.branch?.name || null,
+        });
+      }
+
+      // 🔑 Permissions
+      const roleId = admin?.roles?.[0]?.pivot?.role_id;
+      if (roleId) {
+        const perms = await fetchPermissions(roleId);
+        localStorage.setItem("permissions", JSON.stringify(perms));
+      } else {
+        setPermissions([]);
+      }
+
+      navigate("/dashboard");
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.message || "An error occurred");
-      } else if (err.request) {
-        setError("No response from server. Please check your connection.");
+        setError(err.response.data.message || "Login failed");
       } else {
-        setError("An unexpected error occurred.");
+        setError("Server not reachable");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Destructure companyData from store
-  const { companyData } = useStores();
-
-  // Default values before companyData arrives
-  const defaultNameEn = "Inventory   Managemnt System  ";
-  const defaultNameAm = "";
-
-  // Use company data when available
-  const companyNameEn = companyData?.login_page_name || defaultNameEn;
-  const companyNameAm = companyData?.login_page_name_am || defaultNameAm;
+  const companyNameEn =
+    companyData?.login_page_name || "Inventory Management System";
+  const companyNameAm = companyData?.login_page_name_am || "";
 
   return (
     <div
-      className={`h-screen w-full flex flex-col items-center justify-center p-4 transition-all duration-500 ${bgClass}`}
+      className={`h-screen w-full flex items-center justify-center p-4 transition-all duration-500 ${bgClass}`}
     >
-      {/* Settings Icon */}
+      {/* Settings */}
       <div className="absolute top-4 right-4">
         <button
-          onClick={() => setShowSettings(!showSettings)}
+          onClick={() => setShowSettings((v) => !v)}
           className="p-3 bg-white/30 rounded-full text-white shadow-md hover:scale-110 transition"
         >
           <FaCog size={22} />
         </button>
+
         {showSettings && (
           <div className="absolute right-14 top-0 bg-white/30 rounded-lg shadow-lg p-3 space-y-2">
-            {backgrounds.map((bg, idx) => (
+            {backgrounds.map((bg) => (
               <button
-                key={idx}
+                key={bg.name}
                 onClick={() => {
                   setBgClass(bg.class);
                   setShowSettings(false);
@@ -124,13 +137,13 @@ const Login = ({ onLogin }) => {
       </div>
 
       {/* Login Card */}
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-fadeIn">
-        <h2 className="text-center text-3xl font-extrabold text-gray-800 mb-1">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
+        <h2 className="text-center text-3xl font-extrabold text-gray-800">
           {companyNameAm}
         </h2>
-        <h2 className="text-center text-2xl font-bold text-gray-700 mb-4">
+        <h3 className="text-center text-xl font-bold text-gray-700 mb-4">
           {companyNameEn}
-        </h2>
+        </h3>
 
         <p className="text-center text-gray-600 mb-6 font-semibold">
           Login to your account
@@ -145,17 +158,11 @@ const Login = ({ onLogin }) => {
 
           {/* Username */}
           <div>
-            <label
-              htmlFor="username"
-              className="block text-gray-700 mb-1 font-medium"
-            >
+            <label className="block text-gray-700 mb-1 font-medium">
               Username
             </label>
             <input
-              type="text"
-              id="username"
-              placeholder="Enter your username"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+              className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-200"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -164,68 +171,32 @@ const Login = ({ onLogin }) => {
 
           {/* Password */}
           <div className="relative">
-            <label
-              htmlFor="password"
-              className="block text-gray-700 mb-1 font-medium"
-            >
+            <label className="block text-gray-700 mb-1 font-medium">
               Password
             </label>
             <input
               type={showPassword ? "text" : "password"}
-              id="password"
-              placeholder="Enter your password"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+              className="w-full px-4 py-3 rounded-lg border focus:ring-2 focus:ring-blue-200"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
             <div
-              className="absolute right-4 top-[57%] transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800 transition"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-4 top-[58%] cursor-pointer text-gray-500"
             >
-              {showPassword ? (
-                <BsEyeSlash size={20} />
-              ) : (
-                <BsEyeSlashFill size={20} />
-              )}
+              {showPassword ? <BsEyeSlash /> : <BsEyeSlashFill />}
             </div>
           </div>
 
           {/* Submit */}
           <button
-            type="submit"
-            className="w-full py-3 rounded-lg font-semibold text-lg bg-gradient-to-r from-pink-500 to-yellow-400 text-white shadow-md hover:scale-105 active:scale-95 transition-transform duration-300"
             disabled={isLoading}
+            className="w-full py-3 rounded-lg font-semibold bg-gradient-to-r from-pink-500 to-yellow-400 text-white hover:scale-105 transition"
           >
-            {isLoading ? (
-              <svg
-                className="w-6 h-6 animate-spin mx-auto"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.37 0 0 5.37 0 12h4z"
-                ></path>
-              </svg>
-            ) : (
-              "Login"
-            )}
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        {/* Footer Info */}
-      
       </div>
     </div>
   );

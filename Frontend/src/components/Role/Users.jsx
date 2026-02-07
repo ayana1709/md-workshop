@@ -48,16 +48,16 @@ export default function Users() {
 
     if (!confirm.isConfirmed) return;
 
-try {
-    const response = await api.delete(`/users/${id}`);
-    if (response.status === 200) {
-      // ✅ Only remove from UI if the DB actually deleted it
-      setUsers(prevUsers => prevUsers.filter((u) => u.id !== id));
-      Swal.fire("Deleted!", "User removed.", "success");
+    try {
+      const response = await api.delete(`/users/${id}`);
+      if (response.status === 200) {
+        // ✅ Only remove from UI if the DB actually deleted it
+        setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
+        Swal.fire("Deleted!", "User removed.", "success");
+      }
+    } catch (error) {
+      Swal.fire("Error!", "Database refused to delete.", "error");
     }
-  } catch (error) {
-    Swal.fire("Error!", "Database refused to delete.", "error");
-  }
   };
 
   const handleOpenModal = (user) => {
@@ -79,11 +79,14 @@ try {
     }
 
     try {
-      const response = await api.post(`/users/${selectedUser.id}/reset-password`, {
-        old_password: oldPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword,
-      });
+      const response = await api.post(
+        `/users/${selectedUser.id}/reset-password`,
+        {
+          old_password: oldPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        },
+      );
       Swal.fire("Success!", response.data.message, "success");
       setShowModal(false);
     } catch (error) {
@@ -130,7 +133,10 @@ try {
                     : null;
 
                   return (
-                    <tr key={u.id} className="border-b hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={u.id}
+                      className="border-b hover:bg-gray-50 transition-colors"
+                    >
                       <td className="p-3 text-gray-500">#{u.id}</td>
                       <td className="p-3">
                         <img
@@ -139,16 +145,20 @@ try {
                           className="w-10 h-10 rounded-full object-cover border"
                         />
                       </td>
-                      <td className="p-3 font-semibold text-gray-700">{u.name}</td>
-                      
+                      <td className="p-3 font-semibold text-gray-700">
+                        {u.name}
+                      </td>
+
                       {/* --- DEPARTMENT DATA --- */}
                       <td className="p-3">
-                        {u.department ? (
+                        {u.branch ? (
                           <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm border border-blue-100">
-                            {u.department.name}
+                            {u.branch.name}
                           </span>
                         ) : (
-                          <span className="text-gray-400 italic">No Dept</span>
+                          <span className="text-gray-400 italic">
+                            No Branch
+                          </span>
                         )}
                       </td>
 
@@ -161,7 +171,9 @@ try {
                       </td>
                       <td className="p-3 space-x-2 text-center">
                         {u.username === "admin" ? (
-                          <span className="text-gray-400 italic">Protected</span>
+                          <span className="text-gray-400 italic">
+                            Protected
+                          </span>
                         ) : (
                           <>
                             <Link
@@ -190,11 +202,14 @@ try {
                 })}
               </tbody>
             </table>
-            {users.length === 0 && <div className="p-8 text-center text-gray-400">Loading or no users found...</div>}
+            {users.length === 0 && (
+              <div className="p-8 text-center text-gray-400">
+                Loading or no users found...
+              </div>
+            )}
           </div>
         </main>
       </div>
-
 
       {/* Reset Password Modal */}
 

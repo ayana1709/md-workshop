@@ -13,7 +13,7 @@ export default function CreateUser() {
     email: "",
     password: "",
     role: "",
-    department_id: "", // 1. Added Department ID to state
+    branch_id: "", // 1. Added Department ID to state
   });
 
   const [roles, setRoles] = useState([]);
@@ -36,9 +36,13 @@ export default function CreateUser() {
 
     try {
       const formData = new FormData();
-      Object.keys(form).forEach((key) => {
-        formData.append(key, form[key]);
-      });
+
+      formData.append("full_name", form.full_name);
+      formData.append("username", form.username);
+      formData.append("email", form.email);
+      formData.append("password", form.password);
+      formData.append("role", form.role);
+      formData.append("branch_id", form.branch_id); // already number now
 
       if (image) {
         formData.append("profile_image", image);
@@ -68,12 +72,13 @@ export default function CreateUser() {
         email: "",
         password: "",
         role: "",
-        department_id: "",
+        branch_id: "",
       });
       setImage(null);
       setPreview(DefaultAvatar);
     } catch (err) {
       if (err.response?.status === 422) {
+        console.log(err.response.data.errors);
         setErrors(err.response.data.errors);
       } else {
         Swal.fire({
@@ -174,7 +179,7 @@ export default function CreateUser() {
 
                         "image/jpeg",
 
-                        0.7
+                        0.7,
                       );
                     };
                   };
@@ -275,9 +280,9 @@ export default function CreateUser() {
                 Branch
               </label>
               <select
-                value={form.department_id}
+                value={form.branch_id}
                 onChange={(e) =>
-                  setForm({ ...form, department_id: e.target.value })
+                  setForm({ ...form, branch_id: parseInt(e.target.value) })
                 }
                 required
               >
@@ -288,9 +293,9 @@ export default function CreateUser() {
                   </option>
                 ))}
               </select>
-              {errors.department_id && (
+              {errors.branch_id && (
                 <p className="text-red-500 text-sm mt-1">
-                  {errors.department_id[0]}
+                  {errors.branch_id[0]}
                 </p>
               )}
             </div>

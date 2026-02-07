@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('items', function (Blueprint $table) {
 
-            // 🔑 Primary Key (string, not auto increment)
+            // 🔑 Primary Key
             $table->string('item_code', 20)->primary();
 
             // Basic info
             $table->string('item_name');
             $table->string('part_number')->nullable();
+            $table->integer('initial_stock')->nullable();
+            $table->integer('low_stock')->nullable();
 
             // Relations
             $table->foreignId('category_id')
@@ -35,11 +37,6 @@ return new class extends Migration
 
             // Stock info
             $table->string('unit')->nullable();
-            $table->integer('low_quantity')->default(0);
-
-            // Optional cached prices (NOT transactional)
-            $table->decimal('default_selling_price', 15, 2)->nullable();
-            $table->decimal('last_purchase_price', 15, 2)->nullable();
 
             // Extras
             $table->string('location')->nullable();

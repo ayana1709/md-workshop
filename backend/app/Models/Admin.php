@@ -33,10 +33,12 @@ class Admin extends Authenticatable
     ];
 
     // User belongs to a branch
-    public function branch(): BelongsTo
-    {
-        return $this->belongsTo(Branch::class);
-    }
+  
+
+    public function branch()
+{
+    return $this->belongsTo(Branch::class, 'branch_id');
+}
 
     // Check if admin is super/admin
     public function isSuperAdmin(): bool

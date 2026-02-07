@@ -16,7 +16,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = Admin::with(['roles', 'department'])->get();
+        $users = Admin::with(['roles', 'branch'])->get();
 
         return response()->json($users);
     }
@@ -26,7 +26,7 @@ class UserController extends Controller
      */
     public function show($id)
     {
-        $user = Admin::with('roles', 'department')->findOrFail($id);
+        $user = Admin::with('roles', 'branch')->findOrFail($id);
 
         return response()->json($user);
     }

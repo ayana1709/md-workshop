@@ -71,7 +71,8 @@ export default function AddStore() {
       unit: "pcs",
       location: "",
       quantity: "",
-      low_quantity: "",
+      initial_stock: "",
+      low_stock: "",
       purchase_type: "without_receipt",
       purchase_price: "",
       purchase_receipt_price: "",
@@ -150,38 +151,35 @@ export default function AddStore() {
     try {
       // Create FormData
       const fd = new FormData();
-      Object.entries(data).forEach(([k, v]) => {
-        if (v) fd.append(k, v);
-      });
-      images.forEach((img) => fd.append("images[]", img));
 
-      // Convert FormData to plain object for display
-      const payload = {};
-      fd.forEach((value, key) => {
-        // If multiple images, show only names
-        if (value instanceof File) {
-          if (!payload[key]) payload[key] = [];
-          payload[key].push(value.name);
-        } else {
-          payload[key] = value;
+      // Append all fields
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          fd.append(key, value);
         }
       });
 
-      // Show payload in Swal2 popup
-      // await Swal.fire({
-      //   title: "Form Payload",
-      //   html: `<pre style="text-align:left">${JSON.stringify(payload, null, 2)}</pre>`,
-      //   width: 600,
-      // });
+      // Append images
+      images.forEach((file) => fd.append("images[]", file));
 
-      // Uncomment this to actually send the data later
-      await api.post("/items", fd);
+      // Debug: log FormData (optional)
+      // for (let pair of fd.entries()) console.log(pair[0], pair[1]);
+
+      // Send POST request
+      const res = await api.post("/items", fd, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // Success feedback
       toast.success("Item added successfully");
       fetchItems();
       setShowModal(false);
     } catch (err) {
-      console.error("Failed to add item:", err);
-      toast.error("Failed to add item");
+      console.error("Failed to add item:", err?.response?.data || err);
+      const message = err?.response?.data?.message || "Failed to add item";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -366,12 +364,12 @@ export default function AddStore() {
 
                       <div>
                         <Label>Initial Stock</Label>
-                        <Input type="number" {...register("quantity")} />
+                        <Input type="number" {...register("initial_stock")} />
                       </div>
 
                       <div>
                         <Label>Low Stock Alert</Label>
-                        <Input type="number" {...register("low_quantity")} />
+                        <Input type="number" {...register("low_stock")} />
                       </div>
                     </CardContent>
                   </Card>

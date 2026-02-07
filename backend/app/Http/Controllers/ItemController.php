@@ -13,15 +13,37 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class ItemController extends Controller
 {
-    // Fetch all items
-    public function index()
-    {
-        return response()->json(Item::all());
+
+
+
+
+public function index(Request $request)
+{
+    $branchId = $request->query('branch_id');
+    $user = auth()->user();
+    $isAdmin = $user->is_admin ?? false;
+
+    $query = Item::with([
+        'category:id,name',
+        'brand:id,name',
+        'branch:id,name',
+        'creator:id,name',
+        'purchases', // ✅ correct relation
+        'sales',     // ✅ correct relation
+    ]);
+
+    if (!$isAdmin && $branchId) {
+        $query->where('branch_id', $branchId);
     }
+
+    $items = $query->get();
+
+    return response()->json($items);
+}
 
 
 
@@ -32,28 +54,19 @@ public function store(Request $request)
     $validated = $request->validate([
         'item_name' => 'required|string|max:255',
         'part_number' => 'nullable|string|max:255',
-
         'category_id' => 'nullable|exists:categories,id',
         'brand_id'    => 'nullable|exists:brands,id',
-
         'unit'        => 'required|string|max:50',
         'location'    => 'nullable|string|max:255',
+        'initial_stock' => 'required|integer|min:0',
+        'quantity' => 'nullable|integer|min:0',
 
-        // Initial stock (goes to purchases)
-        'quantity' => 'required|integer|min:1',
-
-        // Purchase
+        'low_stock' => 'nullable|integer|min:0',
         'purchase_type' => 'required|in:with_receipt,without_receipt',
         'purchase_price' => 'required|numeric|min:0',
         'purchase_receipt_price' => 'nullable|numeric|min:0',
-
-        // Selling
         'selling_price' => 'required|numeric|min:0',
-
-        // Branch
         'branch_id' => 'required|exists:branches,id',
-
-        // Images
         'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
     ]);
 
@@ -62,84 +75,71 @@ public function store(Request $request)
     try {
         $userId = auth()->id();
 
-        /* =======================
-           ITEM CODE GENERATION
-        ======================= */
+        // ITEM CODE
         $lastCode = Item::max('item_code');
         $newCode  = str_pad(((int) $lastCode) + 1, 4, '0', STR_PAD_LEFT);
 
-        /* =======================
-           CREATE ITEM
-        ======================= */
+        // CREATE ITEM
         $item = Item::create([
             'item_code'   => $newCode,
             'item_name'   => $validated['item_name'],
-            'part_number' => $validated['part_number']
-                ?? 'PN-' . Str::upper(Str::random(8)),
-
+            'part_number' => $validated['part_number'] ?? 'PN-' . Str::upper(Str::random(8)),
             'category_id' => $validated['category_id'] ?? null,
             'brand_id'    => $validated['brand_id'] ?? null,
-
             'unit'        => $validated['unit'],
             'location'    => $validated['location'] ?? 'Warehouse',
-
+            'initial_stock'=>$validated['initial_stock']?? null,
+            'low_stock' => $validated['low_stock'] ?? null, 
             'branch_id'   => $validated['branch_id'],
             'created_by'  => $userId,
         ]);
 
-        /* =======================
-           HANDLE IMAGES
-        ======================= */
+        // HANDLE IMAGES
         $imagePaths = [];
-
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $imagePaths[] = $file->store('items', 'public');
             }
         }
-
-    $item->images = empty($imagePaths)
-    ? json_encode(['items/default.jpg'])
-    : json_encode($imagePaths);
-
-$item->save();
-;
-
-        /* =======================
-           QR CODE
-        ======================= */
-        $qrFileName = 'qrcodes/item_' . $item->item_code . '.svg';
-        QrCode::format('svg')
-            ->size(300)
-            ->generate($item->item_code, storage_path('app/public/' . $qrFileName));
-
-        $item->qr_code = $qrFileName;
+        $item->images = json_encode(empty($imagePaths) ? ['items/default.jpg'] : $imagePaths);
         $item->save();
 
-        /* =======================
-           INITIAL PURCHASE (STOCK IN)
-        ======================= */
-        Purchasee::create([
-            'item_code'     => $item->item_code,
-            'quantity'      => $validated['quantity'],
-            'unit_price'    => $validated['purchase_price'],
-            'total_price'   => $validated['purchase_price'] * $validated['quantity'],
-            'purchase_type' => $validated['purchase_type'],
-            'receipt_price' => $validated['purchase_receipt_price'] ?? null,
+        // ENSURE QR FOLDER EXISTS
+        $qrDir = storage_path('app/public/qrcodes');
+        if (!file_exists($qrDir)) {
+            mkdir($qrDir, 0777, true); // recursive folder creation
+        }
 
-            'branch_id'     => $validated['branch_id'],
-            'created_by'    => $userId,
-        ]);
+        // QR CODE
+        $qrFileName = 'item_' . $item->item_code . '.svg';
+        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+            ->size(300)
+            ->generate($item->item_code, $qrDir . '/' . $qrFileName);
 
-        /* =======================
-           SELL CONFIG (OPTIONAL BASE PRICE)
-        ======================= */
+        $item->qr_code = 'qrcodes/' . $qrFileName;
+        $item->save();
+
+// Determine purchase quantity
+$quantity = $validated['initial_stock'] ?? 0;
+
+// INITIAL PURCHASE
+Purchasee::create([
+    'item_code'     => $item->item_code,
+    'quantity'      => $quantity,
+    'unit_price'    => $validated['purchase_price'],
+    'total_price'   => $validated['purchase_price'] * $quantity,
+    'purchase_type' => $validated['purchase_type'],
+    'receipt_price' => $validated['purchase_receipt_price'] ?? null,
+    'branch_id'     => $validated['branch_id'],
+    'created_by'    => $userId,
+]);
+
+        // SELL CONFIG
         Salee::create([
             'item_code'   => $item->item_code,
-            'quantity'    => 0, // no stock out yet
+            'quantity'    => 0,
             'unit_price'  => $validated['selling_price'],
             'total_price' => 0,
-
             'branch_id'   => $validated['branch_id'],
             'created_by'  => $userId,
         ]);
@@ -161,6 +161,8 @@ $item->save();
         ], 500);
     }
 }
+
+
 
 
 

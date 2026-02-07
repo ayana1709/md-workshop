@@ -18,13 +18,12 @@ class Item extends Model
         'item_code',
         'item_name',
         'part_number',
+        'initial_stock',   // new column
+        'low_stock',       // new column
         'category_id',
         'brand_id',
         'branch_id',
         'unit',
-        'low_quantity',
-        'default_selling_price',
-        'last_purchase_price',
         'location',
         'images',
         'created_by',
@@ -60,12 +59,12 @@ class Item extends Model
     // Transactions
     public function purchases()
     {
-        return $this->hasMany(Purchase::class, 'item_code');
+        return $this->hasMany(Purchasee::class, 'item_code');
     }
 
     public function sales()
     {
-        return $this->hasMany(Sale::class, 'item_code');
+        return $this->hasMany(Salee::class, 'item_code');
     }
 
     /* ================= AUTO CODE + QR ================= */
@@ -73,20 +72,17 @@ class Item extends Model
     protected static function booted()
     {
         static::creating(function ($item) {
-
-            // 🔢 Generate item_code like 0001, 0002
             if (!$item->item_code) {
                 $lastCode = self::orderBy('item_code', 'desc')->value('item_code');
                 $next = $lastCode ? intval($lastCode) + 1 : 1;
                 $item->item_code = str_pad($next, 4, '0', STR_PAD_LEFT);
             }
 
-            // 📷 Generate QR
-            $item->qr_code = base64_encode(
-                QrCode::format('png')
-                    ->size(200)
-                    ->generate($item->item_code)
-            );
+            // Generate QR as SVG (no Imagick needed)
+            $item->qr_code = 'qrcodes/item_' . $item->item_code . '.svg';
+            QrCode::format('svg')
+                ->size(200)
+                ->generate($item->item_code, storage_path('app/public/' . $item->qr_code));
         });
     }
 }
