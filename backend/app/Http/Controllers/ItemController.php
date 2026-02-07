@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Item;
 use App\Models\ItemOut;
+use App\Models\Purchasee;
+use App\Models\Salee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,88 +22,152 @@ class ItemController extends Controller
     {
         return response()->json(Item::all());
     }
-    public function store(Request $request)
-    {
-        // Validate fields
-        $validated = $request->validate([
-            'code' => 'nullable|string|max:20',
-            'part_number' => 'nullable|string|max:255',
-            'item_name' => 'nullable|string|max:255',
-            'quantity' => 'nullable|integer|min:0',
-            'brand' => 'nullable|string|max:255',
-            'total_price' => 'nullable|numeric|min:0',
-            'location' => 'nullable|string|max:255',
-            'condition' => 'nullable|string|max:255',
-            'unit' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'least_price' => 'nullable|numeric|min:0',
-            'maximum_price' => 'nullable|numeric|min:0',
-            'minimum_quantity' => 'nullable|integer|min:0',
-            'low_quantity' => 'nullable|integer|min:0',
-            'shelf_number' => 'nullable|string|max:255',
-            'type' => 'nullable|string|max:255',
-            'manufacturer' => 'nullable|string|max:255',
-            'manufacturing_date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240',
-        ]);
-        if (empty($validated['code'])) {
-            $validated['code'] = strtoupper(substr(uniqid(), -8));
-        }
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            if ($file->getSize() > 2 * 1024 * 1024) {
-                $image = Image::make($file)->encode('jpg', 70);
-                $filename = 'items/'.uniqid().'.jpg';
-                Storage::disk('public')->put($filename, (string) $image);
-                $validated['image'] = $filename;
-            } else {
-                $validated['image'] = $file->store('items', 'public');
-            }
-        }
-        $validated['purchase_price'] = $validated['purchase_price'] ?? 0;
-        $validated['selling_price'] = $validated['selling_price'] ?? 0;
-        $validated['quantity'] = $validated['quantity'] ?? 0;
-        $validated['total_price'] = $validated['total_price'] ?? ($validated['quantity'] * $validated['purchase_price']);
-        if (! empty($validated['part_number'])) {
-            $existingItem = Item::where('part_number', $validated['part_number'])->first();
 
-            if ($existingItem) {
-                $existingItem->quantity += $validated['quantity'];
-                $existingItem->total_price = $existingItem->quantity * ($existingItem->purchase_price ?? 0);
-                if (isset($validated['image'])) {
-                    if ($existingItem->image && Storage::disk('public')->exists($existingItem->image)) {
-                        Storage::disk('public')->delete($existingItem->image);
-                    }
-                    $existingItem->image = $validated['image'];
-                }
-                $existingItem->save();
-                return response()->json([
-                    'message' => 'Quantity updated for existing item',
-                    'item' => $existingItem,
-                ], 200);
+
+
+
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'item_name' => 'required|string|max:255',
+        'part_number' => 'nullable|string|max:255',
+
+        'category_id' => 'nullable|exists:categories,id',
+        'brand_id'    => 'nullable|exists:brands,id',
+
+        'unit'        => 'required|string|max:50',
+        'location'    => 'nullable|string|max:255',
+
+        // Initial stock (goes to purchases)
+        'quantity' => 'required|integer|min:1',
+
+        // Purchase
+        'purchase_type' => 'required|in:with_receipt,without_receipt',
+        'purchase_price' => 'required|numeric|min:0',
+        'purchase_receipt_price' => 'nullable|numeric|min:0',
+
+        // Selling
+        'selling_price' => 'required|numeric|min:0',
+
+        // Branch
+        'branch_id' => 'required|exists:branches,id',
+
+        // Images
+        'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $userId = auth()->id();
+
+        /* =======================
+           ITEM CODE GENERATION
+        ======================= */
+        $lastCode = Item::max('item_code');
+        $newCode  = str_pad(((int) $lastCode) + 1, 4, '0', STR_PAD_LEFT);
+
+        /* =======================
+           CREATE ITEM
+        ======================= */
+        $item = Item::create([
+            'item_code'   => $newCode,
+            'item_name'   => $validated['item_name'],
+            'part_number' => $validated['part_number']
+                ?? 'PN-' . Str::upper(Str::random(8)),
+
+            'category_id' => $validated['category_id'] ?? null,
+            'brand_id'    => $validated['brand_id'] ?? null,
+
+            'unit'        => $validated['unit'],
+            'location'    => $validated['location'] ?? 'Warehouse',
+
+            'branch_id'   => $validated['branch_id'],
+            'created_by'  => $userId,
+        ]);
+
+        /* =======================
+           HANDLE IMAGES
+        ======================= */
+        $imagePaths = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $imagePaths[] = $file->store('items', 'public');
             }
         }
-$item = Item::create($validated);
-$qrData = json_encode([
-    'id' => $item->id,
-    'part_number' => $item->part_number,
-    'item_name' => $item->item_name,
-]);
-$qrFileName = 'qrcodes/item_'.$item->id.'.svg';
-$qrPath = storage_path('app/public/'.$qrFileName);
-QrCode::format('svg')
-    ->size(300)
-    ->margin(2)
-    ->generate($qrData, $qrPath);
-$item->qr_code = $qrFileName;
+
+    $item->images = empty($imagePaths)
+    ? json_encode(['items/default.jpg'])
+    : json_encode($imagePaths);
+
 $item->save();
-return response()->json([
-    'message' => 'Item added successfully',
-    'item' => $item,
-    'qr_url' => asset('storage/'.$item->qr_code),
-], 201);
+;
+
+        /* =======================
+           QR CODE
+        ======================= */
+        $qrFileName = 'qrcodes/item_' . $item->item_code . '.svg';
+        QrCode::format('svg')
+            ->size(300)
+            ->generate($item->item_code, storage_path('app/public/' . $qrFileName));
+
+        $item->qr_code = $qrFileName;
+        $item->save();
+
+        /* =======================
+           INITIAL PURCHASE (STOCK IN)
+        ======================= */
+        Purchasee::create([
+            'item_code'     => $item->item_code,
+            'quantity'      => $validated['quantity'],
+            'unit_price'    => $validated['purchase_price'],
+            'total_price'   => $validated['purchase_price'] * $validated['quantity'],
+            'purchase_type' => $validated['purchase_type'],
+            'receipt_price' => $validated['purchase_receipt_price'] ?? null,
+
+            'branch_id'     => $validated['branch_id'],
+            'created_by'    => $userId,
+        ]);
+
+        /* =======================
+           SELL CONFIG (OPTIONAL BASE PRICE)
+        ======================= */
+        Salee::create([
+            'item_code'   => $item->item_code,
+            'quantity'    => 0, // no stock out yet
+            'unit_price'  => $validated['selling_price'],
+            'total_price' => 0,
+
+            'branch_id'   => $validated['branch_id'],
+            'created_by'  => $userId,
+        ]);
+
+        DB::commit();
+
+        return response()->json([
+            'message' => 'Item added successfully',
+            'item'    => $item,
+            'qr_url'  => asset('storage/' . $item->qr_code),
+        ], 201);
+
+    } catch (\Throwable $e) {
+        DB::rollBack();
+
+        return response()->json([
+            'message' => 'Failed to add item',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
+
+
+
+
+
+
+
     public function getByPartNumber($part_number)
     {
         $item = Item::where('part_number', $part_number)->first();

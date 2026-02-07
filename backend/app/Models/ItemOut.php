@@ -12,7 +12,7 @@ class ItemOut extends Model
     protected $table = 'item_out'; // Specify table name
 
     protected $fillable = [
-        'item_id',
+        'item_code',
         'part_number',
         'description',
         'brand',

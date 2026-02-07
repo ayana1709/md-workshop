@@ -11,7 +11,8 @@ class CreateSaleItemsTable extends Migration
         Schema::create('sale_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sale_id')->constrained()->onDelete('cascade');
-            $table->foreignId('item_id')->constrained()->onDelete('cascade');
+          $table->string('item_code', 20);
+    $table->foreign('item_code')->references('item_code')->on('items')->onDelete('cascade');
             $table->string('item_name')->nullable();
             $table->string('part_number')->nullable();
             $table->string('brand')->nullable();

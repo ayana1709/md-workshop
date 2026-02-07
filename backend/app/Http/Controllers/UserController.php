@@ -46,7 +46,7 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
-            'department_id' => 'required|exists:departments,id',
+            'branch_id' => 'required|exists:branches,id',
         ]);
 
         $imageName = null;
@@ -64,7 +64,7 @@ class UserController extends Controller
             'status' => $request->status ?? 'active',
             'level' => $request->level,
             'profile_image' => $imageName,
-            'department_id' => $request->department_id,
+            'branch_id' => $request->branch_id,
         ]);
 
         $user->assignRole($request->role);
@@ -89,7 +89,7 @@ class UserController extends Controller
             'status' => 'nullable|in:active,inactive',
             'level' => 'nullable|integer|min:1',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png',
-            'department_id' => 'required|exists:departments,id',
+            'branch_id' => 'required|exists:branches,id',
         ]);
 
         // Handle Image Change
@@ -111,7 +111,7 @@ class UserController extends Controller
             'phone' => $request->phone,
             'status' => $request->status ?? $user->status,
             'level' => $request->level ?? $user->level,
-            'department_id' => $request->department_id,
+            'branch_id' => $request->branch_id,
         ]);
 
         $user->syncRoles([$request->role]);

@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Department extends Model
+class Branch extends Model
 {
     use HasFactory;
 
@@ -14,11 +13,15 @@ class Department extends Model
         'name',
         'description',
         'status',
-        ];
-
+    ];
 
     public function admins()
     {
         return $this->hasMany(Admin::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(Item::class, 'branch_id');
     }
 }

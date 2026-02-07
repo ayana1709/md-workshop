@@ -13,7 +13,6 @@ class Admin extends Authenticatable
     use HasApiTokens, HasRoles, Notifiable;
 
     protected $table = 'admins';
-
     protected $guard_name = 'web';
 
     protected $fillable = [
@@ -25,7 +24,7 @@ class Admin extends Authenticatable
         'status',
         'level',
         'profile_image',
-        'department_id',
+        'branch_id', // updated from department_id
     ];
 
     protected $hidden = [
@@ -33,8 +32,15 @@ class Admin extends Authenticatable
         'remember_token',
     ];
 
-    public function department(): BelongsTo
+    // User belongs to a branch
+    public function branch(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Branch::class);
+    }
+
+    // Check if admin is super/admin
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole('admin'); // adjust role name if different
     }
 }

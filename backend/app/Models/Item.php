@@ -4,46 +4,89 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Item extends Model
 {
     use HasFactory;
 
+    protected $primaryKey = 'item_code';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
     protected $fillable = [
+        'item_code',
         'item_name',
         'part_number',
-        'brand',
-        'type',
-        'quantity',
+        'category_id',
+        'brand_id',
+        'branch_id',
         'unit',
-        'purchase_price',
-        'selling_price',
-        'least_price',
-        'maximum_price',
-        'minimum_quantity',
         'low_quantity',
-        'manufacturer',
-        'shelf_number',
-        'manufacturing_date',
-        'unit_price',
-        'total_price',
+        'default_selling_price',
+        'last_purchase_price',
         'location',
-        'condition',
-        'image',
-        'qr_code'
+        'images',
+        'created_by',
+        'qr_code',
     ];
 
-    // In Item model
-    public function toArray()
+    protected $casts = [
+        'images' => 'array',
+    ];
+
+    /* ================= RELATIONSHIPS ================= */
+
+    public function category()
     {
-        $array = parent::toArray();
+        return $this->belongsTo(Category::class);
+    }
 
-        array_walk_recursive($array, function (&$value) {
-            if (is_string($value)) {
-                $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(Admin::class, 'created_by');
+    }
+
+    // Transactions
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class, 'item_code');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'item_code');
+    }
+
+    /* ================= AUTO CODE + QR ================= */
+
+    protected static function booted()
+    {
+        static::creating(function ($item) {
+
+            // 🔢 Generate item_code like 0001, 0002
+            if (!$item->item_code) {
+                $lastCode = self::orderBy('item_code', 'desc')->value('item_code');
+                $next = $lastCode ? intval($lastCode) + 1 : 1;
+                $item->item_code = str_pad($next, 4, '0', STR_PAD_LEFT);
             }
-        });
 
-        return $array;
+            // 📷 Generate QR
+            $item->qr_code = base64_encode(
+                QrCode::format('png')
+                    ->size(200)
+                    ->generate($item->item_code)
+            );
+        });
     }
 }

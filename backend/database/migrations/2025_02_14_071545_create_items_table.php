@@ -9,36 +9,55 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('items', function (Blueprint $table) {
-            $table->id();
+
+            // 🔑 Primary Key (string, not auto increment)
+            $table->string('item_code', 20)->primary();
+
+            // Basic info
             $table->string('item_name');
             $table->string('part_number')->nullable();
-            $table->string('brand')->nullable();
-            $table->integer('quantity')->default(0);
+
+            // Relations
+            $table->foreignId('category_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->foreignId('brand_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->foreignId('branch_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            // Stock info
             $table->string('unit')->nullable();
-            $table->decimal('purchase_price', 15, 2)->default(0);
-            $table->decimal('selling_price', 15, 2)->default(0);
-            $table->decimal('least_price', 15, 2)->default(0);
-            $table->decimal('maximum_price', 15, 2)->default(0);
-            $table->integer('minimum_quantity')->default(0);
             $table->integer('low_quantity')->default(0);
 
-            $table->string('shelf_number')->nullable();
+            // Optional cached prices (NOT transactional)
+            $table->decimal('default_selling_price', 15, 2)->nullable();
+            $table->decimal('last_purchase_price', 15, 2)->nullable();
 
-            $table->string('type')->nullable();
-            $table->string('manufacturer')->nullable();
-            $table->date('manufacturing_date')->nullable();
-            $table->decimal('unit_price', 15, 2)->default(0);
-            $table->decimal('total_price', 15, 2)->default(0);
+            // Extras
             $table->string('location')->nullable();
-            $table->enum('condition', ['New', 'Used'])->default('New');
-            $table->string('image')->nullable();
-            $table->timestamps();
+            $table->string('qr_code')->nullable();
+            $table->json('images')->nullable();
 
+            // Meta
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('admins')
+                ->nullOnDelete();
+
+            $table->timestamps();
             $table->engine = 'InnoDB';
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('items');
     }

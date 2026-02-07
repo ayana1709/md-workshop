@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('admins', function (Blueprint $table) {
-            $table->foreign('department_id')->references('id')->on('departments');
-        });
+      Schema::create('branches', function (Blueprint $table) {
+    $table->id(); // BIGINT UNSIGNED (this matters)
+    $table->string('name')->unique();
+    $table->text('description')->nullable();
+    $table->enum('status', ['active', 'inactive'])->default('active');
+    $table->timestamps();
+});
+
     }
 
     /**
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('admins_and_departments', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('branches');
     }
 };

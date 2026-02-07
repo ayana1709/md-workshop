@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\BolloController;
+use App\Http\Controllers\BranchController;
 use App\Http\Controllers\CompanySettingController;
 use App\Http\Controllers\DailyProgressController;
 use App\Http\Controllers\DepartmentController;
@@ -42,6 +43,8 @@ use App\Models\ItemOut;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MetaController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -60,8 +63,8 @@ use Illuminate\Support\Facades\Route;
 Route::apiResource('store-issues', StoreIssueController::class);
 Route::apiResource('goods-requests', GoodsRequestController::class);
 Route::post('/goods-requests/upload-image', [GoodsRequestController::class, 'upload']);
-Route::apiResource('/departments', DepartmentController::class);
-Route::get('departments/{department}/users', [DepartmentController::class, 'users']);
+Route::apiResource('/departments', BranchController::class);
+Route::get('departments/{department}/users', [BranchController::class, 'users']);
 
 Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
@@ -407,3 +410,16 @@ Route::get('/role-permissions/{roleId}', [PermissionController::class, 'getByRol
 
 
 Route::get('/items/by-qr/{code}', [ItemController::class, 'findByQr']);
+
+
+// Categories
+Route::get('/categories', [MetaController::class, 'categoriesIndex']);
+Route::post('/categories', [MetaController::class, 'categoriesStore']);
+Route::put('/categories/{category}', [MetaController::class, 'categoriesUpdate']);
+Route::delete('/categories/{category}', [MetaController::class, 'categoriesDestroy']);
+
+// Brands
+Route::get('/brands', [MetaController::class, 'brandsIndex']);
+Route::post('/brands', [MetaController::class, 'brandsStore']);
+Route::put('/brands/{brand}', [MetaController::class, 'brandsUpdate']);
+Route::delete('/brands/{brand}', [MetaController::class, 'brandsDestroy']);

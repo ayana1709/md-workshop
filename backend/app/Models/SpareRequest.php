@@ -17,7 +17,7 @@ class SpareRequest extends Model
         'sparedetails', // ✅ Contains part_number, requested_quantity, unit_price, and status
         'level',
         'status', // ✅ Overall status of the request
-        'item_id', // ✅ Foreign key linking to items table
+        'item_code', // ✅ Foreign key linking to items table
     ];
 
     protected $casts = [
@@ -28,6 +28,6 @@ class SpareRequest extends Model
     // ✅ Relationship with the `items` table
     public function item()
     {
-        return $this->belongsTo(Item::class, 'item_id');
+        return $this->belongsTo(Item::class, 'item_code');
     }
 }
