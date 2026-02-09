@@ -40,6 +40,8 @@ public function index(Request $request)
 
     return response()->json($items);
 }
+
+
 public function store(Request $request)
 {
     $validated = $request->validate([
@@ -50,8 +52,6 @@ public function store(Request $request)
         'unit'        => 'required|string|max:50',
         'location'    => 'nullable|string|max:255',
         'initial_stock' => 'required|integer|min:0',
-        'quantity' => 'nullable|integer|min:0',
-
         'low_stock' => 'nullable|integer|min:0',
         'purchase_type' => 'required|in:with_receipt,without_receipt',
         'purchase_price' => 'nullable|numeric|min:0',
@@ -59,18 +59,21 @@ public function store(Request $request)
         'selling_price' => 'nullable|numeric|min:0',
         'branch_id' => 'required|exists:branches,id',
         'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+        'vat_amount' => 'nullable|numeric|min:0',
+        'total_with_vat' => 'nullable|numeric|min:0',
+        'receipt_number' => 'nullable|string|max:100',
     ]);
 
     DB::beginTransaction();
 
     try {
-        $userId = auth()->id();
+        $userId = auth()->id() ?? 1;
 
-        // ITEM CODE
+        // Generate new item code
         $lastCode = Item::max('item_code');
-        $newCode  = str_pad(((int) $lastCode) + 1, 4, '0', STR_PAD_LEFT);
+        $newCode = str_pad(((int)$lastCode) + 1, 4, '0', STR_PAD_LEFT);
 
-        // CREATE ITEM
+        // Create Item
         $item = Item::create([
             'item_code'   => $newCode,
             'item_name'   => $validated['item_name'],
@@ -79,13 +82,13 @@ public function store(Request $request)
             'brand_id'    => $validated['brand_id'] ?? null,
             'unit'        => $validated['unit'],
             'location'    => $validated['location'] ?? 'Warehouse',
-            'initial_stock'=>$validated['initial_stock']?? null,
-            'low_stock' => $validated['low_stock'] ?? null,
+            'initial_stock' => $validated['initial_stock'],
+            'low_stock'   => $validated['low_stock'] ?? null,
             'branch_id'   => $validated['branch_id'],
             'created_by'  => $userId,
         ]);
 
-        // HANDLE IMAGES
+        // Handle images
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
@@ -95,84 +98,85 @@ public function store(Request $request)
         $item->images = json_encode(empty($imagePaths) ? ['items/default.jpg'] : $imagePaths);
         $item->save();
 
-        // ENSURE QR FOLDER EXISTS
+        // Ensure QR code folder exists
         $qrDir = storage_path('app/public/qrcodes');
         if (!file_exists($qrDir)) {
-            mkdir($qrDir, 0777, true); // recursive folder creation
+            mkdir($qrDir, 0777, true);
         }
 
-        // QR CODE
+        // Generate QR code
         $qrFileName = 'item_' . $item->item_code . '.svg';
-        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-            ->size(300)
-            ->generate($item->item_code, $qrDir . '/' . $qrFileName);
-
+        QrCode::format('svg')->size(300)->generate($item->item_code, $qrDir . '/' . $qrFileName);
         $item->qr_code = 'qrcodes/' . $qrFileName;
         $item->save();
 
-// Determine purchase quantity
-$quantity = $validated['initial_stock'] ?? 0;
+        // INITIAL PURCHASE
+        $quantity = $validated['initial_stock'] ?? 0;
+        $purchasePrice = $validated['purchase_price'] ?? 0;
 
-// INITIAL PURCHASE
-$purchase = Purchasee::create([
-    'item_code'           => $item->item_code,
-    'quantity'            => $quantity,
+        $purchase = Purchasee::create([
+            'item_code' => $item->item_code,
+            'quantity' => $quantity,
+            'actual_unit_price' => $purchasePrice,
+            'actual_total_price' => $purchasePrice * $quantity,
+            'purchase_type' => $validated['purchase_type'],
+            'branch_id' => $validated['branch_id'],
+            'created_by' => $userId,
+        ]);
 
-    // REAL purchase prices
-    'actual_unit_price'   => $validated['purchase_price'] ?? 0,
-    'actual_total_price'  => $validated['purchase_price'] * $quantity,
+        // PURCHASE RECEIPT (if with_receipt)
+    // PURCHASE RECEIPT (if with_receipt)
+if ($purchase->purchase_type === 'with_receipt' && !empty($validated['purchase_receipt_price'])) {
 
-    'purchase_type'       => $validated['purchase_type'],
-    'branch_id'           => $validated['branch_id'],
-    'created_by'          => $userId,
-]);
-if (
-    $validated['purchase_type'] === 'with_receipt'
-    && !empty($validated['purchase_receipt_price'])
-) {
+    $receiptUnitPrice  = $validated['purchase_receipt_price'];
+    $receiptTotalPrice = $receiptUnitPrice * $quantity;
+
+    // ✅ VAT = 15% of receipt total
+    $vatPaid = round($receiptTotalPrice * 0.15, 2);
+
     $purchase->receipt()->create([
-        'item_code'            => $item->item_code,
-
-        'receipt_unit_price'   => $validated['purchase_receipt_price'],
-        'receipt_total_price'  => $validated['purchase_receipt_price'] * $quantity,
-
-        'receipt_date'         => now(),
-        'branch_id'            => $validated['branch_id'],
-        'created_by'           => $userId,
+        'receipt_unit_price'  => $receiptUnitPrice,
+        'receipt_total_price' => $receiptTotalPrice,
+        'vat_paid'            => $vatPaid,
+        'receipt_date'        => now(),
+        'branch_id'           => $validated['branch_id'],
+        'created_by'          => $userId,
     ]);
 }
 
+
         // SELL CONFIG
-Salee::create([
-    'item_code'           => $item->item_code,
-    'quantity'            => 0,
-
-    // REAL selling prices
-    'actual_unit_price'   => $validated['selling_price']?? 0,
-    'actual_total_price'  => 0,
-
-    'branch_id'           => $validated['branch_id'],
-    'created_by'          => $userId,
-]);
-
+        Salee::create([
+            'item_code' => $item->item_code,
+            'quantity' => 0,
+            'actual_unit_price' => $validated['selling_price'] ?? 0,
+            'actual_total_price' => 0,
+            'branch_id' => $validated['branch_id'],
+            'created_by' => $userId,
+        ]);
 
         DB::commit();
 
         return response()->json([
             'message' => 'Item added successfully',
-            'item'    => $item,
-            'qr_url'  => asset('storage/' . $item->qr_code),
+            'item' => $item,
+            'qr_url' => asset('storage/' . $item->qr_code),
         ], 201);
 
     } catch (\Throwable $e) {
         DB::rollBack();
-
         return response()->json([
             'message' => 'Failed to add item',
-            'error'   => $e->getMessage(),
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
+
+
+
+
+
+
     public function getByPartNumber($part_number)
     {
         $item = Item::where('part_number', $part_number)->first();

@@ -10,29 +10,17 @@ class Customer extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'customerType',
-        'telephone',
-        'carModels',
+        'full_name',
+        'phone',
+        'address',
+        'email',
+        'notes',
+        'status',
     ];
 
-    protected $casts = [
-        'carModels' => 'array',
-    ];
-
-    // Define the relationship with the Vehicle model
-    public function vehicles()
+    // Relationship with sales
+    public function sales()
     {
-        return $this->hasMany(Vehicle::class);
-    }
-
-    public function Bolo()
-    {
-        return $this->hasMany(Bolo::class);
-    }
-
-    public function Inspection()
-    {
-        return $this->hasMany(Inspection::class);
+        return $this->hasMany(Sale::class);
     }
 }

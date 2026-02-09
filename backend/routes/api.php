@@ -48,6 +48,7 @@ use App\Http\Controllers\PurchaseeController;
 
 use App\Http\Controllers\SaleeController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\ReportsController;
 
 
 
@@ -435,3 +436,4 @@ Route::apiResource('salee', SaleeController::class)
     ->parameters(['salee' => 'item_code']);
 Route::apiResource('receipt', ReceiptController::class)
     ->parameters(['receipt' => 'item_code']);
+Route::get('/report/items-vat', [ReportsController::class, 'itemVatReport']);

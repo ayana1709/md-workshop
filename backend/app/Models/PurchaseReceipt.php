@@ -1,38 +1,28 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Purchasee extends Model
+class PurchaseReceipt extends Model
 {
     use HasFactory;
 
-     protected $fillable = [
-        'item_code',
-        'quantity',
-        'actual_unit_price',
-        'actual_total_price',
-        'purchase_type',
-        'supplier_name',
+    protected $fillable = [
+        'purchasee_id',
+        'receipt_unit_price',
+        'receipt_total_price',
+        'vat_paid', // new column
+        'receipt_date',
         'branch_id',
         'created_by',
     ];
 
-   
-
-    public function item()
+    public function purchase()
     {
-        return $this->belongsTo(Item::class, 'item_code');
+        return $this->belongsTo(Purchasee::class, 'purchasee_id');
     }
 
-public function receipt()
-{
-    return $this->hasOne(PurchaseReceipt::class, 'purchasee_id');
-}
-
-    
     public function branch()
     {
         return $this->belongsTo(Branch::class);

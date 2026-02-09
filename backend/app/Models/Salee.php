@@ -12,30 +12,41 @@ class Salee extends Model
     protected $fillable = [
         'item_code',
         'quantity',
-
-        // REAL prices
         'actual_unit_price',
         'actual_total_price',
-
         'sale_type',
         'branch_id',
         'created_by',
+        'customer_id', // link customer if any
     ];
 
     public function item()
     {
-        return $this->belongsTo(Item::class, 'item_code');
+        return $this->belongsTo(Item::class, 'item_code', 'item_code');
     }
 
-    public function receipt()
-    {
-        return $this->morphOne(Receipt::class, 'receiptable');
-    }    public function branch()
+    public function branch()
     {
         return $this->belongsTo(Branch::class);
     }
 
+    public function receipt()
+    {
+        return $this->hasOne(SaleReceipt::class, 'salee_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Paymentt::class, 'sale_id');
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+    public function creator()
+{
+    return $this->belongsTo(Admin::class, 'created_by');
 }
 
-
-
+}
