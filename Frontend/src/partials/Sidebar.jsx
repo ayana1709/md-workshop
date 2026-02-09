@@ -551,7 +551,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/add-too-sale"
+                                to="/create-receipt"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -560,7 +560,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                  Add recipt
+                                   Create Receipt
                                 </span>
                               </NavLink>
                             </li>
@@ -568,7 +568,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/sales"
+                                to="/manage-receipt"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive

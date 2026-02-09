@@ -12,22 +12,28 @@ class Purchasee extends Model
     protected $fillable = [
         'item_code',
         'quantity',
-        'unit_price',
-        'total_price',
+
+        // REAL prices
+        'actual_unit_price',
+        'actual_total_price',
+
         'purchase_type',
-        'receipt_price',
         'supplier_name',
-        'receipt_number',
         'branch_id',
         'created_by',
     ];
-
-    /* ============ RELATIONS ============ */
 
     public function item()
     {
         return $this->belongsTo(Item::class, 'item_code');
     }
+
+    public function receipt()
+    {
+        return $this->morphOne(Receipt::class, 'receiptable');
+    }
+
+
 
     public function branch()
     {

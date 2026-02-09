@@ -68,7 +68,10 @@ class Item extends Model
     }
 
     /* ================= AUTO CODE + QR ================= */
-
+public function receipts()
+    {
+        return $this->hasMany(Receipt::class, 'item_code');
+    }
     protected static function booted()
     {
         static::creating(function ($item) {

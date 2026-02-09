@@ -9,43 +9,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('purchasees', function (Blueprint $table) {
+    $table->id();
 
-            $table->id();
+    $table->string('item_code', 20);
+    $table->foreign('item_code')
+        ->references('item_code')
+        ->on('items')
+        ->cascadeOnDelete();
 
-            // 🔗 Item
-            $table->string('item_code', 20);
-            $table->foreign('item_code')
-                ->references('item_code')
-                ->on('items')
-                ->cascadeOnDelete();
+    $table->integer('quantity');
 
-            // Purchase details
-            $table->integer('quantity');
-            $table->decimal('unit_price', 15, 2);
-            $table->decimal('total_price', 15, 2);
+    // REAL purchase prices
+    $table->decimal('actual_unit_price', 15, 2)->default(0);
+    $table->decimal('actual_total_price', 15, 2)->default(0);
 
-            // Receipt info
-            $table->enum('purchase_type', ['with_receipt', 'without_receipt'])
-                ->default('without_receipt');
+    $table->enum('purchase_type', ['with_receipt', 'without_receipt'])
+        ->default('without_receipt');
 
-            $table->decimal('receipt_price', 15, 2)->nullable();
-            $table->string('supplier_name')->nullable();
-            $table->string('receipt_number')->nullable();
+    $table->string('supplier_name')->nullable();
 
-            // Branch
-            $table->foreignId('branch_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+    $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
+    $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();
 
-            // Meta
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('admins')
-                ->nullOnDelete();
+    $table->timestamps();
+});
 
-            $table->timestamps();
-        });
     }
 
     public function down(): void

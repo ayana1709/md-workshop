@@ -13,13 +13,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 class ItemController extends Controller
 {
-
-
-
 
 public function index(Request $request)
 {
@@ -44,11 +40,6 @@ public function index(Request $request)
 
     return response()->json($items);
 }
-
-
-
-
-
 public function store(Request $request)
 {
     $validated = $request->validate([
@@ -63,9 +54,9 @@ public function store(Request $request)
 
         'low_stock' => 'nullable|integer|min:0',
         'purchase_type' => 'required|in:with_receipt,without_receipt',
-        'purchase_price' => 'required|numeric|min:0',
+        'purchase_price' => 'nullable|numeric|min:0',
         'purchase_receipt_price' => 'nullable|numeric|min:0',
-        'selling_price' => 'required|numeric|min:0',
+        'selling_price' => 'nullable|numeric|min:0',
         'branch_id' => 'required|exists:branches,id',
         'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
     ]);
@@ -89,7 +80,7 @@ public function store(Request $request)
             'unit'        => $validated['unit'],
             'location'    => $validated['location'] ?? 'Warehouse',
             'initial_stock'=>$validated['initial_stock']?? null,
-            'low_stock' => $validated['low_stock'] ?? null, 
+            'low_stock' => $validated['low_stock'] ?? null,
             'branch_id'   => $validated['branch_id'],
             'created_by'  => $userId,
         ]);
@@ -123,26 +114,47 @@ public function store(Request $request)
 $quantity = $validated['initial_stock'] ?? 0;
 
 // INITIAL PURCHASE
-Purchasee::create([
-    'item_code'     => $item->item_code,
-    'quantity'      => $quantity,
-    'unit_price'    => $validated['purchase_price'],
-    'total_price'   => $validated['purchase_price'] * $quantity,
-    'purchase_type' => $validated['purchase_type'],
-    'receipt_price' => $validated['purchase_receipt_price'] ?? null,
-    'branch_id'     => $validated['branch_id'],
-    'created_by'    => $userId,
+$purchase = Purchasee::create([
+    'item_code'           => $item->item_code,
+    'quantity'            => $quantity,
+
+    // REAL purchase prices
+    'actual_unit_price'   => $validated['purchase_price'] ?? 0,
+    'actual_total_price'  => $validated['purchase_price'] * $quantity,
+
+    'purchase_type'       => $validated['purchase_type'],
+    'branch_id'           => $validated['branch_id'],
+    'created_by'          => $userId,
 ]);
+if (
+    $validated['purchase_type'] === 'with_receipt'
+    && !empty($validated['purchase_receipt_price'])
+) {
+    $purchase->receipt()->create([
+        'item_code'            => $item->item_code,
+
+        'receipt_unit_price'   => $validated['purchase_receipt_price'],
+        'receipt_total_price'  => $validated['purchase_receipt_price'] * $quantity,
+
+        'receipt_date'         => now(),
+        'branch_id'            => $validated['branch_id'],
+        'created_by'           => $userId,
+    ]);
+}
 
         // SELL CONFIG
-        Salee::create([
-            'item_code'   => $item->item_code,
-            'quantity'    => 0,
-            'unit_price'  => $validated['selling_price'],
-            'total_price' => 0,
-            'branch_id'   => $validated['branch_id'],
-            'created_by'  => $userId,
-        ]);
+Salee::create([
+    'item_code'           => $item->item_code,
+    'quantity'            => 0,
+
+    // REAL selling prices
+    'actual_unit_price'   => $validated['selling_price']?? 0,
+    'actual_total_price'  => 0,
+
+    'branch_id'           => $validated['branch_id'],
+    'created_by'          => $userId,
+]);
+
 
         DB::commit();
 
@@ -161,15 +173,6 @@ Purchasee::create([
         ], 500);
     }
 }
-
-
-
-
-
-
-
-
-
     public function getByPartNumber($part_number)
     {
         $item = Item::where('part_number', $part_number)->first();
@@ -285,9 +288,7 @@ Purchasee::create([
         $request->validate([
             'quantity' => 'required|integer|min:1',
         ]);
-
         $item = Item::findOrFail($id);
-
         if ($request->quantity > $item->quantity) {
             return response()->json(['error' => 'Not enough stock available'], 400);
         }
@@ -535,4 +536,14 @@ Purchasee::create([
             ], 400);
         }
     }
+
+
+
+
+
+
+
+
+
+
 }

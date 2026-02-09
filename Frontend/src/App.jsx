@@ -159,6 +159,8 @@ import GoodsRequestManager from "./components/GoodsRequest/GoodsRequestManager";
 import GoodsRequestPrint from "./components/GoodsRequest/GoodsRequestPrint";
 import DepartmentList from "./components/Role/DepartmentList";
 import DepartmentForm from "./components/Role/DepartmentForm";
+import CreateReceipt from "./components/Receipt/CreateReceipt";
+import ManageReceipt from "./components/Receipt/ManageReceipt";
 
 function App() {
   const location = useLocation();
@@ -438,6 +440,11 @@ function App() {
         <Route path="/departments" element={<DepartmentList />}/>
         <Route path="/departments/create" element={<DepartmentForm />}/>
         <Route path="/departments/edit/:id" element={<DepartmentForm />}/>
+        <Route path="/create-receipt" element={<CreateReceipt />}/>
+        <Route path="/manage-receipt" element={<ManageReceipt />}/>
+
+
+
         
       </Routes>
     </>
@@ -445,3 +452,4 @@ function App() {
 }
 
 export default App;
+

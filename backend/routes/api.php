@@ -44,6 +44,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MetaController;
+use App\Http\Controllers\PurchaseeController;
+
+use App\Http\Controllers\SaleeController;
+use App\Http\Controllers\ReceiptController;
+
+
 
 
 /*
@@ -423,3 +429,9 @@ Route::get('/brands', [MetaController::class, 'brandsIndex']);
 Route::post('/brands', [MetaController::class, 'brandsStore']);
 Route::put('/brands/{brand}', [MetaController::class, 'brandsUpdate']);
 Route::delete('/brands/{brand}', [MetaController::class, 'brandsDestroy']);
+Route::apiResource('purchasees', PurchaseeController::class)
+    ->parameters(['purchasees' => 'item_code']);
+Route::apiResource('salee', SaleeController::class)
+    ->parameters(['salee' => 'item_code']);
+Route::apiResource('receipt', ReceiptController::class)
+    ->parameters(['receipt' => 'item_code']);

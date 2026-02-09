@@ -27,6 +27,8 @@ import { Search, X } from "lucide-react";
 import EditItemModal from "./EditItemModal";
 import Swal from "sweetalert2";
 import api from "@/api";
+import PurchaseSellConfigModal from "./PurchaseSellConfigModal";
+
 import { useStores } from "@/contexts/storeContext";
 
 export const columns = ({
@@ -41,6 +43,7 @@ export const columns = ({
   setIsItemModalOpen,
   setSelectedRepairId,
 }) => [
+  
   {
     id: "select",
     header: ({ table }) => (
@@ -206,11 +209,12 @@ export const columns = ({
     header: "Actions",
     cell: ({ row }) => {
       const [open, setOpen] = useState(false);
-      const [isViewOpen, setIsViewOpen] = useState(false);
-      const [isEditOpen, setIsEditOpen] = useState(false);
-      const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-      const [selectedItem, setSelectedItem] = useState(null);
-      const { fetchItems } = useStores();
+const [isViewOpen, setIsViewOpen] = useState(false);
+const [isEditOpen, setIsEditOpen] = useState(false);
+const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+const [isConfigOpen, setIsConfigOpen] = useState(false);
+const [selectedItem, setSelectedItem] = useState(null);
+
 
       // Print QR with user inputs for size and quantity
       const printQr = async () => {
@@ -351,6 +355,18 @@ export const columns = ({
               >
                 ✏️ Edit
               </Button>
+{/* Purchase & Sell Config */}
+<Button
+  variant="ghost"
+  className="w-full justify-start text-green-700"
+  onClick={() => {
+    setSelectedItem(row.original);
+    setIsConfigOpen(true);
+    setOpen(false);
+  }}
+>
+  ⚙️ Purchase & Sell Config
+</Button>
 
               {/* Delete */}
               <Button
@@ -434,6 +450,13 @@ export const columns = ({
               }}
             />
           )}
+{isConfigOpen && selectedItem && (
+  <PurchaseSellConfigModal
+    open={isConfigOpen}
+    setOpen={setIsConfigOpen}
+    item={selectedItem}
+  />
+)}
 
           {/* History Modal */}
           {isHistoryOpen && (
