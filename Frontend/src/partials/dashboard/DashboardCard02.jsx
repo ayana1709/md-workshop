@@ -52,13 +52,13 @@ function DashboardCard02() {
             {
               stop: 0,
               color: `rgba(${hexToRGB(
-                tailwindConfig().theme.colors.violet[500]
+                tailwindConfig().theme.colors.violet[500],
               )}, 0)`,
             },
             {
               stop: 1,
               color: `rgba(${hexToRGB(
-                tailwindConfig().theme.colors.violet[500]
+                tailwindConfig().theme.colors.violet[500],
               )}, 0.2)`,
             },
           ]);
@@ -81,16 +81,16 @@ function DashboardCard02() {
           154, 273, 191, 191, 126, 263, 349, 252, 423, 622, 470, 532,
         ],
         borderColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
+          tailwindConfig().theme.colors.gray[500],
         )}, 0.25)`,
         borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 3,
         pointBackgroundColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
+          tailwindConfig().theme.colors.gray[500],
         )}, 0.25)`,
         pointHoverBackgroundColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
+          tailwindConfig().theme.colors.gray[500],
         )}, 0.25)`,
         pointBorderWidth: 0,
         pointHoverBorderWidth: 0,
@@ -141,10 +141,10 @@ function DashboardCard02() {
         </div>
         <div className="flex items-start">
           <div className="text-3xl font-bold text-gray-800 dark:text-gray-100 mr-2">
-            17,489
+            0
           </div>
           <div className="text-sm font-medium text-red-700 px-1.5 bg-red-500/20 rounded-full">
-            -14%
+            0%
           </div>
         </div>
       </div>

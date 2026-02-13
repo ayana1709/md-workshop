@@ -2,201 +2,221 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
 use App\Models\Salee;
-use App\Models\SaleReceipt;
+use App\Models\SaleItem;
 use App\Models\Item;
+use App\Models\Customer;
+use App\Models\SaleReceipt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class SaleeController extends Controller
 {
-    /**
-     * List all sales with all relations
-     */
+    // GET /salee
     public function index()
     {
-        $sales = Salee::with([
-            'item',
-            'branch',
-            'receipt',
-            'payments',
-            'customer',
-            'creator'
-        ])->get();
-
+        $sales = Salee::with(['items', 'customer', 'branch', 'creator', 'receipt'])->get();
         return response()->json($sales);
     }
-
-    /**
-     * Store a new sale
-     */
-   public function store(Request $request)
+// GET /salee/with-receipt
+public function withReceiptSales()
 {
-    $validated = $request->validate([
-        'item_code'     => 'required|exists:items,item_code',
-        'quantity'      => 'required|integer|min:1',
-        'actual_unit_price' => 'required|numeric|min:0',
-        'sale_type'     => 'required|in:with_receipt,without_receipt',
-        'branch_id'     => 'required|exists:branches,id',
+    // Get only sales with type 'with_receipt'
+    $sales = Salee::with([
+        'items',       // Sale items
+        'customer',    // Customer info
+        'branch',      // Branch info
+        'creator',     // Admin/creator info
+        'receipt'      // Receipt info
+    ])
+    ->where('sale_type', 'with_receipt')
+    ->get();
 
-        // customer info always optional
+    return response()->json($sales);
+}
+
+
+    // GET /salee/{id}
+    public function show(Salee $sale)
+    {
+        return response()->json($sale->load(['items', 'customer', 'branch', 'creator']));
+    }
+
+    // POST /salee
+public function store(Request $request)
+{
+    // --------------------------
+    // Parse items JSON if it's a string (from FormData)
+    // --------------------------
+    if (is_string($request->items)) {
+        $request->merge([
+            'items' => json_decode($request->items, true)
+        ]);
+    }
+
+    $validated = $request->validate([
+        'sale_type' => 'required|in:with_receipt,without_receipt',
+        'branch_id' => 'required|exists:branches,id',
         'customer_id'   => 'nullable|exists:customers,id',
         'customer_name' => 'nullable|string',
         'customer_phone'=> 'nullable|string',
         'customer_address'=> 'nullable|string',
+        'items' => 'required|array|min:1',
+        'items.*.item_code' => 'required|exists:items,item_code',
+        'items.*.quantity' => 'required|integer|min:1',
+        'items.*.unit_price' => 'required|numeric|min:0',
+        'items.*.vat_percent' => 'nullable|numeric|min:0|max:100',
 
-        // payment info
-        'payments'      => 'nullable|array',
-        'payments.*.amount' => 'required_with:payments|numeric|min:0',
-        'payments.*.payment_method' => 'required_with:payments|string',
-        'payments.*.payment_reference' => 'nullable|string',
+        // Optional receipt overrides
+        'receipt_unit_price' => 'nullable|numeric|min:0',
+        'receipt_total_price' => 'nullable|numeric|min:0',
+        'vat_collected' => 'nullable|numeric|min:0',
+        'payment_type' => 'nullable|in:cash,credit,card',
+        'paid_amount' => 'nullable|numeric|min:0',
+
+        // Receipt images
+        'receipt_images.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240', // max 10MB
     ]);
-
-    $item = Item::where('item_code', $validated['item_code'])->first();
-
-    if ($item->initial_stock < $validated['quantity']) {
-        return response()->json(['message' => 'Not enough stock'], 400);
-    }
 
     DB::beginTransaction();
 
     try {
-        // Create customer if not selected
+        // --------------------------
+        // CUSTOMER CREATION
+        // --------------------------
         $customerId = $validated['customer_id'] ?? null;
-        if (!$customerId && isset($validated['customer_name'])) {
+        if (!$customerId && !empty($validated['customer_name'])) {
             $customer = Customer::create([
                 'full_name' => $validated['customer_name'],
-                'phone'     => $validated['customer_phone'] ?? null,
-                'address'   => $validated['customer_address'] ?? null,
+                'phone' => $validated['customer_phone'] ?? null,
+                'address' => $validated['customer_address'] ?? null,
             ]);
             $customerId = $customer->id;
         }
 
-        // Create Sale
+        // --------------------------
+        // CREATE SALE
+        // --------------------------
         $sale = Salee::create([
-            'item_code' => $item->item_code,
-            'quantity' => $validated['quantity'],
-            'actual_unit_price' => $validated['actual_unit_price'],
-            'actual_total_price' => $validated['quantity'] * $validated['actual_unit_price'],
-            'sale_type' => in_array($validated['sale_type'], ['with_receipt','without_receipt']) ? $validated['sale_type'] : 'cash',
+            'sale_type' => $validated['sale_type'],
             'branch_id' => $validated['branch_id'],
             'created_by' => auth()->id() ?? 1,
             'customer_id' => $customerId,
+            'subtotal' => 0,
+            'vat_amount' => 0,
+            'grand_total' => 0,
         ]);
 
-        // Decrease stock
-        $item->decrement('initial_stock', $validated['quantity']);
+        $subtotal = 0;
+        $totalVat = 0;
 
-        // Sale Receipt only if with_receipt
-        if ($validated['sale_type'] === 'with_receipt') {
-            $receiptTotal = $validated['quantity'] * $validated['actual_unit_price'];
-            $vatCollected = round($receiptTotal * 0.15, 2);
+        // --------------------------
+        // LOOP ITEMS
+        // --------------------------
+        foreach ($validated['items'] as $it) {
+            $item = Item::where('item_code', $it['item_code'])->first();
+            if ($item->initial_stock < $it['quantity']) {
+                DB::rollBack();
+                return response()->json([
+                    'message' => 'Not enough stock for ' . $it['item_code']
+                ], 400);
+            }
 
-            $sale->receipt()->create([
-                'receipt_unit_price'  => $validated['actual_unit_price'],
-                'receipt_total_price' => $receiptTotal,
-                'vat_collected'       => $vatCollected,
-                'receipt_date'        => now(),
-                'branch_id'           => $validated['branch_id'],
-                'created_by'          => auth()->id() ?? 1,
-                // customer info for receipt is optional
-                'customer_name'       => $validated['customer_name'] ?? null,
-                'customer_phone'      => $validated['customer_phone'] ?? null,
-                'customer_address'    => $validated['customer_address'] ?? null,
+            $item->decrement('initial_stock', $it['quantity']);
+
+            $itemTotal = $it['quantity'] * $it['unit_price'];
+            $vatAmount = ($itemTotal * ($it['vat_percent'] ?? 0)) / 100;
+
+            $subtotal += $itemTotal;
+            $totalVat += $vatAmount;
+
+            SaleItem::create([
+                'sale_id' => $sale->id,
+                'item_code' => $it['item_code'],
+                'quantity' => $it['quantity'],
+                'unit_price' => $it['unit_price'],
+                'total_price' => $itemTotal,
+                'vat_percent' => $it['vat_percent'] ?? 0,
             ]);
         }
 
-        // Payments
-        if (isset($validated['payments'])) {
-            foreach ($validated['payments'] as $p) {
-                $sale->payments()->create([
-                    'amount' => $p['amount'],
-                    'payment_method' => $p['payment_method'],
-                    'payment_reference' => $p['payment_reference'] ?? null,
-                    'paid_at' => now(),
-                ]);
+        // --------------------------
+        // UPDATE SALE TOTALS
+        // --------------------------
+        $sale->subtotal = $subtotal;
+        $sale->vat_amount = $totalVat;
+        $sale->grand_total = $subtotal + $totalVat;
+        $sale->save();
+
+        // --------------------------
+        // CREATE RECEIPT IF APPLICABLE
+        // --------------------------
+        if ($sale->sale_type === 'with_receipt') {
+            $receipt = new SaleReceipt([
+                'salee_id' => $sale->id,
+                'receipt_unit_price' => $validated['receipt_unit_price'] ?? $sale->grand_total,
+                'receipt_total_price' => $validated['receipt_total_price'] ?? $sale->grand_total,
+                'vat_collected' => $validated['vat_collected'] ?? $totalVat,
+                'receipt_date' => now(),
+                'customer_name' => $validated['customer_name'] ?? $sale->customer->full_name ?? null,
+                'customer_phone' => $validated['customer_phone'] ?? $sale->customer->phone ?? null,
+                'payment_type' => $validated['payment_type'] ?? 'cash',
+                'paid_amount' => $validated['paid_amount'] ?? $sale->grand_total,
+                'branch_id' => $sale->branch_id,
+                'created_by' => auth()->id() ?? 1,
+                'images' => [], // Initialize empty array
+            ]);
+
+            // --------------------------
+            // HANDLE RECEIPT IMAGES
+            // --------------------------
+            if ($request->hasFile('receipt_images')) {
+                $images = [];
+                foreach ($request->file('receipt_images') as $file) {
+                    $images[] = $file->store('receipt_images', 'public');
+                }
+                $receipt->images = $images;
             }
+
+            $receipt->save();
         }
 
         DB::commit();
 
-        return response()->json([
-            'message' => 'Sale completed successfully',
-            'sale' => $sale->load('receipt','payments','item','customer','branch','creator'),
-        ], 201);
+        return response()->json(
+            $sale->load('items','customer','branch','creator','receipt'),
+            201
+        );
 
     } catch (\Throwable $e) {
         DB::rollBack();
         return response()->json([
-            'message' => 'Failed to record sale',
-            'error' => $e->getMessage(),
+            'message' => 'Failed',
+            'error' => $e->getMessage()
         ], 500);
     }
 }
 
 
-    /**
-     * Show a single sale by ID
-     */
-    public function show($id)
+
+
+    // PUT /salee/{id}
+    public function update(Request $request, Salee $sale)
     {
-        $sale = Salee::with([
-            'item',
-            'branch',
-            'receipt',
-            'payments',
-            'customer',
-            'creator'
-        ])->find($id);
-
-        if (!$sale) {
-            return response()->json(['message' => 'Sale not found'], 404);
-        }
-
-        return response()->json($sale);
-    }
-
-    /**
-     * Update a sale (only quantity and price for simplicity)
-     */
-    public function update(Request $request, $id)
-    {
-        $sale = Salee::find($id);
-        if (!$sale) {
-            return response()->json(['message' => 'Sale not found'], 404);
-        }
-
         $validated = $request->validate([
-            'quantity' => 'nullable|integer|min:1',
-            'actual_unit_price' => 'nullable|numeric|min:0',
+            'sale_type' => 'nullable|in:with_receipt,without_receipt',
+            'branch_id' => 'nullable|exists:branches,id',
         ]);
 
-        if (isset($validated['quantity'])) {
-            $sale->quantity = $validated['quantity'];
-        }
-        if (isset($validated['actual_unit_price'])) {
-            $sale->actual_unit_price = $validated['actual_unit_price'];
-        }
+        $sale->update($validated);
 
-        $sale->actual_total_price = $sale->quantity * $sale->actual_unit_price;
-        $sale->save();
-
-        return response()->json($sale->load('item','receipt','payments','customer','branch','creator'));
+        return response()->json($sale->load('items','customer','branch','creator'));
     }
 
-    /**
-     * Delete a sale
-     */
-    public function destroy($id)
+    // DELETE /salee/{id}
+    public function destroy(Salee $sale)
     {
-        $sale = Salee::find($id);
-        if (!$sale) {
-            return response()->json(['message' => 'Sale not found'], 404);
-        }
-
         $sale->delete();
-
-        return response()->json(['message' => 'Sale deleted successfully']);
+        return response()->json(['message'=>'Sale deleted successfully']);
     }
 }

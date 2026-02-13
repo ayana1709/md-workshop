@@ -19,7 +19,7 @@ import {
   FileDown,
 } from "lucide-react";
 
-const OutStore = () => {
+const AvailableStore = () => {
   const printRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -70,8 +70,8 @@ const OutStore = () => {
     try {
       const url =
         branchId && branchId !== "all"
-          ? `/item/out_of_stock?branch_id=${branchId}`
-          : "/item/out_of_stock";
+          ? `/item/available?branch_id=${branchId}`
+          : "/item/available";
       const res = await api.get(url);
       setItems(Array.isArray(res.data) ? res.data : res.data.items || []);
     } catch (err) {
@@ -405,7 +405,7 @@ const OutStore = () => {
   return (
     <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 dark:text-white rounded-lg shadow-md">
       <h2 className="text-lg sm:text-xl font-bold text-green-500 mb-4">
-        Out of Stock item list
+        Items with low stock / ከ10 በታች ቀሪ ያላቸው እቃዎች
       </h2>
 
       {/* Top Controls */}
@@ -600,4 +600,4 @@ const OutStore = () => {
   );
 };
 
-export default OutStore;
+export default AvailableStore;

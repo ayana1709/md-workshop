@@ -10,24 +10,30 @@ class Salee extends Model
     use HasFactory;
 
     protected $fillable = [
-        'item_code',
-        'quantity',
-        'actual_unit_price',
-        'actual_total_price',
         'sale_type',
+        'subtotal',
+        'vat_amount',
+        'grand_total',
         'branch_id',
         'created_by',
-        'customer_id', // link customer if any
+        'customer_id',
     ];
 
-    public function item()
+   
+
+    public function customer()
     {
-        return $this->belongsTo(Item::class, 'item_code', 'item_code');
+        return $this->belongsTo(Customer::class);
     }
 
     public function branch()
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(Admin::class, 'created_by');
     }
 
     public function receipt()
@@ -39,14 +45,8 @@ class Salee extends Model
     {
         return $this->hasMany(Paymentt::class, 'sale_id');
     }
-
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
-    }
-    public function creator()
-{
-    return $this->belongsTo(Admin::class, 'created_by');
+    public function items() {
+    return $this->hasMany(SaleItem::class, 'sale_id');
 }
 
 }

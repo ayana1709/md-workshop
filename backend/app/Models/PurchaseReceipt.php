@@ -12,10 +12,15 @@ class PurchaseReceipt extends Model
         'purchasee_id',
         'receipt_unit_price',
         'receipt_total_price',
-        'vat_paid', // new column
+        'vat_paid',
         'receipt_date',
         'branch_id',
         'created_by',
+
+        // New invoice fields
+        'invoice_number',
+        'invoice_date',
+        'invoice_image',
     ];
 
     public function purchase()

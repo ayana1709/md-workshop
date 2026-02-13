@@ -4,6 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import SidebarLinkGroup from "./SidebarLinkGroup";
 import logo from "./../images/aa.png";
 import { useStores } from "@/contexts/storeContext";
+import { ShoppingCart, Receipt, PackageCheck } from "lucide-react";
 
 function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
   const location = useLocation();
@@ -63,7 +64,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
           transition-all duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-64"}
           ${sidebarExpanded ? "w-64" : "w-20"} 
-          bg-white dark:bg-gray-800
+          bg-gray-150 dark:bg-gray-800
           ${
             variant === "v2"
               ? "border-r border-gray-200 dark:border-gray-700/60"
@@ -179,7 +180,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   );
                 }}
               </SidebarLinkGroup>
-
               {/* Job Order  */}
               {hasAccess("Job Order", "manage") && (
                 <SidebarLinkGroup activecondition={pathname.includes("job")}>
@@ -356,7 +356,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                    Movement
+                                  Movement
                                 </span>
                               </NavLink>
                             </li>
@@ -374,7 +374,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                 Operation
+                                  Operation
                                 </span>
                               </NavLink>
                             </li>
@@ -385,9 +385,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-
-            
-
               {/* Sales */}
               {hasAccess("Sales", "manage") && (
                 <SidebarLinkGroup
@@ -411,19 +408,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                              <svg
-                                className={`shrink-0 fill-green-500 ${
-                                  pathname.includes("purchase")
+                              <ShoppingCart
+                                className={`shrink-0 ${
+                                  pathname.includes("sale")
                                     ? "text-violet-500"
-                                    : "text-gray-400 dark:text-gray-500"
+                                    : "text-green-400 dark:text-green-500"
                                 }`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M6 2a2 2 0 0 0-2 2v2H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a3 3 0 0 0 3-3V7a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6Zm0 2h12v2H6V4ZM4 8h16v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Zm3 5h10v7a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-7Zm3-2a1 1 0 1 1 2 0v2h2a1 1 0 1 1 0 2h-2v2a1 1 0 1 1-2 0v-2H8a1 1 0 1 1 0-2h2v-2Z" />
-                              </svg>
+                                size={18}
+                              />
 
                               <span className="text-sm font-medium ml-4  duration-200">
                                 Sales
@@ -487,8 +479,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-
-              
               {/* Recit */}
               {hasAccess("Sales", "manage") && (
                 <SidebarLinkGroup
@@ -547,28 +537,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                         {/* <div className="lg:hidden lg:sidebar-expanded:block 2xl:block"> */}
                         {open && (
                           <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
-                            {/* Staff  */}
-                            <li className="mb-1 last:mb-0">
-                              <NavLink
-                                end
-                                to="/create-receipt"
-                                className={({ isActive }) =>
-                                  "block transition duration-150 truncate " +
-                                  (isActive
-                                    ? "text-violet-500"
-                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                                }
-                              >
-                                <span className="text-sm font-medium  duration-200">
-                                   Create Receipt
-                                </span>
-                              </NavLink>
-                            </li>
                             {/* Timesheet    */}
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/manage-receipt"
+                                to="/receipt-page"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -588,8 +561,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-
-                {/* Recit and item management */}
+              {/* Recit and item management */}
               {hasAccess("Sales", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -612,22 +584,17 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                              <svg
-                                className={`shrink-0 fill-green-500 ${
-                                  pathname.includes("purchase")
+                              <PackageCheck
+                                className={`shrink-0 ${
+                                  pathname.includes("report-receipt")
                                     ? "text-violet-500"
-                                    : "text-gray-400 dark:text-gray-500"
+                                    : "text-green-600 dark:text-green-500"
                                 }`}
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M6 2a2 2 0 0 0-2 2v2H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3v7a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-7a3 3 0 0 0 3-3V7a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6Zm0 2h12v2H6V4ZM4 8h16v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8Zm3 5h10v7a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-7Zm3-2a1 1 0 1 1 2 0v2h2a1 1 0 1 1 0 2h-2v2a1 1 0 1 1-2 0v-2H8a1 1 0 1 1 0-2h2v-2Z" />
-                              </svg>
+                                size={18}
+                              />
 
                               <span className="text-sm font-medium ml-4  duration-200">
-                                Manage Recipt and Item
+                                Receipt and Item
                               </span>
                             </div>
                             {/* Icon */}
@@ -647,11 +614,10 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                         {/* <div className="lg:hidden lg:sidebar-expanded:block 2xl:block"> */}
                         {open && (
                           <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
-                            {/* Staff  */}
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/add-too-sale"
+                                to="/report-receipt"
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -660,24 +626,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                  Add recipt
-                                </span>
-                              </NavLink>
-                            </li>
-                            {/* Timesheet    */}
-                            <li className="mb-1 last:mb-0">
-                              <NavLink
-                                end
-                                to="/sales"
-                                className={({ isActive }) =>
-                                  "block transition duration-150 truncate " +
-                                  (isActive
-                                    ? "text-violet-500"
-                                    : "text-gray-500/90 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")
-                                }
-                              >
-                                <span className="text-sm font-medium  duration-200">
-                                  Manage recipt
+                                  Receipt Report
                                 </span>
                               </NavLink>
                             </li>
@@ -688,7 +637,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-                {/* Payment */}
+              {/* Payment */}
               {hasAccess("Payment", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -987,8 +936,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-        
-                {/*  Income  */}
+              {/*  Income  */}
               {hasAccess("Income", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1154,9 +1102,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-
-
-  {/* Profit */}
+              {/* Profit */}
               {hasAccess("Expense", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1219,12 +1165,11 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
 
                         {open && (
                           <ul className={`pl-8 mt-1 ${!open && "hidden"}`}>
-                          
                             {/* manage Purchase   */}
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/expense"
+                                to=""
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -1233,7 +1178,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                profit Report
+                                  profit Report
                                 </span>
                               </NavLink>
                             </li>
@@ -1244,10 +1189,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-      
-
-
-    {/* List of Customer */}
+              {/* List of Customer */}
               {hasAccess("Staff Management", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1314,7 +1256,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/new-expense"
+                                to=""
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -1331,7 +1273,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/expense"
+                                to=""
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -1351,7 +1293,6 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-    {/* List of Supplier */}
               {hasAccess("Staff Management", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1418,7 +1359,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/new-expense"
+                                to=""
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -1435,7 +1376,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                             <li className="mb-1 last:mb-0">
                               <NavLink
                                 end
-                                to="/expense"
+                                to=""
                                 className={({ isActive }) =>
                                   "block transition duration-150 truncate " +
                                   (isActive
@@ -1455,7 +1396,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-        {/* staff managemnt  */}
+              {/* staff managemnt  */}
               {hasAccess("Staff Management", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}
@@ -1580,7 +1521,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                                 }
                               >
                                 <span className="text-sm font-medium  duration-200">
-                                 Branch
+                                  Branch
                                 </span>
                               </NavLink>
                             </li>
@@ -1591,8 +1532,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, variant = "default" }) {
                   }}
                 </SidebarLinkGroup>
               )}
-              
-                 {/* setting */}
+              {/* setting */}
               {hasAccess("Inventory", "manage") && (
                 <SidebarLinkGroup
                   activecondition={pathname.includes("ecommerce")}

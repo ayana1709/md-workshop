@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 export default function AddStore() {
   const { showModal, setShowModal, fetchItems } = useStores();
@@ -58,6 +59,8 @@ export default function AddStore() {
   const [brands, setBrands] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
+  // State for invoice image
+  const [invoiceImageFile, setInvoiceImageFile] = useState(null);
 
   const { register, handleSubmit, watch, setValue } = useForm({
     defaultValues: {
@@ -145,9 +148,11 @@ export default function AddStore() {
   };
 
   /* ---------- submit ---------- */
+  const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     setLoading(true);
+
     try {
       // Create FormData
       const fd = new FormData();
@@ -162,24 +167,81 @@ export default function AddStore() {
       // Append images
       images.forEach((file) => fd.append("images[]", file));
 
-      // Debug: log FormData (optional)
-      // for (let pair of fd.entries()) console.log(pair[0], pair[1]);
+      // Product images
+      images.forEach((file) => fd.append("images[]", file));
 
+      // Invoice image (if with receipt)
+      if (data.purchase_type === "with_receipt" && invoiceImageFile) {
+        fd.append("invoice_image", invoiceImageFile);
+      }
       // Send POST request
       const res = await api.post("/items", fd, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Success feedback: auto-close popup after 2.5s
+      Swal.fire({
+        icon: "success",
+        title: "Item Added",
+        html: `Item "<strong>${res.data.item.item_name}</strong>" has been added successfully!`,
+        timer: 2500, // Auto-close after 2.5 seconds
+        showConfirmButton: false, // No button
+        allowOutsideClick: false, // Disable click to close
+        allowEscapeKey: false,
+        didClose: () => {
+          // Navigate automatically after popup closes
+          navigate("/inventory/total-items");
         },
       });
 
-      // Success feedback
-      toast.success("Item added successfully");
       fetchItems();
       setShowModal(false);
     } catch (err) {
       console.error("Failed to add item:", err?.response?.data || err);
-      const message = err?.response?.data?.message || "Failed to add item";
-      toast.error(message);
+
+      // Extract server-side validation errors
+      let message = "Failed to add item. Please check your input.";
+      if (err?.response?.data) {
+        if (err.response.data.errors) {
+          const errors = Object.values(err.response.data.errors)
+            .flat()
+            .join("<br/>");
+          message = errors || message;
+        } else if (err.response.data.message) {
+          message = err.response.data.message;
+        }
+      }
+
+      // Show user-friendly Swal error (clickable)
+      await Swal.fire({
+        icon: "error",
+        title: "Oops! 😅",
+        html: `
+    <div class="text-sm text-gray-700 mt-2">
+      ${message}
+    </div>
+  `,
+        showConfirmButton: true,
+        confirmButtonText: "Got it",
+        allowOutsideClick: true, // Click outside to close
+        allowEscapeKey: true, // Escape key to close
+        timer: 4000, // Auto-close after 4 seconds
+        timerProgressBar: true, // Shows countdown bar
+        backdrop: `
+    rgba(0,0,0,0.6)
+  `,
+        buttonsStyling: false,
+        customClass: {
+          popup: "rounded-2xl p-6 border-2 border-red-500",
+          confirmButton:
+            "bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg",
+        },
+        didOpen: () => {
+          // Ensure it stays on top of other modals
+          const popup = document.querySelector(".swal2-popup");
+          popup.style.zIndex = 99999;
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -379,7 +441,9 @@ export default function AddStore() {
                     <CardHeader>
                       <CardTitle>🧾 Purchase Information</CardTitle>
                     </CardHeader>
+
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {/* Purchase Type */}
                       <div>
                         <Label>Purchase Type</Label>
                         <Select
@@ -399,23 +463,69 @@ export default function AddStore() {
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {/* Purchase Price */}
                       <div>
                         <Label>Purchase Price</Label>
-                        <Input type="number" {...register("purchase_price")} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...register("purchase_price")}
+                        />
                       </div>
 
+                      {/* WITH RECEIPT SECTION */}
                       <AnimatePresence>
                         {watch("purchase_type") === "with_receipt" && (
                           <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="md:col-span-2"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5 p-4 border rounded-xl bg-muted/30"
                           >
-                            <Label>Receipt Price</Label>
-                            <Input
-                              type="number"
-                              {...register("purchase_receipt_price")}
-                            />
+                            {/* Receipt Unit Price */}
+                            <div>
+                              <Label>Receipt Unit Price</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                {...register("purchase_receipt_price")}
+                              />
+                            </div>
+
+                            {/* Invoice Number */}
+                            <div>
+                              <Label>Invoice Number</Label>
+                              <Input
+                                type="text"
+                                {...register("invoice_number")}
+                                placeholder="Enter invoice number"
+                              />
+                            </div>
+
+                            {/* Invoice Date */}
+                            <div>
+                              <Label>Invoice Date</Label>
+                              <Input
+                                type="date"
+                                {...register("invoice_date")}
+                              />
+                            </div>
+
+                            {/* Invoice Image */}
+                            <div>
+                              <Label>Invoice Image</Label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files[0];
+                                  setInvoiceImageFile(file);
+                                  setValue("invoice_image", file); // optional if using FormData directly
+                                }}
+                              />
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>

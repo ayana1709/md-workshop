@@ -9,8 +9,6 @@ import {
 } from "../components/ui/popover";
 import { Separator } from "../components/ui/separator";
 import EditFieldModal from "../components/EditFieldModal";
-// import { Dialog, DialogTitle } from "@mui/material";
-// import { DialogContent, DialogHeader, DialogTrigger } from "./ui/dialog";
 import {
   Dialog,
   DialogContent,
@@ -29,11 +27,59 @@ import Swal from "sweetalert2";
 import api from "@/api";
 import PurchaseSellConfigModal from "./PurchaseSellConfigModal";
 
-import { useStores } from "@/contexts/storeContext";
+function ItemImageCell({ images, itemName }) {
+  const [open, setOpen] = React.useState(false);
+  const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "");
+  let imgs = [];
+  try {
+    imgs = images ? JSON.parse(images) : [];
+  } catch {}
+
+  const firstImage = imgs[0] ?? null;
+  const imageUrl = firstImage
+    ? `${baseUrl}/storage/${firstImage}`
+    : "/images/default.jpg";
+
+  return (
+    <>
+      <img
+        src={imageUrl}
+        alt={itemName}
+        className="w-12 h-12 object-cover rounded cursor-pointer border"
+        onClick={() => setOpen(true)}
+        onError={(e) => (e.currentTarget.src = "/images/default.jpg")}
+      />
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {imgs.length > 0 ? (
+              imgs.map((img, i) => (
+                <img
+                  key={i}
+                  src={
+                    img.startsWith("http") ? img : `${baseUrl}/storage/${img}`
+                  }
+                  className="w-full h-60 object-cover rounded border"
+                />
+              ))
+            ) : (
+              <img
+                src="/images/default.jpg"
+                className="w-full h-60 object-cover rounded border"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 export const columns = ({
   selectedRows,
   setSelectedRows,
+  fetchItems,
   printRef,
   setItems,
   isEditOpen,
@@ -43,82 +89,61 @@ export const columns = ({
   setIsItemModalOpen,
   setSelectedRepairId,
 }) => [
-  
   {
     id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (selectedRows.length > 0 &&
-            selectedRows.length === table.getRowModel().rows.length)
-        }
-        onCheckedChange={(value) => {
-          const ids = table.getRowModel().rows.map((row) => row.original.id);
-          setSelectedRows(value ? ids : []);
-        }}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={selectedRows.includes(row.original.id)}
-        onCheckedChange={() => {
-          const id = row.original.id;
-          setSelectedRows((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-          );
-        }}
-        aria-label="Select row"
-      />
-    ),
+    header: ({ table }) => {
+      const allItems = table.getRowModel().rows.map((r) => r.original);
+      const allSelected =
+        allItems.length > 0 &&
+        allItems.every((item) =>
+          selectedRows.some((s) => s.item_code === item.item_code),
+        );
+
+      return (
+        <Checkbox
+          checked={allSelected}
+          onCheckedChange={(value) => {
+            setSelectedRows(value ? allItems : []);
+          }}
+        />
+      );
+    },
+
+    cell: ({ row }) => {
+      const item = row.original;
+      const isChecked = selectedRows.some(
+        (s) => s.item_code === item.item_code,
+      );
+
+      return (
+        <Checkbox
+          checked={isChecked}
+          onCheckedChange={() => {
+            setSelectedRows((prev) =>
+              prev.some((s) => s.item_code === item.item_code)
+                ? prev.filter((s) => s.item_code !== item.item_code)
+                : [...prev, item],
+            );
+          }}
+        />
+      );
+    },
+
     enableSorting: false,
     enableHiding: false,
   },
 
   {
-    accessorKey: "image",
+    id: "image",
     header: "Image",
-    cell: ({ row }) => {
-      const [openImage, setOpenImage] = useState(false);
-
-      const apiBase = import.meta.env.VITE_API_URL;
-
-      const imageUrl = row.original.image
-        ? `${apiBase}/storage/${row.original.image}`
-        : "/images/default-item.png";
-
-      return (
-        <>
-          {/* Thumbnail */}
-          <img
-            src={imageUrl}
-            alt={row.original.item_name}
-            className="w-12 h-12 object-cover rounded cursor-pointer border"
-            onClick={() => setOpenImage(true)}
-            onError={(e) => {
-              e.currentTarget.src = "/images/defa.jpg";
-            }}
-          />
-
-          {/* Full Image Modal */}
-          <Dialog open={openImage} onOpenChange={setOpenImage}>
-            <DialogContent className="p-0 bg-transparent border-none shadow-none">
-              <img
-                src={imageUrl}
-                alt={row.original.item_name}
-                className="max-w-full max-h-[80vh] object-contain rounded"
-                onError={(e) => {
-                  e.currentTarget.src = "/images/default-item.png";
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        </>
-      );
-    },
+    cell: ({ row }) => (
+      <ItemImageCell
+        images={row.original.images}
+        itemName={row.original.item_name}
+      />
+    ),
   },
-
+  ,
   {
     accessorKey: "item_code",
     header: "Item Code",
@@ -169,155 +194,147 @@ export const columns = ({
 
   // QUANTITY (sum of purchases)
   {
-    accessorKey: "quantity",
+    accessorKey: "initial_stock",
     header: "Quantity",
     cell: ({ row }) => {
-      const totalQuantity = row.original.purchases?.reduce(
-        (sum, p) => sum + Number(p.quantity),
-        0,
-      );
-      return <span>{totalQuantity || 0}</span>;
+      return <span>{row.original.initial_stock ?? 0}</span>;
     },
   },
+
   { accessorKey: "low_stock", header: " Stock Alert" },
 
   // LOCATION
   { accessorKey: "location", header: "Location" },
+  { accessorKey: "selling_price", header: "Selling Price" },
 
   // STATUS
   {
-    id: "status",
+    id: "stock_status",
     header: "Status",
-    cell: ({ row }) => {
-      const totalQuantity = row.original.purchases?.reduce(
-        (sum, p) => sum + Number(p.quantity),
-        0,
-      );
-      return (
-        <span
-          className={`px-2 py-1 rounded text-white text-xs font-semibold ${
-            totalQuantity > 0 ? "bg-green-500" : "bg-red-500"
-          }`}
-        >
-          {totalQuantity > 0 ? "Available" : "Not Available"}
-        </span>
-      );
-    },
+    cell: ({ row }) => (
+      <span
+        className={`px-2 py-1 rounded text-white text-xs font-semibold ${
+          row.original.stock_status === "available"
+            ? "bg-green-500"
+            : row.original.stock_status === "low_stock"
+              ? "bg-yellow-500"
+              : "bg-red-500"
+        }`}
+      >
+        {row.original.stock_status}
+      </span>
+    ),
   },
   {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
       const [open, setOpen] = useState(false);
-const [isViewOpen, setIsViewOpen] = useState(false);
-const [isEditOpen, setIsEditOpen] = useState(false);
-const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-const [isConfigOpen, setIsConfigOpen] = useState(false);
-const [selectedItem, setSelectedItem] = useState(null);
-
+      const [isViewOpen, setIsViewOpen] = useState(false);
+      const [isEditOpen, setIsEditOpen] = useState(false);
+      const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+      const [isConfigOpen, setIsConfigOpen] = useState(false);
+      const [selectedItem, setSelectedItem] = useState(null);
 
       // Print QR with user inputs for size and quantity
+      // Print QR with user inputs for size and quantity
       const printQr = async () => {
-        const qrUrl = row.original.qr_code;
-        if (!qrUrl) return alert("QR code not available!");
+        const qrPath = row.original.qr_code;
+        if (!qrPath) return alert("QR code not available!");
 
-        const apiBase = import.meta.env.VITE_API_URL;
-        const fullQrUrl = qrUrl.startsWith("http")
-          ? qrUrl
-          : `${apiBase}/storage/${qrUrl}`;
+        const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "");
 
-        const { value: formValues } = await Swal.fire({
+        const fullQrUrl = qrPath.startsWith("http")
+          ? qrPath
+          : `${baseUrl}/storage/${qrPath}`;
+
+        const defaultQuantity =
+          Number(row.original.quantity || row.original.initial_stock) || 1;
+
+        const { value } = await Swal.fire({
           title: "QR Print Settings",
           html: `
-          <div style="display:flex; flex-direction:column; gap:8px;">
-            <label>Width (px)</label>
-            <input id="swal-width" type="number" class="swal2-input" value="150"/>
-            <label>Height (px)</label>
-            <input id="swal-height" type="number" class="swal2-input" value="150"/>
-            <label>Quantity</label>
-            <input id="swal-quantity" type="number" class="swal2-input" value="${row.original.quantity || 1}"/>
-          </div>
-        `,
-          focusConfirm: false,
+      <input id="w" class="swal2-input" type="number" value="150" placeholder="Width (px)">
+      <input id="h" class="swal2-input" type="number" value="150" placeholder="Height (px)">
+      <input id="q" class="swal2-input" type="number" value="${defaultQuantity}" placeholder="Quantity">
+    `,
           showCancelButton: true,
-          confirmButtonText: "Print",
-          cancelButtonText: "Cancel",
-          preConfirm: () => {
-            const width =
-              Number(document.getElementById("swal-width").value) || 150;
-            const height =
-              Number(document.getElementById("swal-height").value) || 150;
-            const quantity =
-              Number(document.getElementById("swal-quantity").value) || 1;
-            return { width, height, quantity };
-          },
+          preConfirm: () => ({
+            width: +document.getElementById("w").value || 150,
+            height: +document.getElementById("h").value || 150,
+            quantity: +document.getElementById("q").value || defaultQuantity,
+          }),
         });
-
-        if (!formValues) return;
-
-        const { width, height, quantity } = formValues;
-
+        if (!value) return;
+        const { width, height, quantity } = value;
         const win = window.open("", "_blank");
         win.document.write(`
-        <html>
-          <head>
-            <title>Print QR - ${row.original.item_name}</title>
-            <style>
-              @media print { body { margin: 0; } }
-              body {
-                font-family: Arial;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                padding: 10px;
-              }
-              .qr-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                width: ${width}px;
-                height: ${height + 30}px;
-                page-break-inside: avoid;
-              }
-              .qr-item img {
-                width: ${width}px;
-                height: ${height}px;
-              }
-              .item-code {
-                margin-top: 5px;
-                font-size: 12px;
-                text-align: center;
-              }
-            </style>
-          </head>
-          <body>
-            ${Array(quantity)
-              .fill(0)
-              .map(
-                () => `
-              <div class="qr-item">
-                <img src="${fullQrUrl}" />
-                <div class="item-code">Item Code: ${String(row.original.id).padStart(4, "0")}</div>
-              </div>
-            `,
-              )
-              .join("")}
-            <script>
-              window.onload = () => { window.print(); window.close(); };
-            </script>
-          </body>
-        </html>
-      `);
+    <html>
+      <head>
+        <title>Print QR</title>
+        <style>
+          body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+          }
+
+          .qr-card {
+            width: ${width + 20}px;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+          }
+
+          .qr-card img {
+            width: ${width}px;
+            height: ${height}px;
+            object-fit: contain;
+          }
+
+          .item-code {
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+          }
+        </style>
+      </head>
+
+      <body>
+        ${Array(quantity)
+          .fill(0)
+          .map(
+            () => `
+          <div class="qr-card">
+            <img src="${fullQrUrl}" />
+            <div class="item-code">Item Code: ${row.original.item_code}</div>
+          </div>
+        `,
+          )
+          .join("")}
+
+        <script>
+          window.onload = () => {
+            window.print();
+            window.close();
+          };
+        </script>
+      </body>
+    </html>
+  `);
         win.document.close();
       };
-
       return (
         <div className="relative">
           <Button size="sm" onClick={() => setOpen((prev) => !prev)}>
             Action <IoMdArrowDropdown className="ml-1" />
           </Button>
-
           {open && (
             <div className="absolute right-0 mt-2 w-52 bg-white shadow-md rounded-md border flex flex-col z-50">
               {/* Print QR */}
@@ -331,9 +348,8 @@ const [selectedItem, setSelectedItem] = useState(null);
               >
                 🖨️ Print QR
               </Button>
-
               {/* View */}
-              <Button
+              {/* <Button
                 variant="ghost"
                 className="w-full justify-start text-gray-700"
                 onClick={() => {
@@ -342,57 +358,78 @@ const [selectedItem, setSelectedItem] = useState(null);
                 }}
               >
                 👁️ View
-              </Button>
-
+              </Button> */}
               {/* Edit */}
               <Button
                 className="w-full justify-start"
                 onClick={() => {
                   setSelectedItem(row.original);
-                  setIsEditOpen(true);
+                  setIsEd;
+
+                  itOpen(true);
                   setOpen(false);
                 }}
               >
                 ✏️ Edit
               </Button>
-{/* Purchase & Sell Config */}
-<Button
-  variant="ghost"
-  className="w-full justify-start text-green-700"
-  onClick={() => {
-    setSelectedItem(row.original);
-    setIsConfigOpen(true);
-    setOpen(false);
-  }}
->
-  ⚙️ Purchase & Sell Config
-</Button>
+              {/* Purchase & Sell Config */}
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-green-700"
+                onClick={() => {
+                  setSelectedItem(row.original);
+                  setIsConfigOpen(true);
+                  setOpen(false);
+                }}
+              >
+                ⚙️ Purchase & Sell Config
+              </Button>
 
-              {/* Delete */}
               <Button
                 variant="ghost"
                 className="w-full justify-start text-red-600"
                 onClick={async () => {
+                  const itemCode = row.original.item_code;
+
                   const result = await Swal.fire({
-                    title: "Are you sure?",
-                    text: "This item will be permanently deleted.",
+                    title: "Delete Item?",
+                    text: `Item ${itemCode} will be permanently deleted.`,
                     icon: "warning",
                     showCancelButton: true,
-                    confirmButtonText: "Yes, delete it!",
+                    confirmButtonText: "Yes, delete it",
                     cancelButtonText: "Cancel",
                     confirmButtonColor: "#d33",
                   });
+
                   if (!result.isConfirmed) return;
+
                   try {
-                    await api.delete(`/items/${row.original.id}`);
-                    Swal.fire(
-                      "Deleted!",
-                      "Item deleted successfully.",
-                      "success",
-                    );
-                    await fetchItems();
+                    // ✅ Direct API call
+                    await api.delete(`/items/${itemCode}`);
+
+                    await Swal.fire({
+                      icon: "success",
+                      title: "Deleted!",
+                      text: "Item deleted successfully.",
+                      timer: 1500,
+                      showConfirmButton: false,
+                    });
+
+                    // ✅ Refresh table
+                    if (fetchItems) fetchItems();
+
+                    // ✅ Close dropdown
+                    setOpen(false);
                   } catch (error) {
-                    Swal.fire("Error", "Failed to delete the item.", "error");
+                    console.error("Delete error:", error);
+
+                    Swal.fire({
+                      icon: "error",
+                      title: "Delete Failed",
+                      text:
+                        error.response?.data?.message ||
+                        "Failed to delete item",
+                    });
                   }
                 }}
               >
@@ -416,21 +453,83 @@ const [selectedItem, setSelectedItem] = useState(null);
           {/* View Modal */}
           {isViewOpen && (
             <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <div className="border-b p-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-800">
+              <DialogContent
+                className="max-w-2xl max-h-[80vh] overflow-y-auto"
+                aria-describedby="item-details-description"
+              >
+                <p id="item-details-description" className="sr-only">
+                  View item details including images, category, and pricing.
+                </p>
+
+                {/* Header */}
+                <div className="border-b pb-3 mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">
                     Item Details
                   </h2>
+                  <p className="text-sm text-gray-500">
+                    Code: {row.original.item_code}
+                  </p>
                 </div>
-                <div className="px-4 py-6 space-y-4">
-                  {Object.entries(row.original).map(([key, value]) => (
-                    <div key={key} className="flex justify-between gap-2">
-                      <span className="font-medium text-gray-700">{key}:</span>
-                      <span>{value ?? "N/A"}</span>
+
+                {/* Body */}
+                <div className="space-y-4 text-sm">
+                  {/* Basic Info */}
+                  <Detail label="Item Name" value={row.original.item_name} />
+                  <Detail
+                    label="Part Number"
+                    value={row.original.part_number}
+                  />
+                  <Detail label="Unit" value={row.original.unit} />
+                  <Detail label="Location" value={row.original.location} />
+
+                  {/* Relations */}
+                  <Detail
+                    label="Category"
+                    value={row.original.category?.name}
+                  />
+                  <Detail label="Brand" value={row.original.brand?.name} />
+                  <Detail label="Branch" value={row.original.branch?.name} />
+
+                  {/* Pricing */}
+                  <Detail
+                    label="Selling Price"
+                    value={
+                      row.original.selling_price
+                        ? `${row.original.selling_price} ETB`
+                        : "N/A"
+                    }
+                  />
+                  <Detail
+                    label="Low Stock Alert"
+                    value={row.original.low_stock}
+                  />
+
+                  {/* Status */}
+                  <Detail
+                    label="Stock Status"
+                    value={row.original.stock_status}
+                  />
+
+                  {/* Images */}
+                  {row.original.images && row.original.images.length > 0 && (
+                    <div>
+                      <span className="font-medium text-gray-700">Images:</span>
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {row.original.images.map((img, i) => (
+                          <img
+                            key={i}
+                            src={`${import.meta.env.VITE_API_URL}/storage/${img}`}
+                            alt="item"
+                            className="w-24 h-24 object-cover rounded border"
+                          />
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-                <div className="mt-4 text-right">
+
+                {/* Footer */}
+                <div className="mt-6 text-right">
                   <Button onClick={() => setIsViewOpen(false)}>Close</Button>
                 </div>
               </DialogContent>
@@ -443,20 +542,20 @@ const [selectedItem, setSelectedItem] = useState(null);
               open={isEditOpen}
               setOpen={setIsEditOpen}
               item={selectedItem}
+              itemCode={selectedItem.item_code} // ✅ ADD THIS
               onSave={(updatedData) => {
-                console.log("Item updated:", updatedData);
-                // Track history update and refresh list
                 fetchItems();
               }}
             />
           )}
-{isConfigOpen && selectedItem && (
-  <PurchaseSellConfigModal
-    open={isConfigOpen}
-    setOpen={setIsConfigOpen}
-    item={selectedItem}
-  />
-)}
+
+          {isConfigOpen && selectedItem && (
+            <PurchaseSellConfigModal
+              open={isConfigOpen}
+              setOpen={setIsConfigOpen}
+              item={selectedItem}
+            />
+          )}
 
           {/* History Modal */}
           {isHistoryOpen && (

@@ -49,6 +49,8 @@ use App\Http\Controllers\PurchaseeController;
 use App\Http\Controllers\SaleeController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\MovementController;
+
 
 
 
@@ -254,8 +256,12 @@ Route::get('/items/low-stock', [ItemController::class, 'getLowStockItems']);
 Route::get('/items', [ItemController::class, 'index']);        // GET /api/items - List all items
 Route::get('/items/{item}', [ItemController::class, 'show']);   // GET /api/items/{id} - Show a single item
 Route::post('/items', [ItemController::class, 'store']);       // POST /api/items - Create a new item
-Route::put('/items/{item}', [ItemController::class, 'update']); // PUT /api/items/{id} - Update an existing item
-Route::delete('/items/{item}', [ItemController::class, 'destroy']); // DELETE /api/items/{id} - Delete an item
+// Route::put('/items/{item}', [ItemController::class, 'update']); // PUT /api/items/{id} - Update an existing item
+Route::put('/items/{item_code}', [ItemController::class, 'update']);
+Route::delete('/items/{item_code}', [ItemController::class, 'destroy']);
+
+
+Route::delete('/items/{item_code}', [ItemController::class, 'destroy']);
 Route::patch('/items/{id}/update-field', [ItemController::class, 'updateField']);
 Route::post('/items/{id}/item-out', [ItemController::class, 'itemOut']);
 Route::post('/items/add-more', [ItemController::class, 'addMore']);
@@ -263,6 +269,12 @@ Route::post('/items/fetch-selected', [ItemController::class, 'fetchSelectedItems
 Route::get('/items/part/{part_number}', [ItemController::class, 'getByPartNumber']);
 Route::post('/items/import', [ItemController::class, 'import']);
 Route::get('/item/stats', [ItemController::class, 'dashboardStats']);
+Route::get('/item/low_stock', [ItemController::class, 'lowStockItems']);
+Route::get('/item/out_of_stock', [ItemController::class, 'outOfStockItems']);
+Route::get('/item/available', [ItemController::class, 'availableItems']);
+
+
+
 
 
 Route::get('/spare-requests', [SpareRequestController::class, 'index']);
@@ -432,8 +444,30 @@ Route::put('/brands/{brand}', [MetaController::class, 'brandsUpdate']);
 Route::delete('/brands/{brand}', [MetaController::class, 'brandsDestroy']);
 Route::apiResource('purchasees', PurchaseeController::class)
     ->parameters(['purchasees' => 'item_code']);
-Route::apiResource('salee', SaleeController::class)
-    ->parameters(['salee' => 'item_code']);
+Route::get('/purchases/with-receipt', [PurchaseeController::class, 'withReceipt']);
+
+    Route::apiResource('salee', SaleeController::class);
 Route::apiResource('receipt', ReceiptController::class)
     ->parameters(['receipt' => 'item_code']);
+
+// Route::get('/salee/with-receipt', [SaleeController::class, 'withReceiptSales']);
+Route::get('/salee/with-receipt', [SaleeController::class, 'indexWithReceipt']);
+
 Route::get('/report/items-vat', [ReportsController::class, 'itemVatReport']);
+
+// Route::get('/items/search', [ItemController::class, 'saleSearch']);
+Route::get('/sales/items/search', [ItemController::class, 'search']);
+
+Route::post('/items/scan', [ItemController::class, 'scanCode']);
+
+
+
+Route::get('/movements', [MovementController::class, 'index']);
+Route::get('/movements/{id}', [MovementController::class, 'show']);
+Route::post('/movements', [MovementController::class, 'store']);
+
+
+Route::post('/items/ecommerce/toggle', [ItemController::class, 'toggleEcommerce']);
+Route::post('/items/ecommerce/bulk', [ItemController::class, 'bulkAddToEcommerce']);
+Route::get('/items/ecommerce', [ItemController::class, 'ecommerceIndex']);
+Route::post('/items/ecommerce/add', [ItemController::class, 'addToEcommerce']);

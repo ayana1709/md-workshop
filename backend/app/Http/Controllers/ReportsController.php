@@ -68,22 +68,75 @@ class ReportsController extends Controller
             /* =======================
              | STATUS + RECOMMENDATION
              ======================= */
-            $purchaseVat = $purchaseTotals['vat'];
-            $saleVat = $saleTotals['vat'];
+   /* =======================
+ | STATUS + RECOMMENDATION
+ ======================= */
 
-            if ($purchaseVat > 0 && $saleVat > 0) {
-                $status = 'NORMAL';
-                $recommendation = 'VAT compliant. No action required.';
-            } elseif ($purchaseVat == 0 && $saleVat > 0) {
-                $status = 'RISKY';
-                $recommendation = 'Sales VAT collected without purchase VAT. Investigate supplier compliance.';
-            } elseif ($purchaseVat == 0 && $saleVat == 0) {
-                $status = 'LOW RISK';
-                $recommendation = 'No VAT activity. Monitor future transactions.';
-            } else {
-                $status = 'REVIEW';
-                $recommendation = 'Mixed VAT behavior. Manual audit recommended.';
-            }
+$purchaseVat = $purchaseTotals['vat'];
+$saleVat = $saleTotals['vat'];
+
+$purchaseWithReceiptQty = $purchaseRows
+    ->where('with_receipt', 'Yes')
+    ->sum('quantity');
+
+$saleWithReceiptQty = $saleRows
+    ->where('with_receipt', 'Yes')
+    ->sum('quantity');
+
+$vatBalance = $saleVat - $purchaseVat;
+
+
+/* =======================
+ | DECISION LOGIC
+ ======================= */
+
+if ($saleWithReceiptQty > $purchaseWithReceiptQty) {
+
+    $status = 'IMBALANCED';
+
+    $recommendation = 
+        'You are selling more items with VAT receipts than you are purchasing with VAT receipts. 
+        This increases your VAT payable amount and audit exposure. 
+        Consider purchasing more items with VAT receipts to balance input and output VAT.';
+
+} elseif ($purchaseWithReceiptQty > $saleWithReceiptQty) {
+
+    $status = 'VAT CREDIT';
+
+    $recommendation = 
+        'You are purchasing more items with VAT receipts than you are selling with VAT receipts. 
+        You may accumulate VAT credit. Ensure proper documentation for future VAT claims.';
+
+} elseif ($purchaseVat > 0 && $saleVat > 0) {
+
+    $status = 'BALANCED';
+
+    $recommendation = 
+        'VAT activity is balanced between purchases and sales. Maintain consistent VAT compliance.';
+
+} elseif ($purchaseVat == 0 && $saleVat > 0) {
+
+    $status = 'HIGH RISK';
+
+    $recommendation = 
+        'Sales VAT is being collected without corresponding purchase VAT. 
+        This may indicate supplier non-compliance or increased tax liability.';
+
+} elseif ($purchaseVat == 0 && $saleVat == 0) {
+
+    $status = 'LOW ACTIVITY';
+
+    $recommendation = 
+        'No VAT activity detected. Monitor transactions if VAT registration is required.';
+
+} else {
+
+    $status = 'REVIEW';
+
+    $recommendation = 
+        'Mixed VAT behavior detected. Manual financial review is recommended.';
+}
+
 
             return [
                 'item_code' => $item->item_code,

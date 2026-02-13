@@ -48,13 +48,13 @@ function DashboardCard01() {
             {
               stop: 0,
               color: `rgba(${hexToRGB(
-                tailwindConfig().theme.colors.violet[500]
+                tailwindConfig().theme.colors.violet[500],
               )}, 0)`,
             },
             {
               stop: 1,
               color: `rgba(${hexToRGB(
-                tailwindConfig().theme.colors.violet[500]
+                tailwindConfig().theme.colors.violet[500],
               )}, 0.15)`,
             },
           ]);
@@ -72,7 +72,7 @@ function DashboardCard01() {
           314, 314, 314, 388, 314, 202, 202, 202, 202, 314, 720, 642,
         ],
         borderColor: `rgba(${hexToRGB(
-          tailwindConfig().theme.colors.gray[500]
+          tailwindConfig().theme.colors.gray[500],
         )}, 0.3)`,
         borderWidth: 2,
         pointRadius: 0,
@@ -127,10 +127,10 @@ function DashboardCard01() {
       </div>
       <div className="flex items-center gap-2 mb-4">
         <span className="text-3xl font-extrabold text-gray-900 dark:text-gray-50">
-          24,780
+          0.00
         </span>
         <span className="text-xs font-bold text-green-700 dark:text-green-400 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 animate-bounce">
-          +49%
+          +0%
         </span>
       </div>
 

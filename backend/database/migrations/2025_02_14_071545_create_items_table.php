@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('part_number')->nullable();
             $table->integer('initial_stock')->nullable();
             $table->integer('low_stock')->nullable();
+                 $table->decimal('selling_price', 15, 2)->default(0);
 
             // Relations
             $table->foreignId('category_id')

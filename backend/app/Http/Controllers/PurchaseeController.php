@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Purchasee;
-use App\Models\Receipt;
+use App\Models\PurchaseReceipt;
 use App\Models\Item;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseeController extends Controller
 {
@@ -24,140 +24,130 @@ class PurchaseeController extends Controller
     }
 
     /**
-     * Store a new purchase
+     * Store new purchase
      */
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'item_code' => 'required|exists:items,item_code',
-        'quantity' => 'required|numeric|min:1',
-        'actual_unit_price' => 'required|numeric|min:0',
-        'purchase_type' => 'required|in:with_receipt,without_receipt',
-        'supplier_name' => 'nullable|string|max:255',
-        'branch_id' => 'required|exists:branches,id',
-        // optional receipt override
-        'receipt_unit_price' => 'nullable|numeric|min:0',
-    ]);
-
-    DB::transaction(function () use ($validated) {
-
-        // 1️⃣ Calculate internal totals
-        $actualTotal = $validated['quantity'] * $validated['actual_unit_price'];
-
-        $purchase = Purchasee::create([
-            'item_code' => $validated['item_code'],
-            'quantity' => $validated['quantity'],
-            'actual_unit_price' => $validated['actual_unit_price'],
-            'actual_total_price' => $actualTotal,
-            'purchase_type' => $validated['purchase_type'],
-            'supplier_name' => $validated['supplier_name'] ?? null,
-            'branch_id' => $validated['branch_id'],
-            'created_by' => auth()->id() ?? 1,
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'item_code' => 'required|exists:items,item_code',
+            'quantity' => 'required|numeric|min:1',
+            'actual_unit_price' => 'required|numeric|min:0',
+            'purchase_type' => 'required|in:with_receipt,without_receipt',
+            'supplier_name' => 'nullable|string|max:255',
+            'branch_id' => 'required|exists:branches,id',
+            'receipt_unit_price' => 'nullable|numeric|min:0',
         ]);
 
-        // 2️⃣ Update stock
-        $item = Item::where('item_code', $validated['item_code'])->first();
-        $item->increment('initial_stock', $validated['quantity']);
+        DB::transaction(function () use ($validated) {
 
-        // 3️⃣ Receipt logic (ONLY source of VAT)
-        if ($purchase->purchase_type === 'with_receipt') {
+            $actualTotal = $validated['quantity'] * $validated['actual_unit_price'];
 
-            $receiptUnitPrice = $validated['receipt_unit_price']
-                ?? $purchase->actual_unit_price;
-
-            $receiptTotalPrice = $receiptUnitPrice * $purchase->quantity;
-
-            // ✅ VAT = 15% of receipt total
-            $vatPaid = round($receiptTotalPrice * 0.15, 2);
-
-            $purchase->receipt()->create([
-                'receipt_unit_price'  => $receiptUnitPrice,
-                'receipt_total_price' => $receiptTotalPrice,
-                'vat_paid'            => $vatPaid,
-                'receipt_date'        => now(),
-                'branch_id'           => $purchase->branch_id,
-                'created_by'          => auth()->id() ?? 1,
+            $purchase = Purchasee::create([
+                'item_code' => $validated['item_code'],
+                'quantity' => $validated['quantity'],
+                'actual_unit_price' => $validated['actual_unit_price'],
+                'actual_total_price' => $actualTotal,
+                'purchase_type' => $validated['purchase_type'],
+                'supplier_name' => $validated['supplier_name'] ?? null,
+                'branch_id' => $validated['branch_id'],
+                'created_by' => Auth::id() ?? 1,
             ]);
-        }
-    });
 
-    return response()->json([
-        'message' => 'Purchase created successfully'
-    ], 201);
-}
+            // Update stock
+            $item = Item::where('item_code', $validated['item_code'])->first();
+            $item->increment('initial_stock', $validated['quantity']);
 
+            // Receipt
+            if ($purchase->purchase_type === 'with_receipt') {
 
-    /**
-     * Show a single purchase by ID
-     */
-    public function show($id)
-    {
-        $purchase = Purchasee::with(['item', 'branch', 'creator', 'receipt'])
-            ->findOrFail($id);
+                $receiptUnit = $validated['receipt_unit_price']
+                    ?? $purchase->actual_unit_price;
 
-        return response()->json($purchase);
+                $receiptTotal = $receiptUnit * $purchase->quantity;
+
+                $vatPaid = round($receiptTotal * 0.15, 2);
+
+                $purchase->receipt()->create([
+                    'receipt_unit_price' => $receiptUnit,
+                    'receipt_total_price' => $receiptTotal,
+                    'vat_paid' => $vatPaid,
+                    'receipt_date' => now(),
+                    'branch_id' => $purchase->branch_id,
+                    'created_by' => Auth::id() ?? 1,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Purchase created successfully'
+        ], 201);
     }
 
     /**
-     * Update a purchase by ID
+     * Show single purchase
+     */
+    public function show($id)
+    {
+        return response()->json(
+            Purchasee::with(['item', 'branch', 'creator', 'receipt'])
+                ->findOrFail($id)
+        );
+    }
+
+    /**
+     * Update purchase
      */
     public function update(Request $request, $id)
     {
-        $purchase = Purchasee::findOrFail($id);
+        $purchase = Purchasee::with('receipt')->findOrFail($id);
 
         $validated = $request->validate([
             'quantity' => 'sometimes|numeric|min:1',
             'actual_unit_price' => 'sometimes|numeric|min:0',
-            'purchase_type' => 'sometimes|string|in:with_receipt,without_receipt',
+            'purchase_type' => 'sometimes|in:with_receipt,without_receipt',
             'supplier_name' => 'nullable|string|max:255',
             'branch_id' => 'sometimes|exists:branches,id',
-            // Receipt fields
-            'receipt_number' => 'nullable|string|max:100',
-            'vat_amount' => 'nullable|numeric|min:0',
-            'total_with_vat' => 'nullable|numeric|min:0',
+            'receipt_unit_price' => 'nullable|numeric|min:0',
         ]);
 
         DB::transaction(function () use ($purchase, $validated) {
+
             $item = $purchase->item;
 
-            // If quantity changes, update item stock accordingly
+            // Adjust stock if quantity changes
             if (isset($validated['quantity'])) {
-                $stockDifference = $validated['quantity'] - $purchase->quantity;
-                if ($item) {
-                    $item->initial_stock += $stockDifference;
-                    $item->save();
-                }
+                $difference = $validated['quantity'] - $purchase->quantity;
+                $item->increment('initial_stock', $difference);
             }
 
-            // Recalculate total price if quantity or unit price changes
-            if (isset($validated['quantity']) || isset($validated['actual_unit_price'])) {
-                $qty = $validated['quantity'] ?? $purchase->quantity;
-                $unit = $validated['actual_unit_price'] ?? $purchase->actual_unit_price;
-                $validated['actual_total_price'] = $qty * $unit;
-            }
+            // Recalculate total if needed
+            $qty = $validated['quantity'] ?? $purchase->quantity;
+            $unit = $validated['actual_unit_price'] ?? $purchase->actual_unit_price;
 
-            // Update purchase
+            $validated['actual_total_price'] = $qty * $unit;
+
             $purchase->update($validated);
 
-            // Handle receipt
-            if (($validated['purchase_type'] ?? $purchase->purchase_type) === 'with_receipt') {
-                $unitPrice = $validated['actual_unit_price'] ?? $purchase->actual_unit_price;
-                $qty = $validated['quantity'] ?? $purchase->quantity;
+            $type = $validated['purchase_type'] ?? $purchase->purchase_type;
+
+            if ($type === 'with_receipt') {
+
+                $receiptUnit = $validated['receipt_unit_price'] ?? $unit;
+                $receiptTotal = $receiptUnit * $qty;
+                $vatPaid = round($receiptTotal * 0.15, 2);
 
                 $purchase->receipt()->updateOrCreate(
                     ['purchasee_id' => $purchase->id],
                     [
-                        'receipt_number' => $validated['receipt_number'] ?? $purchase->receipt->receipt_number ?? null,
-                        'receipt_unit_price' => $unitPrice,
-                        'receipt_total_price' => $unitPrice * $qty,
+                        'receipt_unit_price' => $receiptUnit,
+                        'receipt_total_price' => $receiptTotal,
+                        'vat_paid' => $vatPaid,
                         'receipt_date' => now(),
-                        'vat_amount' => $validated['vat_amount'] ?? $purchase->receipt->vat_amount ?? 0,
                         'branch_id' => $validated['branch_id'] ?? $purchase->branch_id,
-                        'created_by' => Auth::id() ?? null,
+                        'created_by' => Auth::id() ?? 1,
                     ]
                 );
             } else {
-                // Delete receipt if switched to without_receipt
                 $purchase->receipt()?->delete();
             }
         });
@@ -168,22 +158,20 @@ public function store(Request $request)
     }
 
     /**
-     * Delete a purchase by ID
+     * Delete purchase
      */
     public function destroy($id)
     {
         $purchase = Purchasee::findOrFail($id);
 
         DB::transaction(function () use ($purchase) {
-            // Update item stock
+
             $item = $purchase->item;
+
             if ($item) {
-                $item->initial_stock -= $purchase->quantity;
-                if ($item->initial_stock < 0) $item->initial_stock = 0;
-                $item->save();
+                $item->decrement('initial_stock', $purchase->quantity);
             }
 
-            // Delete receipt & purchase
             $purchase->receipt()?->delete();
             $purchase->delete();
         });
@@ -192,4 +180,18 @@ public function store(Request $request)
             'message' => 'Purchase deleted successfully'
         ]);
     }
+    /**
+ * Get purchases WITH receipt only
+ */
+public function withReceipt()
+{
+    return response()->json(
+        Purchasee::with(['receipt'])
+            ->where('purchase_type', 'with_receipt')
+            ->latest()
+            ->get()
+    );
+}
+
+
 }

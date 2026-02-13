@@ -12,7 +12,7 @@ class SaleReceipt extends Model
         'salee_id',
         'receipt_unit_price',
         'receipt_total_price',
-        'vat_collected', // new column
+        'vat_collected', // VAT collected
         'receipt_date',
         'customer_name',
         'customer_phone',
@@ -20,8 +20,16 @@ class SaleReceipt extends Model
         'paid_amount',
         'branch_id',
         'created_by',
+        'images', // NEW: store multiple receipt images as JSON
     ];
 
+    // Cast JSON column to array
+    protected $casts = [
+        'images' => 'array',
+        'receipt_date' => 'date',
+    ];
+
+    // Relations
     public function sale()
     {
         return $this->belongsTo(Salee::class, 'salee_id');
@@ -31,9 +39,9 @@ class SaleReceipt extends Model
     {
         return $this->belongsTo(Branch::class);
     }
-    public function customer()
-{
-    return $this->belongsTo(Customer::class, 'customer_id');
-}
 
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 }

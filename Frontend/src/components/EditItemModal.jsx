@@ -1,147 +1,219 @@
-import { Dialog, DialogContent } from "../components/ui/dialog";
-import { Button } from "../components/ui/button";
-import { useState } from "react";
-import api from "@/api";
+import React, { useState, useEffect } from "react";
+import api from "../api";
 import { toast } from "react-toastify";
-import { useStores } from "@/contexts/storeContext";
-// import { useStores } from "../contexts/storeContext";
+import { useStores } from "../contexts/storeContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { useParams, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
-const EditItemModal = ({ open, setOpen, item }) => {
-  const { fetchItems } = useStores(); // <-- get fetchItems from context
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
-  const [formData, setFormData] = useState({
-    code: item.code || "",
-    part_number: item.part_number || "",
-    item_name: item.item_name || "",
-    quantity: item.quantity || "",
-    brand: item.brand || "",
-    // model: item.model || "",
-    condition: item.condition || "",
-    unit: item.unit || "",
-    purchase_price: item.purchase_price || "",
-    selling_price: item.selling_price || "",
-    least_price: item.least_price || "",
-    maximum_price: item.maximum_price || "",
-    // minimum_quantity: item.minimum_quantity || "",
-    low_quantity: item.low_quantity || "",
-    manufacturer: item.manufacturer || "",
-    // manufacturing_date: item.manufacturing_date || "",
-    // unit_price: item.unit_price || "",
-    total_price: item.total_price || "",
-    location: item.location || "",
-    image: null,
-  });
+export default function EditItemModal({ open, setOpen, item, itemCode }) {
+  // const { id } = useParams();
+  const navigate = useNavigate();
+  // const { fetchItems } = useStores();
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [invoiceImageFile, setInvoiceImageFile] = useState(null);
 
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
-  };
+  const { register, handleSubmit, watch, setValue, reset } = useForm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  /* ================= FETCH ITEM ================= */
+  useEffect(() => {
+    fetchItem();
+  }, [itemCode]);
 
-    const payload = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value !== null && value !== "") {
-        payload.append(key, value);
-      }
-    });
-
+  const fetchItem = async () => {
     try {
-      await api.post(`/items/${item.id}?_method=PUT`, payload, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.get(`/items/${itemCode}`);
+      const itemData = res.data;
 
-      toast.success("Item updated successfully!");
-      await fetchItems(); // <-- refresh list in context
-      setOpen(false);
-    } catch (error) {
-      console.error("Error updating item:", error);
-      toast.error("Failed to update item");
+      reset(itemData);
+
+      const parsedImages =
+        typeof itemData.images === "string"
+          ? JSON.parse(itemData.images)
+          : itemData.images || [];
+
+      setExistingImages(parsedImages);
+    } catch (err) {
+      // toast.error("Failed to load item");
     }
   };
 
-  const fields = [
-    { label: "Item Name:", key: "item_name" },
-    { label: "Part Number:", key: "part_number" },
-    { label: "Brand:", key: "brand" },
-    { label: "Unit:", key: "unit" },
-    { label: "Purchase Price:", key: "purchase_price", type: "number" },
-    { label: "Selling Price:", key: "selling_price", type: "number" },
-    { label: "Quantity:", key: "quantity", type: "number" },
-    { label: "Location:", key: "location" },
-    { label: "Least Price:", key: "least_price", type: "number" },
-    { label: "Maximum Price:", key: "maximum_price", type: "number" },
-    { label: "Low Quantity:", key: "low_quantity", type: "number" },
-    { label: "Manufacturer:", key: "manufacturer" },
-    { label: "Total Price:", key: "total_price", type: "number" },
-  ];
+  /* ================= IMAGE HANDLING ================= */
+
+  const handleImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImages((prev) => [...prev, ...files]);
+  };
+
+  const removeExistingImage = (imageId) => {
+    setExistingImages((prev) => prev.filter((img) => img.id !== imageId));
+  };
+
+  /* ================= UPDATE SUBMIT ================= */
+
+  const onSubmit = async (data) => {
+    setLoading(true);
+
+    try {
+      const fd = new FormData();
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          fd.append(key, value);
+        }
+      });
+
+      images.forEach((file) => fd.append("images[]", file));
+
+      if (invoiceImageFile) {
+        fd.append("invoice_image", invoiceImageFile);
+      }
+
+      await api.post(`/items/${itemCode}?_method=PUT`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Item Updated Successfully",
+        timer: 2000,
+        showConfirmButton: false,
+        didClose: () => navigate("/inventory/total-items"),
+      });
+
+      fetchItems();
+    } catch (err) {
+      // toast.error("Failed to update item");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="bg-white p-0 rounded-lg shadow-lg w-full max-w-2xl sm:max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="border-b p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">Edit Item</h2>
-        </div>
+    <Dialog open={true}>
+      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto p-0">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <Card className="rounded-none">
+            <CardHeader className="border-b bg-muted/40">
+              <CardTitle>✏️ Update Product</CardTitle>
+            </CardHeader>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-6">
-          <div className="flex flex-col gap-5">
-            {fields.map((field, index) => (
-              <div
-                key={index}
-                className="flex flex-col sm:flex-row sm:items-center gap-2"
-              >
-                <label className="sm:w-40 text-sm font-medium text-gray-700">
-                  {field.label}
-                </label>
-                <input
-                  type={field.type || "text"}
-                  value={formData[field.key]}
-                  onChange={(e) => handleChange(field.key, e.target.value)}
-                  className="flex-1 text-sm border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            ))}
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <CardContent className="space-y-8 p-6">
+                {/* ================= ABOUT ITEM ================= */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>📦 About Item</CardTitle>
+                  </CardHeader>
 
-            {/* Image Upload */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <label className="sm:w-40 text-sm font-medium text-gray-700">
-                Image:
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="flex-1 text-sm"
-              />
-            </div>
-          </div>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Existing Images */}
+                    <div className="md:col-span-2">
+                      <Label>Existing Images</Label>
+                      <div className="flex gap-3 flex-wrap mt-2">
+                        {existingImages.map((img) => (
+                          <div key={img.id} className="relative w-24 h-24">
+                            <button
+                              type="button"
+                              onClick={() => removeExistingImage(img.id)}
+                              className="absolute top-1 right-1 bg-red-500 text-white w-5 h-5 rounded-full text-xs"
+                            >
+                              ✕
+                            </button>
+                            <img
+                              src={img.url}
+                              alt=""
+                              className="w-full h-full object-cover rounded border"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-          {/* Actions */}
-          <div className="mt-8 flex justify-end gap-3">
-            <Button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Save
-            </Button>
-          </div>
-        </form>
+                    {/* Upload New Images */}
+                    <div className="md:col-span-2">
+                      <Label>Add New Images</Label>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleImagesChange}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Item Code</Label>
+                      <Input disabled {...register("item_code")} />
+                    </div>
+
+                    <div>
+                      <Label>Item Name</Label>
+                      <Input {...register("item_name")} />
+                    </div>
+
+                    <div>
+                      <Label>Part Number</Label>
+                      <Input {...register("part_number")} />
+                    </div>
+
+                    <div>
+                      <Label>Initial Stock</Label>
+                      <Input type="number" {...register("initial_stock")} />
+                    </div>
+
+                    <div>
+                      <Label>Low Stock Alert</Label>
+                      <Input type="number" {...register("low_stock")} />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* ================= SELLING ================= */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>💰 Selling Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Label>Selling Price</Label>
+                    <Input type="number" {...register("selling_price")} />
+                  </CardContent>
+                </Card>
+              </CardContent>
+
+              <Separator />
+
+              <CardFooter className="justify-end p-6">
+                <Button disabled={loading}>
+                  {loading ? "Updating..." : "Update Product"}
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default EditItemModal;
+}

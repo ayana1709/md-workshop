@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
+
+
+use Illuminate\Validation\ValidationException;
 class ItemController extends Controller
 {
 
@@ -57,11 +61,11 @@ public function store(Request $request)
         'purchase_price' => 'nullable|numeric|min:0',
         'purchase_receipt_price' => 'nullable|numeric|min:0',
         'selling_price' => 'nullable|numeric|min:0',
-        'branch_id' => 'required|exists:branches,id',
+        'branch_id' => 'nullable|exists:branches,id',
         'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
-        'vat_amount' => 'nullable|numeric|min:0',
-        'total_with_vat' => 'nullable|numeric|min:0',
-        'receipt_number' => 'nullable|string|max:100',
+        'invoice_number' => 'nullable|string|max:100',
+        'invoice_date' => 'nullable|date',
+        'invoice_image' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
     ]);
 
     DB::beginTransaction();
@@ -86,9 +90,10 @@ public function store(Request $request)
             'low_stock'   => $validated['low_stock'] ?? null,
             'branch_id'   => $validated['branch_id'],
             'created_by'  => $userId,
+            'selling_price' => $validated['selling_price'] ?? 0,
         ]);
 
-        // Handle images
+        // Handle item images
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
@@ -98,13 +103,9 @@ public function store(Request $request)
         $item->images = json_encode(empty($imagePaths) ? ['items/default.jpg'] : $imagePaths);
         $item->save();
 
-        // Ensure QR code folder exists
+        // QR code generation
         $qrDir = storage_path('app/public/qrcodes');
-        if (!file_exists($qrDir)) {
-            mkdir($qrDir, 0777, true);
-        }
-
-        // Generate QR code
+        if (!file_exists($qrDir)) mkdir($qrDir, 0777, true);
         $qrFileName = 'item_' . $item->item_code . '.svg';
         QrCode::format('svg')->size(300)->generate($item->item_code, $qrDir . '/' . $qrFileName);
         $item->qr_code = 'qrcodes/' . $qrFileName;
@@ -125,35 +126,31 @@ public function store(Request $request)
         ]);
 
         // PURCHASE RECEIPT (if with_receipt)
-    // PURCHASE RECEIPT (if with_receipt)
-if ($purchase->purchase_type === 'with_receipt' && !empty($validated['purchase_receipt_price'])) {
+        if ($purchase->purchase_type === 'with_receipt' && !empty($validated['purchase_receipt_price'])) {
+            $receiptUnitPrice  = $validated['purchase_receipt_price'];
+            $receiptTotalPrice = $receiptUnitPrice * $quantity;
+            $vatPaid = round($receiptTotalPrice * 0.15, 2);
 
-    $receiptUnitPrice  = $validated['purchase_receipt_price'];
-    $receiptTotalPrice = $receiptUnitPrice * $quantity;
+            $receiptData = [
+                'receipt_unit_price'  => $receiptUnitPrice,
+                'receipt_total_price' => $receiptTotalPrice,
+                'vat_paid'            => $vatPaid,
+                'receipt_date'        => now(),
+                'branch_id'           => $validated['branch_id'],
+                'created_by'          => $userId,
+            ];
 
-    // ✅ VAT = 15% of receipt total
-    $vatPaid = round($receiptTotalPrice * 0.15, 2);
+            // Add invoice details
+            if (!empty($validated['invoice_number'])) $receiptData['invoice_number'] = $validated['invoice_number'];
+            if (!empty($validated['invoice_date'])) $receiptData['invoice_date'] = $validated['invoice_date'];
 
-    $purchase->receipt()->create([
-        'receipt_unit_price'  => $receiptUnitPrice,
-        'receipt_total_price' => $receiptTotalPrice,
-        'vat_paid'            => $vatPaid,
-        'receipt_date'        => now(),
-        'branch_id'           => $validated['branch_id'],
-        'created_by'          => $userId,
-    ]);
-}
+            // Handle invoice image
+            if ($request->hasFile('invoice_image')) {
+                $receiptData['invoice_image'] = $request->file('invoice_image')->store('invoices', 'public');
+            }
 
-
-        // SELL CONFIG
-        Salee::create([
-            'item_code' => $item->item_code,
-            'quantity' => 0,
-            'actual_unit_price' => $validated['selling_price'] ?? 0,
-            'actual_total_price' => 0,
-            'branch_id' => $validated['branch_id'],
-            'created_by' => $userId,
-        ]);
+            $purchase->receipt()->create($receiptData);
+        }
 
         DB::commit();
 
@@ -173,151 +170,640 @@ if ($purchase->purchase_type === 'with_receipt' && !empty($validated['purchase_r
 }
 
 
+public function update(Request $request, $item_code)
+{
+    $item = Item::where('item_code', $item_code)->firstOrFail();
 
+    $validated = $request->validate([
+        'item_name' => 'required|string|max:255',
+        'part_number' => 'nullable|string|max:255',
+        'category_id' => 'nullable|exists:categories,id',
+        'brand_id'    => 'nullable|exists:brands,id',
+        'unit'        => 'required|string|max:50',
+        'location'    => 'nullable|string|max:255',
+        'initial_stock' => 'nullable|integer|min:0',
+        'low_stock' => 'nullable|integer|min:0',
+        'purchase_type' => 'nullable|in:with_receipt,without_receipt',
+        'purchase_price' => 'nullable|numeric|min:0',
+        'purchase_receipt_price' => 'nullable|numeric|min:0',
+        'selling_price' => 'nullable|numeric|min:0',
+        'branch_id' => 'nullable|exists:branches,id',
+        'images.*' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+        'invoice_number' => 'nullable|string|max:100',
+        'invoice_date' => 'nullable|date',
+        'invoice_image' => 'nullable|image|mimes:jpg,jpeg,png|max:10240',
+    ]);
 
+    DB::beginTransaction();
 
+    try {
+        $userId = auth()->id() ?? 1;
 
-    public function getByPartNumber($part_number)
-    {
-        $item = Item::where('part_number', $part_number)->first();
-        if (! $item) {
-            return response()->json(['message' => 'Item not found'], 404);
-        }
-        return response()->json($item);
-    }
-    public function update(Request $request, $id)
-    {
-        $item = Item::findOrFail($id);
-        $validated = $request->validate([
-            'code' => 'nullable|string|max:20',
-            'part_number' => 'nullable|string|max:255',
-            'item_name' => 'nullable|string|max:255',
-            'quantity' => 'nullable|integer|min:0',
-            'brand' => 'nullable|string|max:255',
-            'type' => 'nullable|string|max:255',
-            // 'unit_price' => 'nullable|numeric|min:0',
-            'total_price' => 'nullable|numeric|min:0',
-            'location' => 'nullable|string|max:255',
-            'condition' => 'nullable|string|max:255',
-            'unit' => 'nullable|string|max:255',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'least_price' => 'nullable|numeric|min:0',
-            'maximum_price' => 'nullable|numeric|min:0',
-            'minimum_quantity' => 'nullable|integer|min:0',
-            'low_quantity' => 'nullable|integer|min:0',
-            'shelf_number' => 'nullable|string|max:255',
-            'manufacturer' => 'nullable|string|max:255',
-            'manufacturing_date' => 'nullable|date',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:10240',
+        /* =============================
+           UPDATE ITEM TABLE
+        ============================== */
+        $item->update([
+            'item_name'     => $validated['item_name'],
+            'part_number'   => $validated['part_number'] ?? $item->part_number,
+            'category_id'   => $validated['category_id'] ?? null,
+            'brand_id'      => $validated['brand_id'] ?? null,
+            'branch_id'     => $validated['branch_id'] ?? null,
+            'unit'          => $validated['unit'],
+            'location'      => $validated['location'] ?? $item->location,
+            'initial_stock' => $validated['initial_stock'] ?? $item->initial_stock,
+            'low_stock'     => $validated['low_stock'] ?? $item->low_stock,
+            'selling_price' => $validated['selling_price'] ?? $item->selling_price,
         ]);
 
-        if ($request->hasFile('image')) {
+        /* =============================
+           IMAGE REPLACEMENT
+        ============================== */
+        if ($request->hasFile('images')) {
 
-            if ($item->image && Storage::disk('public')->exists($item->image)) {
-                Storage::disk('public')->delete($item->image);
+            $oldImages = is_string($item->images)
+                ? json_decode($item->images, true)
+                : $item->images;
+
+            if (is_array($oldImages)) {
+                foreach ($oldImages as $oldImage) {
+                    Storage::disk('public')->delete($oldImage);
+                }
             }
 
-            $path = $request->file('image')->store('items', 'public');
-            $validated['image'] = $path;
+            $paths = [];
+            foreach ($request->file('images') as $image) {
+                $paths[] = $image->store('items', 'public');
+            }
+
+            $item->images = json_encode($paths);
+            $item->save();
         }
 
-        if (isset($validated['quantity']) && isset($validated['unit_price'])) {
-            $validated['total_price'] = $validated['quantity'] * $validated['unit_price'];
+        /* =============================
+           UPDATE / CREATE PURCHASE
+        ============================== */
+        if (!empty($validated['purchase_type'])) {
+
+            $quantity = $validated['initial_stock'] ?? $item->initial_stock;
+            $purchasePrice = $validated['purchase_price'] ?? 0;
+
+            $purchase = Purchasee::updateOrCreate(
+                ['item_code' => $item->item_code],
+                [
+                    'quantity' => $quantity,
+                    'actual_unit_price' => $purchasePrice,
+                    'actual_total_price' => $purchasePrice * $quantity,
+                    'purchase_type' => $validated['purchase_type'],
+                    'branch_id' => $validated['branch_id'],
+                    'created_by' => $userId,
+                ]
+            );
+
+            /* =============================
+               HANDLE RECEIPT
+            ============================== */
+            if (
+                $purchase->purchase_type === 'with_receipt' &&
+                !empty($validated['purchase_receipt_price'])
+            ) {
+
+                $receiptUnitPrice  = $validated['purchase_receipt_price'];
+                $receiptTotalPrice = $receiptUnitPrice * $quantity;
+                $vatPaid = round($receiptTotalPrice * 0.15, 2);
+
+                $receiptData = [
+                    'receipt_unit_price'  => $receiptUnitPrice,
+                    'receipt_total_price' => $receiptTotalPrice,
+                    'vat_paid'            => $vatPaid,
+                    'receipt_date'        => now(),
+                    'branch_id'           => $validated['branch_id'],
+                    'created_by'          => $userId,
+                ];
+
+                if (!empty($validated['invoice_number']))
+                    $receiptData['invoice_number'] = $validated['invoice_number'];
+
+                if (!empty($validated['invoice_date']))
+                    $receiptData['invoice_date'] = $validated['invoice_date'];
+
+                if ($request->hasFile('invoice_image')) {
+                    $receiptData['invoice_image'] =
+                        $request->file('invoice_image')->store('invoices', 'public');
+                }
+
+                $purchase->receipt()->updateOrCreate(
+                    ['purchasee_id' => $purchase->id],
+                    $receiptData
+                );
+            }
         }
 
-        $item->update($validated);
+        DB::commit();
 
         return response()->json([
             'message' => 'Item updated successfully',
-            'item' => $item,
-        ]);
-    }
-
-    public function show($id)
-    {
-        $item = Item::findOrFail($id);
-
-        return response()->json($item);
-    }
-
-    public function fetchSelectedItems(Request $request)
-    {
-        $validated = $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'integer|exists:items,id',
+            'item' => $item->fresh(['category', 'brand', 'branch']),
         ]);
 
-        $items = Item::whereIn('id', $validated['ids'])->get();
+    } catch (\Throwable $e) {
+        DB::rollBack();
 
         return response()->json([
-            'message' => 'Items fetched successfully',
-            'items' => $items,
+            'message' => 'Failed to update item',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+
+ public function availableItems(Request $request)
+    {
+        $items = Item::with(['brand', 'category', 'branch'])
+            ->where('stock_status', 'available')
+            ->get();
+
+        return response()->json($items);
+    }
+
+    /**
+     * Fetch all low stock items (stock_status = 'low_stock')
+     */
+    public function lowStockItems(Request $request)
+    {
+        $items = Item::with(['brand', 'category', 'branch'])
+            ->where('stock_status', 'low_stock')
+            ->get();
+
+        return response()->json($items);
+    }
+
+    /**
+     * Fetch all out-of-stock items (stock_status = 'out_of_stock')
+     */
+    public function outOfStockItems(Request $request)
+    {
+        $items = Item::with(['brand', 'category', 'branch'])
+            ->where('stock_status', 'out_of_stock')
+            ->get();
+
+        return response()->json($items);
+    }
+
+
+
+public function destroy($item_code)
+{
+    try {
+        $item = Item::where('item_code', $item_code)->firstOrFail();
+
+        DB::transaction(function () use ($item) {
+
+            /* 🔹 Delete images */
+            $images = $item->images;
+            if (is_string($images)) {
+                $images = json_decode($images, true);
+            }
+
+            if (is_array($images)) {
+                foreach ($images as $img) {
+                    Storage::disk('public')->delete($img);
+                }
+            }
+
+            /* 🔹 Delete QR code */
+            if ($item->qr_code) {
+                Storage::disk('public')->delete($item->qr_code);
+            }
+
+            /* 🔹 Delete relations */
+            $item->receipts()->delete();
+            $item->sales()->delete();
+            $item->purchases()->delete();
+
+            /* 🔹 Delete item */
+            $item->delete();
+        });
+
+        return response()->json([
+            'message' => 'Item deleted successfully',
+            'item_code' => $item_code
         ]);
+
+    } catch (\Throwable $e) {
+        Log::error('Delete Item Error: '.$e->getMessage());
+
+        return response()->json([
+            'message' => 'Failed to delete item',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
 
-    public function destroy($id)
-    {
-        $item = Item::findOrFail($id);
-        $item->delete();
 
-        return response()->json(['message' => 'Item deleted successfully']);
-    }
 
-    public function updateField(Request $request, $id)
-    {
+
+
+
+
+public function import(Request $request)
+{
+    // 1️⃣ Validate request structure
+    try {
         $request->validate([
-            'field' => 'required|string|in:quantity,unit_price,part_number,purchase_price,selling_price', // added prices
-            'value' => 'required|string|min:0',
+            'items' => 'required|array|min:1',
         ]);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'message' => 'Invalid import payload',
+            'errors'  => $e->errors(),
+        ], 422);
+    }
 
-        $item = Item::findOrFail($id);
+    $rows = $request->input('items');
+    $userId = auth()->id() ?? 1;
 
-        $item->{$request->field} = $request->value;
+    $inserted = 0;
+    $updated  = 0;
+    $rowErrors = [];
 
-        if (in_array($request->field, ['quantity', 'unit_price', 'purchase_price', 'selling_price'])) {
-            $item->total_price = ($item->quantity ?? 0) * ($item->unit_price ?? $item->purchase_price ?? 0);
+    DB::beginTransaction();
+
+    try {
+        // Get last numeric item_code once
+        $lastCode = Item::orderBy('item_code', 'desc')->value('item_code');
+        $newCodeInt = $lastCode ? (int) $lastCode : 0;
+
+        foreach ($rows as $index => $row) {
+            $rowNumber = $index + 2; // Excel row (assuming header row)
+
+            try {
+                // Normalize headers
+                $normalized = [];
+                foreach ($row as $key => $value) {
+                    $normalized[strtolower(trim($key))] =
+                        is_string($value) ? trim($value) : $value;
+                }
+
+                // Skip empty rows
+                if (!array_filter($normalized)) {
+                    continue;
+                }
+
+                // Required field: item_name
+                $item_name = $normalized['item_name']
+                    ?? $normalized['item name']
+                    ?? null;
+
+                if (!$item_name) {
+                    throw new \Exception('Missing item_name');
+                }
+
+                // Quantities
+                $quantity  = max(0, (int) ($normalized['quantity'] ?? 0));
+                $low_stock = max(0, (int) ($normalized['minimum_stock'] ?? 0));
+
+                // Part number
+                $part_number = $normalized['part_number']
+                    ?? $normalized['part no.']
+                    ?? null;
+
+                if (!$part_number) {
+                    do {
+                        $part_number = 'PN-' . strtoupper(Str::random(8));
+                    } while (Item::where('part_number', $part_number)->exists());
+                }
+
+                // Brand
+                $brand_id = null;
+                if (!empty($normalized['brand'])) {
+                    $brand_id = Brand::firstOrCreate([
+                        'name' => trim($normalized['brand']),
+                    ])->id;
+                }
+
+                // Category
+                $category_id = null;
+                if (!empty($normalized['category'])) {
+                    $category_id = Category::firstOrCreate([
+                        'name' => trim($normalized['category']),
+                    ])->id;
+                }
+
+                // Branch
+                $branchName = trim($normalized['branch'] ?? 'Main Branch');
+                $branch_id = \App\Models\Branch::firstOrCreate([
+                    'name' => $branchName,
+                ])->id;
+
+                // Prices
+                $purchase_price = (float) ($normalized['purchasing_price'] ?? 0);
+                $selling_price  = (float) ($normalized['selling_price'] ?? 0);
+
+                // Defaults
+                $unit     = $normalized['unit'] ?? 'Pcs';
+                $location = $normalized['location'] ?? 'Warehouse';
+
+                // Generate item_code
+                $newCodeInt++;
+                $item_code = str_pad($newCodeInt, 4, '0', STR_PAD_LEFT);
+
+                // Create item
+                $item = Item::create([
+                    'item_code'     => $item_code,
+                    'item_name'     => $item_name,
+                    'part_number'   => $part_number,
+                    'category_id'   => $category_id,
+                    'brand_id'      => $brand_id,
+                    'unit'          => $unit,
+                    'location'      => $location,
+                    'initial_stock' => $quantity,
+                    'low_stock'     => $low_stock,
+                    'branch_id'     => $branch_id,
+                    'created_by'    => $userId,
+                    'selling_price' => $selling_price,
+                ]);
+
+                // Images
+                $images = [];
+                if (!empty($normalized['images'])) {
+                    foreach (explode(',', $normalized['images']) as $img) {
+                        $img = trim($img);
+                        if ($img) $images[] = 'items/' . $img;
+                    }
+                }
+                $item->images = json_encode(
+                    $images ?: ['items/default.jpg']
+                );
+                $item->save();
+
+                // QR Code
+                $qrDir = storage_path('app/public/qrcodes');
+                if (!is_dir($qrDir)) {
+                    mkdir($qrDir, 0755, true);
+                }
+
+                // $qrFile = "item_{$item->item_code}.svg";
+                // QrCode::format('svg')
+                //     ->size(300)
+                //     ->generate($item->item_code, $qrDir . '/' . $qrFile);
+
+                // $item->update([
+                //     'qr_code' => 'qrcodes/' . $qrFile,
+                // ]);
+
+                // Initial purchase record
+                Purchasee::create([
+                    'item_code'          => $item->item_code,
+                    'quantity'           => $quantity,
+                    'actual_unit_price'  => $purchase_price,
+                    'actual_total_price' => $purchase_price * $quantity,
+                    'purchase_type'      => 'without_receipt',
+                    'branch_id'          => $branch_id,
+                    'created_by'         => $userId,
+                ]);
+
+                $inserted++;
+
+            } catch (\Throwable $rowException) {
+                // Collect row-level errors but continue import
+                $rowErrors[] = [
+                    'row'    => $rowNumber,
+                    'error'  => $rowException->getMessage(),
+                ];
+
+                Log::warning('Import row failed', [
+                    'row'   => $rowNumber,
+                    'error' => $rowException->getMessage(),
+                ]);
+            }
         }
 
-        $item->save();
+        DB::commit();
 
         return response()->json([
-            'message' => ucfirst($request->field).' updated successfully',
-            'item' => $item,
+            'message'   => 'Import completed',
+            'inserted'  => $inserted,
+            'updated'   => $updated,
+            'failed'    => count($rowErrors),
+            'errors'    => $rowErrors,
         ], 200);
-    }
 
-    public function itemOut(Request $request, $id)
-    {
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
-        $item = Item::findOrFail($id);
-        if ($request->quantity > $item->quantity) {
-            return response()->json(['error' => 'Not enough stock available'], 400);
-        }
+    } catch (\Throwable $e) {
+        DB::rollBack();
 
-        $totalPrice = $request->quantity * $item->unit_price;
-
-        ItemOut::create([
-            'item_id' => $item->id,
-            'part_number' => $item->part_number,
-            'description' => $item->description,
-            'brand' => $item->brand,
-            'type' => $item->type,
-            'condition' => $item->condition,
-            'quantity' => $request->quantity,
-            // 'unit_price' => $item->unit_price,
-            'total_price' => $totalPrice,
-            'location' => $item->location,
-            'date' => now(),
+        Log::error('Item import failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
         ]);
 
-        $item->quantity -= $request->quantity;
-        $item->save();
-
-        return response()->json(['message' => 'Item successfully moved out', 'updated_quantity' => $item->quantity]);
+        return response()->json([
+            'message' => 'Import failed due to server error',
+        ], 500);
     }
+}
+
+
+
+public function search(Request $request)
+{
+    $q = $request->query('q');
+    $branchId = $request->query('branch_id');
+
+    if (!$q || !$branchId) {
+        return response()->json([
+            'items' => []
+        ]);
+    }
+
+    $items = Item::with([
+            'brand:id,name',
+            'category:id,name',
+            'branch:id,name',
+            'creator:id,name',
+            'purchases',
+            'sales',
+        ])
+        ->where('branch_id', $branchId)
+        ->where(function ($query) use ($q) {
+            $query->where('item_code', 'LIKE', "%{$q}%")
+                  ->orWhere('item_name', 'LIKE', "%{$q}%")
+                  ->orWhere('part_number', 'LIKE', "%{$q}%");
+        })
+        ->orderBy('item_name')
+        ->limit(20)
+        ->get();
+
+    return response()->json([
+        'items' => $items
+    ]);
+}
+
+
+
+
+
+
+
+
+public function scanCode(Request $request)
+{
+    $request->validate([
+        'code' => 'required|string',
+        'branch_id' => 'nullable|exists:branches,id',
+    ]);
+
+    $code     = trim($request->code);
+    $branchId = $request->branch_id;
+
+    $query = Item::with([
+        'category:id,name',
+        'brand:id,name',
+        'branch:id,name',
+        'purchases',
+        'sales',
+    ]);
+
+    if ($branchId) {
+        $query->where('branch_id', $branchId);
+    }
+
+    $item = $query->where(function ($q) use ($code) {
+        $q->where('item_code', $code)
+          ->orWhere('part_number', $code);
+    })->first();
+
+    if (! $item) {
+        return response()->json([
+            'message' => 'Item not found for scanned code',
+            'code' => $code,
+        ], 404);
+    }
+
+    return response()->json([
+        'message' => 'Item detected successfully',
+        'item' => $item,
+        'qr_url' => $item->qr_code ? asset('storage/' . $item->qr_code) : null,
+    ]);
+}
+
+
+
+
+
+
+
+//old code  change codes dow this to new code with item code
+
+
+
+   
+
+
+
+// Fetch a single item by item_code
+public function show($itemCode)
+{
+    $item = Item::where('item_code', $itemCode)
+                ->with(['category', 'brand', 'branch', 'purchases', 'sales'])
+                ->first();
+
+    if (!$item) {
+        return response()->json([
+            'message' => 'Item not found',
+            'item_code' => $itemCode
+        ], 404);
+    }
+
+    return response()->json($item);
+}
+
+// Fetch multiple items by array of item_codes
+public function fetchSelectedItems(Request $request)
+{
+    $validated = $request->validate([
+        'codes' => 'required|array',
+        'codes.*' => 'string|exists:items,item_code',
+    ]);
+
+    $items = Item::whereIn('item_code', $validated['codes'])
+                 ->with(['category', 'brand', 'branch', 'purchases', 'sales'])
+                 ->get();
+
+    return response()->json([
+        'message' => 'Items fetched successfully',
+        'items' => $items,
+    ]);
+}
+
+
+
+
+
+
+
+public function bulkToggleEcommerce(Request $request)
+{
+    $request->validate([
+        'items' => 'required|array',
+        'items.*.item_code' => 'required|string',
+        'items.*.posted' => 'required|boolean',
+    ]);
+
+    foreach ($request->items as $item) {
+        Item::where('item_code', $item['item_code'])
+            ->update(['posted_to_ecommerce' => $item['posted']]);
+    }
+
+    return response()->json([
+        'message' => 'Items updated successfully'
+    ]);
+}
+
+
+public function ecommerceIndex()
+{
+    return Item::with(['category', 'brand'])
+        ->where('posted_to_ecommerce', true)
+        ->orWhereNotNull('posted_to_ecommerce')
+        ->get();
+}
+public function addToEcommerce(Request $request)
+{
+    $request->validate([
+        'item_codes' => 'required|array',
+    ]);
+
+    Item::whereIn('item_code', $request->item_codes)
+        ->update([
+            // DO NOT force true
+            'posted_to_ecommerce' => DB::raw('posted_to_ecommerce')
+        ]);
+
+    return response()->json([
+        'message' => 'Items added to ecommerce manager'
+    ]);
+}
+
+
+public function toggleEcommerce(Request $request)
+{
+    $request->validate([
+        'item_code' => 'required|string',
+        'posted' => 'required|boolean',
+    ]);
+
+    $item = Item::where('item_code', $request->item_code)->firstOrFail();
+    $item->posted_to_ecommerce = $request->posted;
+    $item->save();
+
+    return response()->json([
+        'message' => 'Ecommerce status updated',
+        'posted_to_ecommerce' => $item->posted_to_ecommerce
+    ]);
+}
+
+
 
     public function getOutOfStockItems()
     {
@@ -344,204 +830,47 @@ if ($purchase->purchase_type === 'with_receipt' && !empty($validated['purchase_r
         return response()->json($itemsOut, 200);
     }
 
-    public function addMore(Request $request)
-    {
-        $validated = $request->validate([
-            'id' => 'required|integer|exists:items,id',
-            'part_number' => 'nullable|string',
-            'quantity' => 'nullable|integer|min:0',
-            // 'unit_price' => 'nullable|numeric|min:0',
-            'purchase_price' => 'nullable|numeric|min:0',
-            'selling_price' => 'nullable|numeric|min:0',
-            'condition' => 'nullable|string|in:New,Used',
-        ]);
-
-        $item = Item::find($validated['id']);
-
-        if ($item) {
-
-            if (isset($validated['quantity'])) {
-                $item->quantity = $validated['quantity'];
-            }
-
-            if (isset($validated['part_number'])) {
-                $item->part_number = $validated['part_number'];
-            }
-
-            if (isset($validated['unit_price'])) {
-                $item->unit_price = $validated['unit_price'];
-            }
-
-            if (isset($validated['purchase_price'])) {
-                $item->purchase_price = $validated['purchase_price'];
-            }
-
-            if (isset($validated['selling_price'])) {
-                $item->selling_price = $validated['selling_price'];
-            }
-
-            $item->total_price = $item->quantity * $item->unit_price;
-
-            $item->save();
-
-            return response()->json([
-                'message' => 'Item updated successfully with new values',
-                'item' => $item,
-            ], 200);
-        }
-
-        return response()->json([
-            'message' => 'Item not found',
-        ], 404);
-    }
-
-    public function dashboardStats()
-    {
-        return response()->json([
-            'total_items' => Item::count(),
-            'total_quantity' => Item::sum('quantity'),
-            'out_of_stock' => Item::where('quantity', 0)->count(),
-            'low_stock' => Item::where('quantity', '<', 10)->count(),
-        ]);
-    }
-
-    public function import(Request $request)
-    {
-        $rows = $request->input('items', []);
-
-        if (! $rows || count($rows) === 0) {
-            return response()->json([
-                'message' => 'No rows were received for processing.',
-                'inserted' => 0,
-                'updated' => 0,
-            ], 400);
-        }
-
-        try {
-
-            $mappedItems = collect($rows)
-                ->map(function ($row, $index) {
-
-                    $normalized = [];
-                    foreach ($row as $key => $value) {
-
-                        $normalized[strtolower(trim($key))] = trim($value);
-                    }
-
-                    $allValues = implode('', array_map('strval', $normalized));
-                    if (trim($allValues) === '') {
-                        return null;
-                    }
-
-                    $item_name =
-                        $normalized['item_name'] ??
-                        $normalized['item name'] ??
-                        $normalized['item'] ??
-                        null;
-
-                    $quantity =
-                        isset($normalized['quantity']) && $normalized['quantity'] !== '' ? intval($normalized['quantity']) : (isset($normalized['qyt']) && $normalized['qyt'] !== '' ? intval($normalized['qyt']) : (isset($normalized['qty']) && $normalized['qty'] !== '' ? intval($normalized['qty']) : null));
-
-                    if (! $item_name) {
-                        throw new \Exception('Row '.($index + 1).' is missing Item Name');
-                    }
-
-                    if ($quantity === null || $quantity === '') {
-                        $quantity = 0;
-                    }
-
-                    return [
-                        'image' => $normalized['image'] ?? null,
-                        'item_name' => $item_name,
-
-                        'part_number' => $normalized['part_number'] ?? $normalized['part no.'] ?? $normalized['part number'] ?? null,
-
-                        'brand' => $normalized['brand'] ?? null,
-                        'unit' => $normalized['unit'] ?? null,
-                        'quantity' => $quantity,
-
-                        'low_quantity' => $normalized['low_quantity'] ?? $normalized['low qty'] ?? 0,
-
-                        'purchase_price' => $normalized['purchase_price'] ?? $normalized['pr price'] ?? 0,
-
-                        'selling_price' => $normalized['selling_price'] ?? $normalized['sl.price'] ?? 0,
-
-                        'least_price' => $normalized['least_price'] ?? $normalized['least price'] ?? 0,
-
-                        'condition' => $normalized['condition'] ?? null,
-                        'type' => $normalized['type'] ?? null,
-                        'manufacturer' => $normalized['manufacturer'] ?? null,
-                        'location' => $normalized['location'] ?? null,
-
-                        'shelf_number' => $normalized['shelf_number'] ?? $normalized['shalf no'] ?? null,
-                    ];
-                })
-                ->filter()
-                ->values();
-
-            $items = $mappedItems->toArray();
-
-            $inserted = [];
-            $updated = [];
-
-            foreach ($items as $item) {
-
-                foreach ($item as $key => $value) {
-                    if ($value === '' || $value === ' ') {
-                        $item[$key] = null;
-                    }
-                }
-                $item['purchase_price'] = $item['purchase_price'] ?? 0;
-                $item['selling_price'] = $item['selling_price'] ?? 0;
-                $item['least_price'] = $item['least_price'] ?? 0;
-                $item['low_quantity'] = $item['low_quantity'] ?? 0;
-
-                $item['condition'] = $item['condition'] ?? 'New';
-                $item['brand'] = $item['brand'] ?? 'N/A';
-                $item['unit'] = $item['unit'] ?? 'Pcs';
-                $item['type'] = $item['type'] ?? 'General';
-                $item['manufacturer'] = $item['manufacturer'] ?? 'Unknown';
-                $item['location'] = $item['location'] ?? 'Warehouse';
-                $item['shelf_number'] = $item['shelf_number'] ?? 'N/A';
-
-                if (empty($item['part_number'])) {
-                    do {
-                        $pn = 'PN-'.strtoupper(Str::random(8));
-                    } while (Item::where('part_number', $pn)->exists());
-
-                    $item['part_number'] = $pn;
-                }
-
-                $item['code'] = strtoupper(substr(uniqid(), -8));
-
-                $item['total_price'] = $item['quantity'] * ($item['purchase_price'] ?? 0);
-
-                if (empty($item['image'])) {
-                    $item['image'] = 'items/default.jpg';
-                }
-
-                try {
-                    $created = Item::create($item);
-                    $inserted[] = $created;
-                } catch (\Illuminate\Database\QueryException $e) {
-                    Log::error('Import QueryException (Skipped): Item failed DB insert. Message: '.$e->getMessage(), ['item_data' => $item]);
-                }
-            }
-
-            // 4. Return Final Counts
-            return response()->json([
-                'message' => 'Import completed successfully',
-                'inserted' => count($inserted),
-                'updated' => count($updated),
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Import failed: '.$e->getMessage(),
-            ], 400);
-        }
-    }
+public function dashboardStats()
+{
+    return response()->json([
+        'total_items'    => Item::count(),
+        'total_quantity' => Item::sum('initial_stock'),
+        'out_of_stock'   => Item::where('stock_status', 'out_of_stock')->count(),
+        'low_stock'      => Item::where('stock_status', 'low_stock')->count(),
+        'available'      => Item::where('stock_status', 'available')->count(),
+    ]);
+}
 
 
+
+// public function dashboardStats()
+// {
+//     $totalItems = Item::count();
+//     $totalQuantity = Item::sum('quantity');
+
+//     // Out of stock
+//     $outOfStock = Item::where('quantity', 0)->count();
+
+//     // Low stock based on each item's threshold
+//     $lowStock = Item::whereColumn('quantity', '<=', 'low_stock')
+//         ->whereNotNull('low_stock')
+//         ->count();
+
+//     // Below initial stock (stock reduced)
+//     $belowInitial = Item::whereColumn('quantity', '<', 'initial_stock')->count();
+
+//     // Healthy stock (equal or above initial)
+//     $healthyStock = Item::whereColumn('quantity', '>=', 'initial_stock')->count();
+
+//     return response()->json([
+//         'total_items'     => $totalItems,
+//         'total_quantity'  => $totalQuantity,
+//         'out_of_stock'    => $outOfStock,
+//         'low_stock'       => $lowStock,
+//         'below_initial'   => $belowInitial,
+//         'healthy_stock'   => $healthyStock,
+//     ]);
+// }
 
 
 

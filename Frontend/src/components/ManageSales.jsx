@@ -75,277 +75,81 @@ export default function ManageSales() {
 
   useEffect(() => {
     api
-      .get("/sales")
+      .get("/salee")
       .then((res) => setSales(res.data))
       .catch((err) => console.error(err));
   }, []);
 
   console.log(selectedSale);
-
   const columns = [
-    { accessorKey: "id", header: "#" },
-    { accessorKey: "ref_num", header: "REF Num" },
-
-    { accessorKey: "sales_date", header: " Date" },
-    { accessorKey: "tin_number", header: "Reaquested By" },
-
-    { accessorKey: "customer_name", header: "To" },
-
-    { accessorKey: "company_name", header: "Reason" },
-
-    { accessorKey: "approved_by", header: "Approved By" },
-
-    // { accessorKey: "requested_date", header: "Requested Date" },
-
-    { accessorKey: "location", header: "Location" },
-
     {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.original.status;
-
-        const colors = {
-          Requested: "bg-yellow-200 text-yellow-800",
-          "Store Out": "bg-blue-200 text-blue-800",
-          Pending: "bg-orange-200 text-orange-800",
-          Approved: "bg-green-200 text-green-800",
-        };
-
-        return (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[status]}`}
-          >
-            {status}
-          </span>
-        );
-      },
+      header: "#",
+      cell: ({ row }) => row.index + 1,
     },
 
-    // { accessorKey: "total_amount", header: "Total Amount" },
+    {
+      header: "Date",
+      accessorKey: "created_at",
+      cell: ({ getValue }) => new Date(getValue()).toLocaleDateString(),
+    },
 
-    // { accessorKey: "paid_amount", header: "Paid" },
+    {
+      header: "Customer",
+      accessorFn: (row) => row.customer?.full_name || "-",
+    },
 
-    // { accessorKey: "due_amount", header: "Remaining" },
+    {
+      header: "Phone",
+      accessorFn: (row) => row.customer?.phone || "-",
+    },
+
+    {
+      header: "Sale Type",
+      accessorKey: "sale_type",
+      cell: ({ getValue }) =>
+        getValue() === "with_receipt" ? "With Receipt" : "Without Receipt",
+    },
+
+    {
+      header: "Subtotal",
+      accessorKey: "subtotal",
+    },
+
+    {
+      header: "VAT",
+      accessorKey: "vat_amount",
+    },
+
+    {
+      header: "Grand Total",
+      accessorKey: "grand_total",
+    },
+
+    {
+      header: "Paid",
+      accessorFn: (row) => row.receipt?.paid_amount || "0.00",
+    },
+
+    {
+      header: "Payment",
+      accessorFn: (row) => row.receipt?.payment_type || "-",
+    },
+
+    {
+      header: "Branch",
+      accessorFn: (row) => row.branch?.name || "-",
+    },
+
+    {
+      header: "Created By",
+      accessorFn: (row) => row.creator?.name || "-",
+    },
 
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const sale = row.original;
-
-        const handleDelete = () => {
-          if (confirm("Are you sure you want to delete this sale?")) {
-            console.log("Deleting sale:", sale);
-            // Perform delete logic here
-          }
-        };
-        const handlePrintById = async (saleId) => {
-          try {
-            const { data: sale } = await api.get(`/sales/${saleId}`);
-            const { name, nameAm, phone, address, tin, logo } = companyInfo;
-
-            const {
-              ref_num,
-              customer_name,
-              sales_date,
-              total_amount,
-              sub_total,
-              discount,
-              vat_rate,
-              paid_amount,
-              due_amount,
-              payment_status,
-              payment_type,
-              remark,
-              location,
-              delivered_by,
-              requested_date,
-              approved_by,
-              status,
-              items,
-            } = sale;
-
-            const amountInWords = `${parseFloat(total_amount).toFixed(
-              2
-            )} Birr Only`;
-
-            const style = `
-      <style>
-        body { font-family: 'Arial', sans-serif; font-size: 12px; color: #000; }
-        .invoice-box { width: 100%; position: relative; }
-        
-        .title-main { text-align: center; margin-top: 10px; font-weight: bold; line-height: 1.4; }
-        .title-main .am { font-size: 18px; font-weight: bold; }
-        .title-main .en { font-size: 16px; }
-
-        /* TABLE STYLES */
-        .info, .items, .summary { width: 100%; border-collapse: collapse; }
-        .info td { padding: 3px 6px; font-size: 12px; }
-        
-        .items th, .items td { border: 1px solid #000; padding: 5px; font-size: 12px; }
-        .items th { background: #f2f2f2; text-align: center; }
-        
-        .summary { width: 40%; float: right; margin-top: 15px; }
-        .summary th, .summary td { border: 1px solid #000; padding: 5px; }
-
-        .footer { margin-top: 40px; font-size: 11px; text-align: center; color: #444; }
-
-        .watermark {
-          position: fixed;
-          inset: 0;
-          display:flex; justify-content:center; align-items:center;
-          z-index:0; pointer-events:none;
-        }
-        .watermark span {
-          transform: rotate(-45deg);
-          font-size: 50px;
-          color: rgba(150, 150, 150, 0.15);
-          font-weight: bold;
-        }
-      </style>
-    `;
-
-            const itemsTable = items
-              .map(
-                (it, idx) => `
-        <tr>
-          <td style="text-align:center">${idx + 1}</td>
-          <td>${it.pivot.item_name}</td>
-          <td>${it.pivot.unit || "-"}</td>
-          <td style="text-align:center">${it.pivot.sale_quantity}</td>
-          <td style="text-align:right">${parseFloat(
-            it.pivot.selling_price
-          ).toFixed(2)}</td>
-          <td style="text-align:right">${(
-            parseFloat(it.pivot.sale_quantity) *
-            parseFloat(it.pivot.selling_price)
-          ).toFixed(2)}</td>
-        </tr>`
-              )
-              .join("");
-
-            const vatAmount = (
-              (parseFloat(sub_total) - parseFloat(discount)) *
-              (parseFloat(vat_rate) / 100)
-            ).toFixed(2);
-
-            const content = `
-      <html>
-        <head>
-          <title>Store Issue Invoice</title>
-          <meta charset="UTF-8"/>
-          ${style}
-        </head>
-        <body>
-          <div class="invoice-box">
-
-            <!-- HEADER -->
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-              <div style="width:80px;">
-                ${logo ? `<img src="${logo}" style="max-width:100%">` : ""}
-              </div>
-
-              <div style="text-align:center; flex:1;">
-                <h2>${name || "Company Name"}</h2>
-                <h3 style="margin-top:4px;">${nameAm || ""}</h3>
-                <div>${address || ""} | Tel: ${phone || ""}</div>
-                <div><strong>TIN:</strong> ${tin || ""}</div>
-              </div>
-
-              <div style="width:80px;">
-                ${logo ? `<img src="${logo}" style="max-width:100%">` : ""}
-              </div>
-            </div>
-
-            <div class="title-main">
-              <div class="am">የዕቃ ማውጫ ሰነድ</div>
-              <div class="en">Store Issue Invoice</div>
-            </div>
-
-            <hr/>
-
-            <!-- SALE INFO -->
-            <table class="info">
-              <tr>
-                <td>
-
-                  <strong>Ref No:</strong> ${ref_num} <br/>
-                  <strong>Approved By:</strong> ${approved_by || "-"} <br/>
-                  <strong>Delivered By:</strong> ${delivered_by || "-"} <br/>
-                </td>
-                <td>
-                  <strong>To:</strong> ${customer_name} <br/>
-                  <strong>Store out Date:</strong> ${sales_date} <br/>
-                  <strong>Requested Date:</strong> ${requested_date} <br/>
-                  <strong>Location:</strong> ${location || "-"} <br/>
-                  <strong>Status:</strong> ${status} <br/>
-
-                </td>
-              </tr>
-            </table>
-
-            <!-- ITEMS -->
-            <table class="items">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Item</th>
-                  <th>Unit</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>${itemsTable}</tbody>
-            </table>
-
-            <!-- SUMMARY -->
-            
-
-            <div style="clear:both;"></div>
-
-            <div><strong>Amount in Words:</strong> ${amountInWords}</div>
-
-            <!-- SIGNATURES -->
-            <table width="100%" style="margin-top:30px;">
-              <tr>
-                <td>Requested Signature: ____________________</td>
-                <td>Approver Signature: ____________________</td>
-              </tr>
-            </table>
-
-            <!-- FOOTER -->
-            <div class="footer">
-              <hr/>
-              <p><strong>Thank you!</strong></p>
-              <p>Generated on ${new Date().toLocaleString()}</p>
-            </div>
-          </div>
-
-          <!-- WATERMARK -->
-          <div class="watermark">
-            <span>STORE ISSUE</span>
-          </div>
-
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = () => window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `;
-
-            const printWindow = window.open("", "_blank");
-            printWindow.document.write(content);
-            printWindow.document.close();
-          } catch (error) {
-            console.error("Print error:", error);
-            toast.error("Failed to print");
-          }
-        };
 
         return (
           <Popover>
@@ -354,11 +158,8 @@ export default function ManageSales() {
                 Actions
               </Button>
             </PopoverTrigger>
-            <PopoverContent
-              className="w-40 space-y-2 p-2"
-              side="bottom"
-              align="start"
-            >
+
+            <PopoverContent className="w-40 space-y-2 p-2">
               <Button
                 variant="ghost"
                 className="w-full justify-start"
@@ -369,28 +170,13 @@ export default function ManageSales() {
               >
                 View
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start"
                 onClick={() => navigate(`/sales/edit/${sale.id}`)}
               >
                 Edit
-              </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start"
-                onClick={() => handlePrintById(sale.id)}
-              >
-                Print Attachemnt
-              </Button>
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-red-600 hover:text-red-700"
-                onClick={handleDelete}
-              >
-                Delete
               </Button>
             </PopoverContent>
           </Popover>
@@ -427,7 +213,7 @@ export default function ManageSales() {
     const doc = new jsPDF();
     doc.text("Sales Report", 14, 16);
     const tableData = sales.map((row) =>
-      columns.map((col) => row[col.accessorKey])
+      columns.map((col) => row[col.accessorKey]),
     );
     const tableHeaders = columns.map((col) => col.header);
     autoTable(doc, {
@@ -493,7 +279,7 @@ export default function ManageSales() {
                         >
                           {column.columnDef.header}
                         </DropdownMenuCheckboxItem>
-                      )
+                      ),
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -528,7 +314,7 @@ export default function ManageSales() {
                           ? null
                           : flexRender(
                               header.column.columnDef.header,
-                              header.getContext()
+                              header.getContext(),
                             )}
                       </th>
                     ))}
@@ -542,7 +328,7 @@ export default function ManageSales() {
                       <td key={cell.id} className="px-4 py-2 whitespace-nowrap">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}

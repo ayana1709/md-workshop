@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,9 @@ return new class extends Migration {
             // Payment info
             $table->enum('payment_type', ['cash', 'credit', 'card'])->default('cash');
             $table->decimal('paid_amount', 15, 2)->nullable();
+
+            // Store receipt images as JSON in one column
+            $table->json('images')->nullable();
 
             $table->foreignId('branch_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

@@ -18,8 +18,16 @@ class Item extends Model
         'item_code',
         'item_name',
         'part_number',
-        'initial_stock',   // new column
-        'low_stock',       // new column
+        'initial_stock',
+        'low_stock',
+          'selling_price',
+
+        // status fields
+        'stock_status',
+        'movement_status',
+        'posted_to_ecommerce',
+        'operation_status',
+
         'category_id',
         'brand_id',
         'branch_id',
@@ -32,6 +40,7 @@ class Item extends Model
 
     protected $casts = [
         'images' => 'array',
+        'posted_to_ecommerce' => 'boolean',
     ];
 
     /* ================= RELATIONSHIPS ================= */
@@ -56,24 +65,38 @@ class Item extends Model
         return $this->belongsTo(Admin::class, 'created_by');
     }
 
-    // Transactions
     public function purchases()
     {
         return $this->hasMany(Purchasee::class, 'item_code');
     }
 
-    public function sales()
-    {
-        return $this->hasMany(Salee::class, 'item_code');
-    }
+  public function saleItems()
+{
+    return $this->hasMany(SaleItem::class, 'item_code', 'item_code');
+}
 
-    /* ================= AUTO CODE + QR ================= */
-public function receipts()
+public function sales()
+{
+    return $this->hasManyThrough(
+        Salee::class,
+        SaleItem::class,
+        'item_code', // Foreign key on SaleItem table...
+        'id',        // Foreign key on Salee table (local key of SaleItem)
+        'item_code', // Local key on Item table
+        'sale_id'    // Local key on SaleItem table pointing to Salee
+    );
+}
+
+    public function receipts()
     {
         return $this->hasMany(Receipt::class, 'item_code');
     }
+
+    /* ================= MODEL EVENTS ================= */
+
     protected static function booted()
     {
+        // Generate code + QR only once
         static::creating(function ($item) {
             if (!$item->item_code) {
                 $lastCode = self::orderBy('item_code', 'desc')->value('item_code');
@@ -81,11 +104,28 @@ public function receipts()
                 $item->item_code = str_pad($next, 4, '0', STR_PAD_LEFT);
             }
 
-            // Generate QR as SVG (no Imagick needed)
             $item->qr_code = 'qrcodes/item_' . $item->item_code . '.svg';
+
             QrCode::format('svg')
                 ->size(200)
-                ->generate($item->item_code, storage_path('app/public/' . $item->qr_code));
+                ->generate(
+                    $item->item_code,
+                    storage_path('app/public/' . $item->qr_code)
+                );
+        });
+
+        // Auto stock status (create + update)
+        static::saving(function ($item) {
+            $stock = (int) $item->initial_stock;
+            $low   = (int) ($item->low_stock ?? 0);
+
+            if ($stock <= 0) {
+                $item->stock_status = 'out_of_stock';
+            } elseif ($low > 0 && $stock <= $low) {
+                $item->stock_status = 'low_stock';
+            } else {
+                $item->stock_status = 'available';
+            }
         });
     }
 }

@@ -176,13 +176,13 @@ function StoreProvider({ children }) {
       // Refresh list after deletion
       if (type === "repair") {
         setRepairs((prevRepairs) =>
-          prevRepairs.filter((repair) => repair.id !== id)
+          prevRepairs.filter((repair) => repair.id !== id),
         );
       } else if (type === "bolo") {
         setBolos((prevBolos) => prevBolos.filter((bolo) => bolo.id !== id));
       } else if (type === "inspection") {
         setInspection((prevInspection) =>
-          prevInspection.filter((inspection) => inspection.id !== id)
+          prevInspection.filter((inspection) => inspection.id !== id),
         );
       } else if (type === "wheel") {
         setWheel((prevWheel) => prevWheel.filter((wheel) => wheel.id !== id));

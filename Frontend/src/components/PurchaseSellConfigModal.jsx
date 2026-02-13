@@ -10,7 +10,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
   const [purchase, setPurchase] = useState({
     quantity: "",
     actual_unit_price: "",
-    purchase_type: "without_receipt", // "with_receipt" option
+    purchase_type: "without_receipt",
     receipt_number: "",
     vat_amount: "",
     total_with_vat: "",
@@ -24,6 +24,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
   const [hasPurchase, setHasPurchase] = useState(false);
   const [hasSale, setHasSale] = useState(false);
 
+  // Fetch purchase and sale data when modal opens
   useEffect(() => {
     if (!open || !itemCode) return;
 
@@ -35,6 +36,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
           api.get(`/salee/${itemCode}`),
         ]);
 
+        // PURCHASE
         if (pRes.status === "fulfilled" && pRes.value.data) {
           const p = Array.isArray(pRes.value.data)
             ? pRes.value.data[0]
@@ -53,6 +55,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
           }
         }
 
+        // SALE
         if (sRes.status === "fulfilled" && sRes.value.data) {
           const s = Array.isArray(sRes.value.data)
             ? sRes.value.data[0]
@@ -76,6 +79,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
 
   const handleSave = async () => {
     try {
+      // SAVE PURCHASE
       if (hasPurchase) {
         await api.put(`/purchasee/${itemCode}`, purchase);
       } else {
@@ -86,6 +90,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
         });
       }
 
+      // SAVE SALE
       if (hasSale) {
         await api.put(`/salee/${itemCode}`, sale);
       } else {
@@ -98,7 +103,8 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
 
       Swal.fire("Saved", "Purchase & Sale config saved", "success");
       setOpen(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       Swal.fire("Error", "Failed to save config", "error");
     }
   };
@@ -134,6 +140,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
               <input
                 className="w-full border rounded px-3 py-2 mb-2"
                 placeholder="Quantity"
+                type="number"
                 value={purchase.quantity}
                 onChange={(e) =>
                   setPurchase({ ...purchase, quantity: e.target.value })
@@ -143,6 +150,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
               <input
                 className="w-full border rounded px-3 py-2 mb-2"
                 placeholder="Actual Unit Price"
+                type="number"
                 value={purchase.actual_unit_price}
                 onChange={(e) =>
                   setPurchase({
@@ -159,12 +167,16 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
                     placeholder="Receipt Number"
                     value={purchase.receipt_number}
                     onChange={(e) =>
-                      setPurchase({ ...purchase, receipt_number: e.target.value })
+                      setPurchase({
+                        ...purchase,
+                        receipt_number: e.target.value,
+                      })
                     }
                   />
                   <input
                     className="w-full border rounded px-3 py-2"
                     placeholder="VAT Amount"
+                    type="number"
                     value={purchase.vat_amount}
                     onChange={(e) =>
                       setPurchase({ ...purchase, vat_amount: e.target.value })
@@ -173,9 +185,13 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
                   <input
                     className="w-full border rounded px-3 py-2"
                     placeholder="Total With VAT"
+                    type="number"
                     value={purchase.total_with_vat}
                     onChange={(e) =>
-                      setPurchase({ ...purchase, total_with_vat: e.target.value })
+                      setPurchase({
+                        ...purchase,
+                        total_with_vat: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -185,10 +201,10 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
             {/* SALE */}
             <div>
               <h3 className="font-medium mb-2">Sale</h3>
-
               <input
                 className="w-full border rounded px-3 py-2"
                 placeholder="Actual Unit Price"
+                type="number"
                 value={sale.actual_unit_price}
                 onChange={(e) =>
                   setSale({ ...sale, actual_unit_price: e.target.value })
@@ -196,7 +212,7 @@ export default function PurchaseSellConfigModal({ open, setOpen, item }) {
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 mt-4">
               <button
                 className="px-4 py-2 border rounded"
                 onClick={() => setOpen(false)}

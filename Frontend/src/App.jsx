@@ -4,7 +4,8 @@ import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import "./css/style.css";
 import "./charts/ChartjsConfig";
 import { Toaster } from "react-hot-toast";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // Import pages
 import Dashboard from "./pages/Dashboard";
 import Login from "./components/Login";
@@ -33,7 +34,6 @@ import JobManager from "./components/JobManager";
 import ViewRepair from "./components/ViewRepair";
 import EditRepairRegistrationForm from "./components/EditRepair";
 import EditRepair from "./components/EditRepair";
-import { ToastContainer } from "react-toastify";
 import RequestSpare from "./components/RequestSpare";
 import StoreItems from "./components/AddStore";
 import IncomingRequest from "./components/IncomingRequest";
@@ -161,6 +161,12 @@ import DepartmentList from "./components/Role/DepartmentList";
 import DepartmentForm from "./components/Role/DepartmentForm";
 import CreateReceipt from "./components/Receipt/CreateReceipt";
 import ManageReceipt from "./components/Receipt/ManageReceipt";
+import MovementItem from "./components/MovementItem";
+import Operation from "./components/Operation";
+import TransferCreate from "./components/TransferCreate";
+import EcommerceManager from "./components/EcommerceManager";
+import ReceiptPage from "./components/ReceiptPage";
+import AvailableStore from "./components/AvailableStore";
 
 function App() {
   const location = useLocation();
@@ -180,6 +186,15 @@ function App() {
       {/* <ToastContainer /> */}
 
       <Toaster position="top-right" reverseOrder={false} />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         <Route
           path="/"
@@ -245,7 +260,6 @@ function App() {
           <Route path="inspection-list" element={<InspectionList />} />
           <Route path="wheel-alignment-list" element={<WheelAlignemntList />} />
         </Route>
-
         <Route
           path="/store-issue/create"
           element={
@@ -270,13 +284,11 @@ function App() {
         {/* for specifc view */}
         <Route path="/store-issue/view/:id" element={<StoreIssueView />} />
         <Route path="/store-issue/print/:id" element={<StoreIssuePrint />} />
-
-                <Route
+        <Route
           path="/goods-request/create"
           element={
             <ProtectedRoute>
-              <GoodsRequestForm
-              />
+              <GoodsRequestForm />
             </ProtectedRoute>
           }
         />
@@ -292,10 +304,11 @@ function App() {
           path="/goods-request/edit/:id"
           element={<GoodsRequestForm isEdit={true} />}
         />
-        <Route path="/goods-request/print/:id" element={<GoodsRequestPrint isPrint={true} />} />
-
+        <Route
+          path="/goods-request/print/:id"
+          element={<GoodsRequestPrint isPrint={true} />}
+        />
         {/* Route for editing a specific request */}
-
         {/*  work order  */}
         <Route path="/work" element={<WorkOrder />}>
           <Route index element={<Navigate to="/work/work-order-list" />} />
@@ -336,7 +349,6 @@ function App() {
         <Route path="/request-spare/:id" element={<RequestSpare />} />
         {/* inspection Action  */}
         <Route path="/setting" element={<CompanySettings />} />
-
         <Route path="/edit-inspection/:id" element={<EditInspection />} />
         <Route path="/view-inspection/:id" element={<ViewInspection />} />
         <Route path="/request-spare/:id" element={<RequestSpare />} />
@@ -355,19 +367,19 @@ function App() {
           <Route path="add-to-sale" element={<AddSalesPage />} />
           <Route path="order" element={<PurchaseOrder />} />
           <Route path="low-store" element={<LowStore />} />
+
+          <Route path="available" element={<AvailableStore />} />
         </Route>
         <Route path="sales" element={<ManageSales />} />
         <Route path="add-too-sale" element={<NewAddSalesPage />} />
         <Route path="create-order" element={<CreatePurchaseOrder />} />
         <Route path="/sales/edit/:id" element={<EditSalesPage />} />
-
         <Route path="purchase" element={<Purchases />} />
-
         {/* Incoming Request  */}
         <Route path="/history/:code" element={<HistoryPage />} />
         <Route path="/incoming" element={<Incoming />}>
           <Route index element={<Navigate to="/incoming/total-incoming" />} />
-          <Route path="total-incoming" element={<TotalIncoming />} />
+          <Route path="total-incoming" element={<MovementItem />} />
           <Route path="recently-incoming" element={<RecentlyIncoming />} />
           <Route path="pending" element={<Pending />} />
         </Route>
@@ -377,7 +389,7 @@ function App() {
             index
             element={<Navigate to="/requested/total-request-item-out" />}
           />
-          <Route path="total-request-item-out" element={<ItemOutList />} />
+          <Route path="total-request-item-out" element={<Operation />} />
           <Route path="pending-item-out" element={<PendingOut />} />
           <Route path="canceled" element={<Canceled />} />
         </Route>
@@ -406,7 +418,6 @@ function App() {
         <Route path="/service-reminder/:id" element={<ServiceReminderForm />} />
         <Route path="/service-reminders/:id" element={<ServiceReminder />} />
         <Route path="/post-drive-results/:id" element={<TestDriveResult />} />
-
         <Route path="/all-payments" element={<AllPaymentsTable />} />
         <Route path="/payments/:id" element={<PaymentDetail />} />
         <Route path="/payments/edit/:id" element={<EditPaymentForm />} />
@@ -420,7 +431,6 @@ function App() {
         <Route path="/manage-proforma" element={<ManageProforma />} />
         <Route path="/proforma-print/:id" element={<ProformaPrint />} />
         <Route path="/proformas/create" element={<FormalProforma />} />
-
         <Route path="/weekly-checklist" element={<WeeklyChecklist />} />
         <Route path="/description/:id" element={<DescriptionPage />} />
         <Route path="/income" element={<IncomePage />} />
@@ -436,20 +446,21 @@ function App() {
         <Route path="/edit-permission/:roleId" element={<EditPermission />} />
         <Route path="/permission" element={<Permissions />} />
         <Route path="/edit-user/:id" element={<EditUser />} />
+        <Route path="/departments" element={<DepartmentList />} />
+        <Route path="/departments/create" element={<DepartmentForm />} />
+        <Route path="/departments/edit/:id" element={<DepartmentForm />} />
+        <Route path="/create-receipt" element={<CreateReceipt />} />
+        <Route path="/report-receipt" element={<ManageReceipt />} />
+        <Route path="/receipt-page" element={<ReceiptPage />} />
 
-        <Route path="/departments" element={<DepartmentList />}/>
-        <Route path="/departments/create" element={<DepartmentForm />}/>
-        <Route path="/departments/edit/:id" element={<DepartmentForm />}/>
-        <Route path="/create-receipt" element={<CreateReceipt />}/>
-        <Route path="/manage-receipt" element={<ManageReceipt />}/>
-
-
-
-        
+        <Route path="/inventory/transfer/create" element={<TransferCreate />} />
+        <Route
+          path="/inventory/ecommerce-manager"
+          element={<EcommerceManager />}
+        />
       </Routes>
     </>
   );
 }
 
 export default App;
-
