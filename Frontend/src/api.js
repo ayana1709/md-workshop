@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  // baseURL: "http://127.0.0.1:8000/api", // your local backend
-  baseURL: "https://ims.yanoltech.com/api", // production
+  baseURL: "http://127.0.0.1:8000/api", // your local backend
+  // baseURL: "https://ims.yanoltech.com/api", // production
   headers: { "Content-Type": "application/json" },
 });
 
